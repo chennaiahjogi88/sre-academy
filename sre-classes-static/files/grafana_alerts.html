@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grafana Alerts & Integrations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .slides {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 4rem;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .s-dark {
+            background-color: #0f172a;
+        }
+
+        .s-blue {
+            background-color: #0f1f3d;
+        }
+
+        .s-green {
+            background-color: #0b1f14;
+        }
+
+        .s-amber {
+            background-color: #1c1200;
+        }
+
+        .s-purple {
+            background-color: #130d2e;
+        }
+
+        .s-coral {
+            background-color: #1f0b06;
+        }
+
+        .slide h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .slide h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .slide h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .slide p {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .slide ul, .slide ol {
+            text-align: left;
+            display: inline-block;
+            font-size: 1.3rem;
+            line-height: 2;
+        }
+
+        .slide li {
+            margin-bottom: 0.8rem;
+        }
+
+        .code {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: left;
+            margin: 1rem 0;
+            overflow-x: auto;
+            color: #cbd5e1;
+        }
+
+        .kw { color: #6b8ff5; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .tag-grafana {
+            background-color: #e6521522;
+            color: #f46800;
+            border: 1px solid #e6521544;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .ag-item {
+            display: inline-block;
+            margin: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .ag-item:hover {
+            background-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .ag-item.portal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .ag-item.portal:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-bar {
+            background-color: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1rem;
+            height: 80px;
+        }
+
+        .nav-left, .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 0 0 auto;
+        }
+
+        .nav-center {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .slide-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background-color: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .slide-count {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            min-width: 50px;
+        }
+
+        .nav-button {
+            background-color: transparent;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .nav-button:hover {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .portal-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .portal-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);
+        }
+
+        .quiz {
+            text-align: left;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: #1e293b;
+            border-left: 4px solid #e65215;
+            border-radius: 0.5rem;
+        }
+
+        .quiz-question h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+
+        .quiz-question p {
+            margin-bottom: 0.8rem;
+            text-align: left;
+        }
+
+        .toggle-answer {
+            background-color: #e65215;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-answer:hover {
+            background-color: #f46800;
+        }
+
+        .answer {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #0f172a;
+            border-radius: 0.25rem;
+            color: #4ade80;
+            font-size: 1rem;
+        }
+
+        .answer.visible {
+            display: block;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #e65215;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #f46800;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="slides">
+        <div class="slide s-title active">
+            <h1>Grafana Alerts & Integrations</h1>
+            <p style="font-size: 1.8rem; margin-top: 2rem;">Alert Management & Incident Response</p>
+        </div>
+
+        <div class="slide s-dark">
+            <h2>Agenda</h2>
+            <div style="margin-top: 2rem;">
+                <a href="#" class="ag-item">Alert Architecture</a>
+                <a href="#" class="ag-item">Alert Rules</a>
+                <a href="#" class="ag-item">Contact Points</a>
+                <a href="#" class="ag-item">Notification Policies</a>
+                <a href="#" class="ag-item">On-Call Integration</a>
+                <a href="#" class="ag-item">Quiz</a>
+                <a href="index.html" class="ag-item portal">🏠 Portal</a>
+            </div>
+        </div>
+
+        <div class="slide s-blue">
+            <h2>Grafana Alerting Architecture</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Alert State Machine:</strong></p>
+                <div class="code" style="text-align: center;">
+Alert Rules → Evaluation
+    ↓
+State: Normal | Pending | Firing
+    ↓
+Contact Points (Slack, PagerDuty, Email)
+    ↓
+Notifications Sent
+                </div>
+                <p style="margin-top: 1.5rem;"><strong>Components:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Alert Rules: Query + threshold conditions</li>
+                    <li>Notification Policies: Routing & grouping rules</li>
+                    <li>Contact Points: Destinations (integrations)</li>
+                    <li>Silences: Suppress alerts during maintenance</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide s-green">
+            <h2>Creating Alert Rules</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Alert Rule Composition:</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 1.5rem;">
+                    <li>Query: From Prometheus/Loki/etc</li>
+                    <li>Condition: Threshold (>, <, ==)</li>
+                    <li>Evaluate for: How long before firing (default: 5m)</li>
+                    <li>Labels: Severity, team, service tags</li>
+                    <li>Annotations: Summary, description, runbook URL</li>
+                </ul>
+                <p style="margin-top: 1.5rem;"><strong>Example:</strong> Alert if CPU > 85% for 5+ minutes</p>
+                <div class="code">
+Query: <span class="str">avg(cpu_usage) > 85</span>
+For: <span class="val">5m</span>
+Label: severity=<span class="val">warning</span>
+Annotation: <span class="val">runbook=https://wiki/cpu-high</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-amber">
+            <h2>Contact Points</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Supported Integrations:</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 1.5rem;">
+                    <li><strong>Slack:</strong> #channel, @user mentions, rich formatting</li>
+                    <li><strong>PagerDuty:</strong> Create incidents, escalation policies</li>
+                    <li><strong>Email:</strong> SMTP configuration required</li>
+                    <li><strong>OpsGenie:</strong> Incident management</li>
+                    <li><strong>Webhook:</strong> Custom integrations (Jira, custom APIs)</li>
+                </ul>
+                <p style="margin-top: 1.5rem;"><strong>Contact Point Config:</strong> Name, type, credentials (API keys, tokens)</p>
+                <p style="margin-top: 0.5rem;">Sensitive data stored in Grafana secrets backend</p>
+            </div>
+        </div>
+
+        <div class="slide s-purple">
+            <h2>Notification Policies</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Routing Tree:</strong> Root policy + nested matchers</p>
+                <div class="code">
+Root (default contact point):
+  ├─ Matcher: severity=critical
+  │   └─ Contact: PagerDuty
+  └─ Matcher: team=database
+      └─ Contact: DBA Slack channel
+                </div>
+                <p style="margin-top: 1.5rem;"><strong>Grouping:</strong> Combine related alerts</p>
+                <ul style="margin-left: 2rem;">
+                    <li>Group by: severity, team, service</li>
+                    <li>Group wait: 10s (wait before sending first)</li>
+                    <li>Repeat interval: 4h (resend resolved alerts)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide s-coral">
+            <h2>Silence & Inhibition</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Silence:</strong> Suppress all matching alerts temporarily</p>
+                <ul style="margin-left: 2rem; margin-bottom: 1.5rem;">
+                    <li>During maintenance windows</li>
+                    <li>Time-bound (start/end time)</li>
+                    <li>Matcher: Labels to match (team, service)</li>
+                </ul>
+                <p style="margin-top: 1.5rem;"><strong>Inhibition Rules:</strong> Suppress alerts conditionally</p>
+                <div class="code">
+<span class="str">Inhibit if</span>: <span class="val">severity=critical</span>
+<span class="str">Matches</span>: <span class="val">severity=warning</span>
+<span class="cmt"># Suppress warnings when critical alert exists</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-blue">
+            <h2>On-Call Integration</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>PagerDuty Integration:</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 1.5rem;">
+                    <li>Create incidents with auto-assignment</li>
+                    <li>Follow escalation policies</li>
+                    <li>Timeline tracking in PagerDuty UI</li>
+                </ul>
+                <p style="margin-top: 1.5rem;"><strong>Slack @oncall mentions:</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 1.5rem;">
+                    <li>Use Slack bot to mention on-call engineer</li>
+                    <li>Requires integration with on-call schedule</li>
+                </ul>
+                <p style="margin-top: 1.5rem;"><strong>Incident Timeline:</strong> Correlate metrics, logs, and incidents in one view</p>
+            </div>
+        </div>
+
+        <div class="slide s-dark">
+            <h2>Quiz: Grafana Alerts & Integrations</h2>
+            <div class="quiz">
+                <div class="quiz-question">
+                    <h4>1. What are the three states an alert can have?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        <strong>Normal</strong> - Condition is not met. <strong>Pending</strong> - Condition met but "for" duration not reached. <strong>Firing</strong> - Condition met for "for" duration, alert is sent.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>2. When would you use an Inhibition Rule?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        To prevent alert noise - e.g., suppress "disk space low" warnings when there's a "disk full" critical alert. Avoids duplicate notifications about the same underlying issue.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>3. What is the difference between Silence and Inhibition?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        <strong>Silence:</strong> Temporary, manual suppression during maintenance (time-bound). <strong>Inhibition:</strong> Permanent rule-based suppression of dependent alerts (e.g., critical suppresses warning).
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>4. How does notification grouping reduce alert fatigue?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        Grouping combines multiple alerts with the same labels (e.g., all pod restart alerts) into a single notification. This reduces the number of messages sent to Slack/PagerDuty, avoiding alert storms.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>5. What information should an alert annotation include?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        <strong>Summary:</strong> What triggered. <strong>Description:</strong> Current values and context. <strong>Runbook URL:</strong> How to resolve. <strong>Dashboard link:</strong> For investigation. These help on-call engineers respond quickly.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-title">
+            <h1>Thank You</h1>
+            <p style="font-size: 1.8rem; margin-top: 2rem;">Questions?</p>
+            <a href="index.html" class="back-link">← Back to Ktech SRE Portal</a>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-left">
+            <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+        </div>
+        <div class="nav-center">
+            <span class="slide-title" id="slideTitle">Grafana Alerts & Integrations</span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <span class="slide-count"><span id="currentSlide">1</span> / <span id="totalSlides">9</span></span>
+            <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+            <a href="index.html" class="portal-link">🏠 Portal</a>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        const slideTitles = [
+            'Grafana Alerts & Integrations',
+            'Agenda',
+            'Grafana Alerting Architecture',
+            'Creating Alert Rules',
+            'Contact Points',
+            'Notification Policies',
+            'Silence & Inhibition',
+            'On-Call Integration',
+            'Quiz: Grafana Alerts & Integrations',
+            'Thank You'
+        ];
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+
+            document.getElementById('slideTitle').textContent = slideTitles[currentSlide];
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                showSlide();
+            }
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+        showSlide();
+    </script>
+</body>
+</html>

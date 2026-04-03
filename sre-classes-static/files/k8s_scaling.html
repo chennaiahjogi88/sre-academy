@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>K8s Scaling & HPA</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#deck{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:36px 60px;animation:fadein .35s ease}
+.slide.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.s-title{background:linear-gradient(135deg,#0f172a 0%,#1a2e1a 100%)}
+.s-blue{background:#0f1f3d}.s-dark{background:#0f172a}.s-green{background:#0b1f14}
+.s-amber{background:#1c1200}.s-purple{background:#130d2e}.s-coral{background:#1f0b06}
+.s-teal{background:#071a1a}.s-end{background:linear-gradient(135deg,#0f172a,#1a3a1a)}
+.s-navy{background:#0a1628}.s-indigo{background:#0f0d2e}.s-rose{background:#1f0a14}
+.tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:14px;display:inline-block}
+.tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+.tag-green{background:#14532d33;color:#4ade80;border:1px solid #14532d55}
+.tag-amber{background:#78350f33;color:#fbbf24;border:1px solid #78350f55}
+.tag-coral{background:#7c1d0d33;color:#fb923c;border:1px solid #7c1d0d55}
+.tag-purple{background:#2e106533;color:#c084fc;border:1px solid #4c1d9555}
+.tag-teal{background:#0f3333;color:#2dd4bf;border:1px solid #14b8a655}
+.tag-rose{background:#4c0d2033;color:#fb7185;border:1px solid #9f123955}
+.tag-indigo{background:#1e1b4b33;color:#818cf8;border:1px solid #3730a355}
+h1{font-size:40px;font-weight:700;line-height:1.15;text-align:center;margin-bottom:12px}
+h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
+.sub{font-size:15px;color:#94a3b8;text-align:center;max-width:700px;line-height:1.6}
+.accent{color:#38bdf8}.accent2{color:#4ade80}.accent3{color:#fbbf24}.accent4{color:#2dd4bf}
+.agenda{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:840px;margin-top:6px}
+.ag-item{background:#ffffff0a;border:1px solid #ffffff15;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.ag-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.ag-text{font-size:13px;color:#cbd5e1;line-height:1.4}
+.ag-text strong{display:block;color:#f1f5f9;font-size:14px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:880px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:100%;max-width:900px}
+.card{background:#ffffff0a;border:1px solid #ffffff15;border-radius:14px;padding:16px 18px}
+.card h3{font-size:15px;font-weight:600;margin-bottom:10px}
+.card ul{list-style:none;padding:0}
+.card ul li{font-size:13px;color:#94a3b8;padding:3px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.card ul li::before{content:"›";font-weight:700;flex-shrink:0}
+.card ul li b{color:#e2e8f0}
+.hbox{background:#ffffff08;border-left:3px solid #38bdf8;border-radius:0 10px 10px 0;padding:10px 16px;margin:6px 0;font-size:13px;color:#cbd5e1;line-height:1.5}
+.hbox.green{border-color:#4ade80}.hbox.amber{border-color:#fbbf24}.hbox.coral{border-color:#fb923c}
+.hbox.purple{border-color:#c084fc}.hbox.teal{border-color:#2dd4bf}.hbox.rose{border-color:#fb7185}
+.hbox.indigo{border-color:#818cf8}.hbox b{color:#f1f5f9}
+.diagram{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.drow{display:flex;gap:8px;justify-content:center;align-items:center}
+.dbox{border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;text-align:center;border:1px solid;min-width:100px}
+.dbox-blue{background:#1e3a5f55;border-color:#3b82f655;color:#93c5fd}
+.dbox-green{background:#14532d44;border-color:#22c55e55;color:#86efac}
+.dbox-amber{background:#78350f44;border-color:#f59e0b55;color:#fcd34d}
+.dbox-red{background:#4c0d0d44;border-color:#ef444455;color:#fca5a5}
+.dbox-purple{background:#2e106544;border-color:#a855f755;color:#d8b4fe}
+.dbox-teal{background:#0f333344;border-color:#14b8a655;color:#5eead4}
+.dbox-gray{background:#1e293b44;border-color:#47556955;color:#94a3b8}
+.dbox-rose{background:#4c0d2044;border-color:#f4365855;color:#fda4af}
+.dbox-orange{background:#7c2d1244;border-color:#ea580c55;color:#fdba74}
+.arrow{color:#475569;font-size:16px;display:flex;align-items:center}
+.arrow-d{color:#475569;font-size:20px;line-height:1;text-align:center}
+.data-table{width:100%;max-width:840px;border-collapse:collapse}
+.data-table th{padding:9px 14px;font-size:12px;text-align:left;border-bottom:1px solid #ffffff20;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+.data-table td{padding:8px 14px;font-size:13px;color:#94a3b8;border-bottom:1px solid #ffffff0a}
+.data-table tr:last-child td{border-bottom:none}
+.data-table td:first-child{color:#f1f5f9;font-weight:500}
+.chip{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block}
+.chip-blue{background:#1e40af33;color:#60a5fa}.chip-green{background:#14532d33;color:#4ade80}
+.chip-amber{background:#78350f33;color:#fbbf24}.chip-red{background:#4c0d0d33;color:#f87171}
+.chip-purple{background:#2e106533;color:#c084fc}.chip-teal{background:#0f333333;color:#2dd4bf}
+.chip-rose{background:#4c0d2033;color:#fb7185}.chip-indigo{background:#1e1b4b33;color:#818cf8}
+.quiz-box{width:100%;max-width:780px}
+.q-item{background:#ffffff08;border:1px solid #ffffff12;border-radius:12px;padding:14px 18px;margin-bottom:8px}
+.q-item .q{font-size:14px;font-weight:500;color:#f1f5f9;margin-bottom:6px}
+.q-item .a{font-size:13px;color:#4ade80;display:none}
+.q-item .a.show{display:block}
+.q-item .btn{font-size:12px;background:#ffffff12;border:none;color:#94a3b8;padding:3px 12px;border-radius:20px;cursor:pointer;margin-top:4px}
+.q-item .btn:hover{background:#ffffff20;color:#fff}
+#nav{background:#0a1120;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px}
+.nav-btn{background:#ffffff0f;border:1px solid #ffffff15;color:#cbd5e1;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s}
+.nav-btn:hover{background:#ffffff20;color:#fff}
+.nav-btn:disabled{opacity:.3;cursor:default}
+#progress{flex:1;height:4px;background:#ffffff10;border-radius:2px;position:relative}
+#bar{height:4px;border-radius:2px;transition:width .3s}
+#slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
+#slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
+.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;overflow-x:auto}
+.prop{color:#c084fc}.str{color:#4ade80}.val{color:#fbbf24}.cmt{color:#475569}.kw{color:#60a5fa}
+.badge-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.badge{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+#bar{background:linear-gradient(90deg,#60a5fa,#c084fc)}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- Slide 1 -->
+<div class="slide s-title active" data-title="K8s Scaling &amp; HPA">
+  <div class="tag tag-blue">Class 14 · Kubernetes Track</div>
+  <h1>Kubernetes <span class="accent2">Scaling</span><br>&amp; <span class="accent">HPA</span></h1>
+  <p class="sub" style="margin-top:14px">Horizontal Pod Autoscaler · Cluster Autoscaler · KEDA · Scaling Strategies</p>
+  <div style="display:flex;gap:20px;margin-top:28px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#475569">⏱ 60 minutes</span>
+    <span style="font-size:13px;color:#475569">📦 4 Segments + Quiz</span>
+    <span style="font-size:13px;color:#475569">🎯 Intermediate</span>
+  </div>
+</div>
+
+<!-- Slide 2: Agenda -->
+<div class="slide s-dark" data-title="Agenda">
+  <div class="tag tag-blue">Session Plan</div>
+  <h2>What We'll Cover</h2>
+  <div class="agenda">
+    <div class="ag-item">
+      <div class="ag-num" style="background:#14532d33;color:#4ade80">01</div>
+      <div class="ag-text"><strong>Scaling Types</strong>Manual, HPA, VPA, Cluster</div>
+    </div>
+    <div class="ag-item">
+      <div class="ag-num" style="background:#1e40af33;color:#60a5fa">02</div>
+      <div class="ag-text"><strong>HPA Deep Dive</strong>Metrics, algorithm, behavior</div>
+    </div>
+    <div class="ag-item">
+      <div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div>
+      <div class="ag-text"><strong>Cluster Autoscaler</strong>Scale nodes automatically</div>
+    </div>
+    <div class="ag-item">
+      <div class="ag-num" style="background:#2e106533;color:#c084fc">04</div>
+      <div class="ag-text"><strong>KEDA</strong>Event-driven autoscaling</div>
+    </div>
+    <div class="ag-item" style="grid-column:1/-1;justify-self:center;max-width:380px">
+      <div class="ag-num" style="background:#0f333333;color:#2dd4bf">05</div>
+      <div class="ag-text"><strong>Quiz &amp; Recap</strong>Knowledge check</div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 3: Scaling Overview -->
+<div class="slide s-green" data-title="Scaling Types">
+  <div class="tag tag-green">Segment 1 — Overview</div>
+  <h2>Kubernetes Scaling Types</h2>
+  <div class="three-col">
+    <div class="card">
+      <h3 style="color:#4ade80">↔️ Horizontal (HPA)</h3>
+      <ul>
+        <li>More/fewer <b>pod replicas</b></li>
+        <li>Based on CPU, memory, custom metrics</li>
+        <li>Best for stateless apps</li>
+        <li>Most common approach</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#60a5fa">↕️ Vertical (VPA)</h3>
+      <ul>
+        <li>Resize <b>CPU/memory</b> of existing pods</li>
+        <li>Requires pod restart to apply</li>
+        <li>Good for stateful, hard-to-shard apps</li>
+        <li>Can conflict with HPA on CPU</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#fbbf24">🖥️ Cluster (CA)</h3>
+      <ul>
+        <li>Add/remove <b>nodes</b> in node group</li>
+        <li>Triggered by unschedulable pods</li>
+        <li>Works with cloud provider APIs</li>
+        <li>Complements HPA</li>
+      </ul>
+    </div>
+  </div>
+  <div class="hbox" style="margin-top:14px;max-width:860px">🎯 <b>Typical pattern:</b> HPA scales pods → pods fill nodes → CA scales nodes → new pods scheduled. They work together.</div>
+</div>
+
+<!-- Slide 4: HPA Deep Dive -->
+<div class="slide s-blue" data-title="HPA Deep Dive">
+  <div class="tag tag-blue">Segment 2 — HPA</div>
+  <h2>Horizontal Pod Autoscaler</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">📄 HPA YAML</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="kw">apiVersion</span>: autoscaling/v2
+<span class="kw">kind</span>: HorizontalPodAutoscaler
+<span class="prop">spec</span>:
+  <span class="prop">scaleTargetRef</span>:
+    <span class="prop">kind</span>: <span class="str">Deployment</span>
+    <span class="prop">name</span>: <span class="str">api</span>
+  <span class="prop">minReplicas</span>: <span class="val">2</span>
+  <span class="prop">maxReplicas</span>: <span class="val">20</span>
+  <span class="prop">metrics</span>:
+  - <span class="prop">type</span>: <span class="kw">Resource</span>
+    <span class="prop">resource</span>:
+      <span class="prop">name</span>: <span class="str">cpu</span>
+      <span class="prop">target</span>:
+        <span class="prop">type</span>: <span class="str">Utilization</span>
+        <span class="prop">averageUtilization</span>: <span class="val">70</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#60a5fa">🧮 HPA Algorithm</h3>
+      <ul>
+        <li>Checks metrics every 15s (configurable)</li>
+        <li>Formula: desired = ceil(current × (current_metric / target_metric))</li>
+        <li>Scale-up: immediate on threshold breach</li>
+        <li>Scale-down: waits 5min (stabilization window)</li>
+        <li>Requires metrics-server to be installed</li>
+      </ul>
+      <div class="hbox" style="margin-top:8px;font-size:12px">⚠️ CPU &gt; 70% with 3 replicas → desired = ceil(3 × (90/70)) = 4</div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 5: Cluster Autoscaler -->
+<div class="slide s-amber" data-title="Cluster Autoscaler">
+  <div class="tag tag-amber">Segment 3 — CA</div>
+  <h2>Cluster Autoscaler</h2>
+  <div class="diagram" style="margin-top:8px">
+    <div class="drow">
+      <div class="dbox dbox-amber">Pod Pending<br><span style="font-size:10px">No node has room</span></div>
+      <div class="arrow">→</div>
+      <div class="dbox dbox-green">CA detects<br><span style="font-size:10px">Unschedulable pod</span></div>
+      <div class="arrow">→</div>
+      <div class="dbox dbox-blue">New Node Added<br><span style="font-size:10px">~2-3 min to join</span></div>
+      <div class="arrow">→</div>
+      <div class="dbox dbox-teal">Pod Scheduled<br><span style="font-size:10px">✅ Running</span></div>
+    </div>
+  </div>
+  <div class="two-col" style="margin-top:14px">
+    <div class="card">
+      <h3 style="color:#fbbf24">📈 Scale Out Triggers</h3>
+      <ul>
+        <li>Pod in Pending state due to insufficient resources</li>
+        <li>CA simulates scheduling to pick best node group</li>
+        <li>Respects min/max node group bounds</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#fbbf24">📉 Scale In Triggers</h3>
+      <ul>
+        <li>Node utilization &lt; 50% for 10 min (default)</li>
+        <li>All pods can be moved to other nodes</li>
+        <li>Respects PDBs before draining</li>
+        <li>Skips nodes with local storage / system pods</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: KEDA -->
+<div class="slide s-purple" data-title="KEDA — Event-Driven Scaling">
+  <div class="tag tag-purple">Segment 4 — KEDA</div>
+  <h2>KEDA — Event-Driven Autoscaling</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#c084fc">⚡ What is KEDA?</h3>
+      <ul>
+        <li>Kubernetes-based Event Driven Autoscaler</li>
+        <li>Scale based on external event sources</li>
+        <li>Can scale to <b>zero</b> when no events</li>
+        <li>Works alongside HPA (extends it)</li>
+        <li>50+ built-in scalers</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#c084fc">📡 KEDA Scalers</h3>
+      <ul>
+        <li>Kafka — queue depth / consumer lag</li>
+        <li>RabbitMQ — message count</li>
+        <li>AWS SQS — queue length</li>
+        <li>Prometheus — any custom metric</li>
+        <li>Cron — time-based scaling</li>
+        <li>HTTP — requests per second</li>
+      </ul>
+    </div>
+  </div>
+  <div class="hbox green" style="margin-top:12px;max-width:860px">🎯 <b>Use case:</b> Scale consumer pods based on Kafka lag. 0 messages → 0 pods. 10,000 messages → 50 pods. Scales to zero saves significant compute cost.</div>
+</div>
+
+<!-- Slide 7: Quiz -->
+<div class="slide s-dark" data-title="Quiz">
+  <div class="tag tag-teal">Knowledge Check</div>
+  <h2>Quick Quiz 🎯</h2>
+  <div class="quiz-box">
+    <div class="q-item">
+      <div class="q">1. HPA target CPU is 50%. Current usage is 80% with 4 replicas. How many replicas will HPA set?</div>
+      <div class="a">ceil(4 × (80/50)) = ceil(6.4) = 7 replicas. HPA always rounds up to ensure target utilization is met.</div>
+      <button class="btn">Show Answer</button>
+    </div>
+    <div class="q-item">
+      <div class="q">2. Why does Cluster Autoscaler scale in slowly (10 min) but scale out quickly?</div>
+      <div class="a">Scale-out is urgent — pending pods mean degraded service. Scale-in is conservative — evicting pods too quickly could cause disruptions. The 10-min window ensures utilization is truly low before removing nodes.</div>
+      <button class="btn">Show Answer</button>
+    </div>
+    <div class="q-item">
+      <div class="q">3. What is the main advantage of KEDA over HPA for queue-based workloads?</div>
+      <div class="a">KEDA can scale to zero (no pods when queue is empty, saving cost) and scales on actual queue depth/lag rather than CPU, which is a much more meaningful metric for consumer workloads.</div>
+      <button class="btn">Show Answer</button>
+    </div>
+    <div class="q-item">
+      <div class="q">4. What must be installed in the cluster for HPA to work?</div>
+      <div class="a">metrics-server — it aggregates resource metrics (CPU/memory) from kubelets and exposes them via the Kubernetes Metrics API that HPA queries.</div>
+      <button class="btn">Show Answer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: Wrap Up -->
+<div class="slide s-end" data-title="Wrap Up">
+  <div class="tag tag-blue">Class 14 — Complete</div>
+  <h1 style="font-size:32px">Scaling Conquered! 🎉</h1>
+  <p class="sub">Your applications can now scale automatically and cost-efficiently</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px;max-width:700px;width:100%">
+    <div class="hbox green">✅ HPA — CPU/memory-based pod scaling</div>
+    <div class="hbox green">✅ VPA — right-size pod resources</div>
+    <div class="hbox green">✅ Cluster Autoscaler — scale nodes</div>
+    <div class="hbox green">✅ KEDA — event-driven scale to zero</div>
+  </div>
+  <a href="index.html" style="margin-top:24px;color:#60a5fa;font-size:14px;text-decoration:none">← Back to Portal</a>
+</div>
+
+</div>
+<nav id="nav">
+  <a href="index.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
+  <button class="nav-btn" id="btnPrev">← Prev</button>
+  <div id="progress"><div id="bar"></div></div>
+  <span id="slide-title-nav"></span>
+  <button class="nav-btn" id="btnNext">Next →</button>
+  <span id="slide-info"></span>
+</nav>
+<script>
+
+const slides=document.querySelectorAll('.slide'),total=slides.length;
+let cur=0;
+function goTo(n){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(n,total-1));slides[cur].classList.add('active');document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-info').textContent=(cur+1)+' / '+total;const t=slides[cur].dataset.title||'';document.getElementById('slide-title-nav').textContent=t;document.getElementById('btnPrev').disabled=cur===0;document.getElementById('btnNext').disabled=cur===total-1;}
+document.getElementById('btnPrev').onclick=()=>goTo(cur-1);
+document.getElementById('btnNext').onclick=()=>goTo(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')goTo(cur+1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')goTo(cur-1);});
+document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',function(){const a=this.closest('.q-item').querySelector('.a');a.classList.toggle('show');this.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}));
+goTo(0);
+
+</script>
+</body>
+</html>

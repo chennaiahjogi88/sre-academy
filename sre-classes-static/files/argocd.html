@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitOps with ArgoCD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #e5e7eb; overflow: hidden; }
+        .slideshow { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        .nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid #334155; gap: 12px; }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav button { background: none; border: 1px solid #475569; color: #cbd5e1; padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; transition: all 0.3s; }
+        .nav button:hover { background: #1e293b; border-color: #64748b; }
+        .nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nav-title { font-weight: 600; color: #e5e7eb; min-width: 200px; text-align: center; }
+        .progress-bar { flex: 1; height: 2px; background: #1e293b; margin: 0 16px; border-radius: 1px; overflow: hidden; max-width: 400px; }
+        .progress { height: 100%; background: linear-gradient(90deg, #EF7B4D, #FF9D4D); width: 0%; transition: width 0.3s; }
+        .slide-counter { color: #94a3b8; font-size: 14px; min-width: 40px; text-align: right; }
+        .nav a { color: #EF7B4D; text-decoration: none; padding: 8px 12px; border: 1px solid #475569; border-radius: 6px; transition: all 0.3s; }
+        .nav a:hover { background: #1e293b; border-color: #EF7B4D; }
+        .slides { flex: 1; overflow: hidden; position: relative; }
+        .slide { position: absolute; width: 100%; height: 100%; display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .slide.active { display: flex; opacity: 1; }
+        .s-title { background: linear-gradient(135deg, #3d1a0a 0%, #4d2415 50%, #6b3220 100%); }
+        .s-dark { background: #0f172a; }
+        .s-blue { background: #0f1f3d; }
+        .s-green { background: #0b1f14; }
+        .s-amber { background: #1c1200; }
+        .s-purple { background: #130d2e; }
+        .slide { padding: 48px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .slide h1 { font-size: 3.5rem; margin-bottom: 16px; text-align: center; background: linear-gradient(135deg, #EF7B4D, #FF9D4D); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .slide h2 { font-size: 2.5rem; margin-bottom: 32px; text-align: center; color: #EF7B4D; }
+        .tag-argo { display: inline-block; background: #EF7B4D22; color: #EF7B4D; border: 1px solid #EF7B4D44; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+        .slide-content { max-width: 1000px; width: 100%; }
+        .agenda { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 1000px; }
+        .ag-item { background: rgba(30, 41, 59, 0.6); border-left: 4px solid #EF7B4D; padding: 16px; border-radius: 8px; line-height: 1.8; }
+        .ag-item strong { color: #EF7B4D; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+        .card { background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 24px; }
+        .card h3 { color: #EF7B4D; margin-bottom: 12px; font-size: 1.2rem; }
+        .card p { line-height: 1.6; color: #cbd5e1; margin-bottom: 8px; font-size: 14px; }
+        .code { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 16px 0; }
+        .code .kw { color: #6b8ff5; }
+        .code .prop { color: #c084fc; }
+        .code .str { color: #4ade80; }
+        .code .val { color: #fbbf24; }
+        .code .cmt { color: #475569; }
+        .svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px; }
+        .svc { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 16px; }
+        .svc strong { color: #EF7B4D; display: block; margin-bottom: 8px; }
+        .svc p { font-size: 13px; line-height: 1.5; color: #cbd5e1; }
+        .quiz-box { background: rgba(30, 41, 59, 0.8); border: 2px solid #EF7B4D; border-radius: 8px; padding: 24px; margin-top: 16px; }
+        .q-item { background: rgba(15, 23, 42, 0.6); border-left: 3px solid #EF7B4D; padding: 16px; margin: 16px 0; border-radius: 4px; }
+        .q-item p { margin-bottom: 12px; color: #e5e7eb; }
+        .q-item button { background: #EF7B4D; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s; }
+        .q-item button:hover { background: #FF9D4D; }
+        .answer { display: none; background: rgba(239, 123, 77, 0.1); border-left: 3px solid #4ade80; padding: 12px; margin-top: 12px; border-radius: 4px; color: #4ade80; font-size: 13px; }
+        .list-item { margin: 12px 0; padding-left: 24px; position: relative; line-height: 1.6; }
+        .list-item::before { content: "›"; position: absolute; left: 0; color: #EF7B4D; }
+        .portal-link { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #EF7B4D; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; transition: all 0.3s; }
+        .portal-link:hover { background: #FF9D4D; }
+        .end-slide-content { text-align: center; }
+        .end-slide-content h2 { font-size: 2rem; margin-bottom: 32px; }
+        .end-slide-content a { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #EF7B4D; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="slideshow">
+        <div class="nav">
+            <div class="nav-left">
+                <button id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+            </div>
+            <div class="nav-title" id="navTitle">ArgoCD — GitOps for Kubernetes</div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <div class="slide-counter">
+                <span id="slideNum">1</span>/<span id="totalSlides">10</span>
+            </div>
+            <div class="nav-right">
+                <button id="nextBtn" onclick="changeSlide(1)">Next →</button>
+                <a href="index.html">🏠 Portal</a>
+                <button onclick="closeSlideshow()">✕</button>
+            </div>
+        </div>
+        <div class="slides">
+            <!-- Slide 1: Title -->
+            <div class="slide s-title active">
+                <div class="tag-argo">ArgoCD Module</div>
+                <h1>ArgoCD</h1>
+                <p style="font-size: 1.5rem; color: #cbd5e1; margin-top: 16px;">GitOps for Kubernetes</p>
+                <p style="color: #94a3b8; margin-top: 32px; font-size: 1.1rem;">class-34 | CI/CD & GitOps</p>
+            </div>
+
+            <!-- Slide 2: Agenda -->
+            <div class="slide s-dark">
+                <h2>Course Agenda</h2>
+                <div class="agenda">
+                    <div class="ag-item"><strong>GitOps Principles</strong> Git as source of truth</div>
+                    <div class="ag-item"><strong>ArgoCD Architecture</strong> Controllers, API, repos</div>
+                    <div class="ag-item"><strong>Application CRD</strong> Deployments via YAML</div>
+                    <div class="ag-item"><strong>Sync Policies</strong> Automated, manual, pruning</div>
+                    <div class="ag-item"><strong>App-of-Apps</strong> Multi-app management</div>
+                    <div class="ag-item"><strong>Production Setup</strong> RBAC, SSO, notifications</div>
+                </div>
+                <a href="index.html" class="portal-link">🏠 Back to Portal</a>
+            </div>
+
+            <!-- Slide 3: GitOps Principles -->
+            <div class="slide s-blue">
+                <h2>GitOps Principles</h2>
+                <div class="slide-content">
+                    <div class="list-item"><strong>1. Declarative Infrastructure:</strong> Desired state in Git, versioned</div>
+                    <div class="list-item"><strong>2. Single Source of Truth:</strong> Git repo as authoritative source</div>
+                    <div class="list-item"><strong>3. Automated Reconciliation:</strong> System constantly syncs cluster to Git</div>
+                    <div class="list-item"><strong>4. Pull Model:</strong> Operator pulls from Git, not pushed externally</div>
+                    <div class="list-item"><strong>5. Auditable & Reversible:</strong> Full history in Git, easy rollbacks</div>
+                    <div class="list-item"><strong>6. Infrastructure as Code:</strong> Everything reproducible from Git</div>
+                </div>
+            </div>
+
+            <!-- Slide 4: ArgoCD Architecture -->
+            <div class="slide s-purple">
+                <h2>ArgoCD Architecture</h2>
+                <div class="slide-content">
+                    <div class="svc-grid">
+                        <div class="svc">
+                            <strong>Repo Server</strong>
+                            <p>Clones Git repo, renders Kustomize/Helm/Jsonnet manifests</p>
+                        </div>
+                        <div class="svc">
+                            <strong>Application Controller</strong>
+                            <p>Monitors cluster state, compares with Git, reconciles</p>
+                        </div>
+                        <div class="svc">
+                            <strong>API Server</strong>
+                            <p>Provides REST API, web UI, user management</p>
+                        </div>
+                        <div class="svc">
+                            <strong>Dex (SSO)</strong>
+                            <p>OAuth2/OIDC authentication integration</p>
+                        </div>
+                        <div class="svc">
+                            <strong>Redis Cache</strong>
+                            <p>Caches app states, repo data for performance</p>
+                        </div>
+                        <div class="svc">
+                            <strong>Notification Controller</strong>
+                            <p>Sends webhooks, Slack alerts on sync events</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Application CRD -->
+            <div class="slide s-green">
+                <h2>ArgoCD Application CRD</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">apiVersion:</span> <span class="str">argoproj.io/v1alpha1</span>
+<span class="kw">kind:</span> <span class="str">Application</span>
+<span class="kw">metadata:</span>
+  <span class="prop">name:</span> <span class="str">my-app</span>
+  <span class="prop">namespace:</span> <span class="str">argocd</span>
+<span class="kw">spec:</span>
+  <span class="prop">project:</span> <span class="str">default</span>
+  <span class="prop">source:</span>
+    <span class="prop">repoURL:</span> <span class="str">https://github.com/myorg/myrepo</span>
+    <span class="prop">targetRevision:</span> <span class="str">main</span>
+    <span class="prop">path:</span> <span class="str">k8s/overlays/prod</span>
+  <span class="prop">destination:</span>
+    <span class="prop">server:</span> <span class="str">https://kubernetes.default.svc</span>
+    <span class="prop">namespace:</span> <span class="str">production</span>
+  <span class="prop">syncPolicy:</span>
+    <span class="prop">automated:</span>
+      <span class="prop">prune:</span> <span class="val">true</span>
+      <span class="prop">selfHeal:</span> <span class="val">true</span></div>
+                </div>
+            </div>
+
+            <!-- Slide 6: Sync Policies -->
+            <div class="slide s-dark">
+                <h2>Sync Policies</h2>
+                <div class="slide-content">
+                    <div class="card">
+                        <h3>Manual Sync</h3>
+                        <p>Requires explicit approval in UI/CLI to sync. Safe for prod, slower releases.</p>
+                    </div>
+                    <div class="card" style="margin-top: 16px;">
+                        <h3>Automated Sync</h3>
+                        <p>Auto-syncs on Git commit. Fast, less control. Use with pull requests for reviews.</p>
+                    </div>
+                    <div class="card" style="margin-top: 16px;">
+                        <h3>Prune</h3>
+                        <p>Deletes resources removed from Git. Prevents orphaned resources.</p>
+                    </div>
+                    <div class="card" style="margin-top: 16px;">
+                        <h3>Self-Heal</h3>
+                        <p>Reverts manual cluster changes, re-syncs to Git state automatically.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: App-of-Apps Pattern -->
+            <div class="slide s-amber">
+                <h2>App-of-Apps Pattern</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="cmt"># Root Application points to app directory</span>
+<span class="kw">apiVersion:</span> <span class="str">argoproj.io/v1alpha1</span>
+<span class="kw">kind:</span> <span class="str">Application</span>
+<span class="kw">metadata:</span>
+  <span class="prop">name:</span> <span class="str">root-app</span>
+<span class="kw">spec:</span>
+  <span class="prop">source:</span>
+    <span class="prop">repoURL:</span> <span class="str">https://github.com/myorg/apps</span>
+    <span class="prop">path:</span> <span class="str">apps</span>  <span class="cmt"># Directory of Application manifests</span>
+  <span class="prop">destination:</span>
+    <span class="prop">server:</span> <span class="str">https://kubernetes.default.svc</span>
+    <span class="prop">namespace:</span> <span class="str">argocd</span>
+
+<span class="cmt"># Each file in apps/ is an Application</span>
+<span class="str">apps/
+├── app-auth.yaml
+├── app-api.yaml
+├── app-web.yaml</span></div>
+                    <p style="margin-top: 16px; color: #cbd5e1;"><strong>Use ApplicationSet</strong> for multi-cluster/multi-environment deployments</p>
+                </div>
+            </div>
+
+            <!-- Slide 8: ArgoCD Production -->
+            <div class="slide s-blue">
+                <h2>ArgoCD in Production</h2>
+                <div class="slide-content">
+                    <div class="list-item"><strong>RBAC:</strong> Projects, AppProject CRD, user roles for access control</div>
+                    <div class="list-item"><strong>SSO/OIDC:</strong> Integrate with Okta, Azure AD, or any OIDC provider</div>
+                    <div class="list-item"><strong>Notifications:</strong> Webhooks to Slack, email on sync success/failure</div>
+                    <div class="list-item"><strong>Image Updater:</strong> Auto-update container images on new tags</div>
+                    <div class="list-item"><strong>High Availability:</strong> Run multiple replicas of API/Controller</div>
+                    <div class="list-item"><strong>Secret Management:</strong> Sealed Secrets, External Secrets Operator</div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Quiz -->
+            <div class="slide s-purple">
+                <h2>Knowledge Check</h2>
+                <div class="slide-content" style="max-width: 900px;">
+                    <div class="quiz-box">
+                        <div class="q-item">
+                            <p><strong>Q1:</strong> What is the main principle of GitOps?</p>
+                            <button onclick="toggleAnswer(0)">Show Answer</button>
+                            <div class="answer" id="answer0">Git is the single source of truth for desired infrastructure state, and operators continuously reconcile the cluster to match.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q2:</strong> What is the difference between manual and automated sync in ArgoCD?</p>
+                            <button onclick="toggleAnswer(1)">Show Answer</button>
+                            <div class="answer" id="answer1">Manual sync requires explicit approval before applying changes; automated sync applies changes automatically on Git commits.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q3:</strong> Why is the "prune" policy important?</p>
+                            <button onclick="toggleAnswer(2)">Show Answer</button>
+                            <div class="answer" id="answer2">Prune deletes resources that were removed from Git, preventing orphaned resources from cluttering the cluster.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q4:</strong> What does "self-heal" do in ArgoCD?</p>
+                            <button onclick="toggleAnswer(3)">Show Answer</button>
+                            <div class="answer" id="answer3">Self-heal automatically reverts manual cluster changes and re-syncs to Git state, enforcing desired state.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q5:</strong> When would you use the App-of-Apps pattern?</p>
+                            <button onclick="toggleAnswer(4)">Show Answer</button>
+                            <div class="answer" id="answer4">To manage multiple applications in a single cluster, or deploy to multiple clusters/environments from one root Application.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 10: End -->
+            <div class="slide s-title">
+                <div class="end-slide-content">
+                    <h2 style="color: #EF7B4D; margin-bottom: 32px;">Thank You!</h2>
+                    <p style="font-size: 1.2rem; color: #cbd5e1; margin-bottom: 32px;">You're ready to implement GitOps with ArgoCD</p>
+                    <a href="index.html" style="display: inline-block; padding: 12px 24px; background: #EF7B4D; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">← Back to Ktech SRE Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        const titles = [
+            'ArgoCD — GitOps for Kubernetes',
+            'Course Agenda',
+            'GitOps Principles',
+            'ArgoCD Architecture',
+            'ArgoCD Application CRD',
+            'Sync Policies',
+            'App-of-Apps Pattern',
+            'ArgoCD in Production',
+            'Knowledge Check',
+            'Thank You!'
+        ];
+
+        function updateSlide() {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+            document.getElementById('navTitle').textContent = titles[currentSlide];
+            document.getElementById('slideNum').textContent = currentSlide + 1;
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(n) {
+            const newSlide = currentSlide + n;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                updateSlide();
+            }
+        }
+
+        function toggleAnswer(id) {
+            const answer = document.getElementById('answer' + id);
+            answer.style.display = answer.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function closeSlideshow() {
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'Escape') closeSlideshow();
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

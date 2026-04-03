@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 60px 80px 140px 80px;
+            animation: fadein 0.5s;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+        }
+
+        .s-dark {
+            background: #0f172a;
+        }
+
+        .s-blue {
+            background: #0f1f3d;
+        }
+
+        .s-green {
+            background: #0b1f14;
+        }
+
+        .s-amber {
+            background: #1c1200;
+        }
+
+        .s-purple {
+            background: #130d2e;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #f87171;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #f87171;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #60a5fa;
+        }
+
+        p, li {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .tag-incident {
+            background: #ef444422;
+            color: #f87171;
+            border: 1px solid #ef444444;
+        }
+
+        .agenda {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .ag-item {
+            padding: 15px;
+            background: rgba(248, 113, 113, 0.1);
+            border-left: 3px solid #f87171;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .ag-item:hover {
+            background: rgba(248, 113, 113, 0.2);
+            transform: translateX(5px);
+        }
+
+        .ag-item a {
+            color: #f87171;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .ag-item a:hover {
+            color: #fca5a5;
+            text-decoration: underline;
+        }
+
+        .card {
+            background: rgba(127, 29, 29, 0.3);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #7f1d1d;
+        }
+
+        .sev-card {
+            background: rgba(127, 29, 29, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f87171;
+            margin-bottom: 15px;
+        }
+
+        .sev-card h3 {
+            margin-top: 0;
+            color: #fca5a5;
+        }
+
+        .code {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .kw { color: #6b8ff5; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .quiz-box {
+            background: rgba(192, 132, 252, 0.1);
+            border-left: 4px solid #c084fc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .q-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 4px;
+        }
+
+        .q-item strong {
+            color: #f87171;
+        }
+
+        .q-item button {
+            background: #60a5fa;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .q-item button:hover {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .answer {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(74, 222, 128, 0.15);
+            border-left: 2px solid #4ade80;
+            color: #86efac;
+            border-radius: 4px;
+        }
+
+        .answer.show {
+            display: block;
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, #0f172a 100%);
+            border-top: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            background: none;
+            border: none;
+            color: #f87171;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 10px 20px;
+        }
+
+        .nav-button:hover {
+            color: #fca5a5;
+        }
+
+        .nav-button:disabled {
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .nav-title {
+            flex: 1;
+            text-align: center;
+            color: #cbd5e1;
+            font-size: 1rem;
+            margin: 0 20px;
+        }
+
+        .nav-progress {
+            flex: 1;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f87171, #fbbf24);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .nav-home {
+            background: none;
+            border: none;
+            color: #fbbf24;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+            padding: 10px;
+        }
+
+        .nav-home:hover {
+            transform: scale(1.15);
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        ul {
+            margin-left: 20px;
+        }
+
+        li {
+            margin-bottom: 12px;
+        }
+
+        .back-link {
+            color: #f87171;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #fca5a5;
+            text-decoration: underline;
+        }
+
+        .lifecycle {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .lifecycle-step {
+            background: rgba(248, 113, 113, 0.15);
+            padding: 15px 20px;
+            border-radius: 6px;
+            flex: 1;
+            margin: 5px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #7f1d1d;
+        }
+
+        .role {
+            background: rgba(127, 29, 29, 0.3);
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 3px solid #f87171;
+            border-radius: 4px;
+        }
+
+        .role strong {
+            color: #fca5a5;
+        }
+
+        .back-link {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide s-title active">
+        <h1>Incident Management</h1>
+        <p class="subtitle">Response, Communication & Tooling</p>
+        <span class="tag tag-incident">SRE Incident Response</span>
+        <p style="margin-top: 40px; font-size: 1.1rem;">class-39 | Module: SRE Reliability Practices</p>
+    </div>
+
+    <div class="slide s-purple">
+        <h2>Agenda</h2>
+        <div class="agenda">
+            <div class="ag-item">Severity Levels</div>
+            <div class="ag-item">Incident Lifecycle</div>
+            <div class="ag-item">Incident Roles</div>
+            <div class="ag-item">War Room Best Practices</div>
+            <div class="ag-item">Communication Templates</div>
+            <div class="ag-item">Incident Tooling</div>
+            <div class="ag-item">Quiz</div>
+            <div class="ag-item"><a href="index.html">🏠 Portal</a></div>
+        </div>
+    </div>
+
+    <div class="slide s-dark">
+        <h2>Severity Levels</h2>
+        <div class="sev-card">
+            <h3>SEV1 - Complete Outage</h3>
+            <p>All customers affected, service completely down. <strong>All hands on deck.</strong></p>
+            <p style="margin-top: 10px; color: #cbd5e1; font-size: 1rem;">Example: Payment processing completely broken, no transactions possible</p>
+        </div>
+        <div class="sev-card">
+            <h3>SEV2 - Major Degradation</h3>
+            <p>Significant impact to customers, service partially down or very slow. <strong>Page oncall immediately.</strong></p>
+            <p style="margin-top: 10px; color: #cbd5e1; font-size: 1rem;">Example: 50% of requests failing, API latency 10x normal</p>
+        </div>
+        <div class="sev-card">
+            <h3>SEV3 - Minor Degradation</h3>
+            <p>Some users impacted, but workarounds exist. <strong>Page next morning if during night.</strong></p>
+            <p style="margin-top: 10px; color: #cbd5e1; font-size: 1rem;">Example: One feature broken but core service works, 5% error rate</p>
+        </div>
+        <div class="sev-card">
+            <h3>SEV4 - Cosmetic / Low Impact</h3>
+            <p>No customer impact or internal-only issue. <strong>Create ticket, can wait.</strong></p>
+            <p style="margin-top: 10px; color: #cbd5e1; font-size: 1rem;">Example: UI button color wrong, typo in error message</p>
+        </div>
+    </div>
+
+    <div class="slide s-blue">
+        <h2>Incident Lifecycle</h2>
+        <div class="lifecycle">
+            <div class="lifecycle-step">Detect</div>
+            <div style="color: #60a5fa; align-self: center;">→</div>
+            <div class="lifecycle-step">Acknowledge</div>
+            <div style="color: #60a5fa; align-self: center;">→</div>
+            <div class="lifecycle-step">Triage</div>
+        </div>
+        <div class="lifecycle">
+            <div class="lifecycle-step">Escalate</div>
+            <div style="color: #60a5fa; align-self: center;">→</div>
+            <div class="lifecycle-step">Mitigate</div>
+            <div style="color: #60a5fa; align-self: center;">→</div>
+            <div class="lifecycle-step">Resolve</div>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <div class="lifecycle-step" style="display: inline-block;">Review</div>
+        </div>
+        <div class="card" style="margin-top: 30px;">
+            <h3>Time SLAs Per Severity</h3>
+            <ul>
+                <li><strong>SEV1:</strong> Detect (2min), Triage (5min), Escalate (10min), Resolve (30min-2h)</li>
+                <li><strong>SEV2:</strong> Detect (5min), Triage (10min), Escalate (20min), Resolve (2-4h)</li>
+                <li><strong>SEV3:</strong> Detect (15min), Triage (30min), Escalate (1h), Resolve (24h)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide s-dark">
+        <h2>Incident Roles</h2>
+        <div class="role">
+            <strong>Incident Commander (IC)</strong><br/>
+            Owns the war room, makes decisions, ensures communication. NOT necessarily the most technical person. Coordinates the team, manages cognitive load, prevents hero culture. Says "stop digging" when needed.
+        </div>
+        <div class="role">
+            <strong>Communications Lead</strong><br/>
+            Owns status page and stakeholder updates. Non-technical summaries for execs. Manages external customer communication. Never goes silent.
+        </div>
+        <div class="role">
+            <strong>Technical Lead</strong><br/>
+            Investigates and fixes the issue. Reports findings to IC. Proposes remediation steps. Focus on one thing at a time.
+        </div>
+        <div class="role">
+            <strong>Scribe</strong><br/>
+            Documents timeline in real-time. Records decisions and theories tested. This becomes the postmortem narrative.
+        </div>
+    </div>
+
+    <div class="slide s-purple">
+        <h2>War Room Best Practices</h2>
+        <div class="two-col">
+            <div class="card">
+                <h3>During the Incident</h3>
+                <ul>
+                    <li>Single Slack channel for sync</li>
+                    <li>Video call always on</li>
+                    <li>Shared doc (timeline)</li>
+                    <li>No blame — systems thinking</li>
+                    <li>Time-box theories (max 15min each)</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Communication Signals</h3>
+                <ul>
+                    <li>"Investigating path X" — start of theory</li>
+                    <li>"Path X negative" — theory ruled out, try next</li>
+                    <li>"Stop digging" — too many paths, refocus</li>
+                    <li>"Hand off to [person]" — clear ownership transfer</li>
+                    <li>"ETA: 30 minutes" — realistic estimate</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide s-blue">
+        <h2>Communication Templates</h2>
+        <div class="card">
+            <h3>Status Page Update (Customer Facing)</h3>
+            <p style="color: #cbd5e1; margin-top: 10px;">"We are aware of degraded performance in the payment service affecting approximately 10% of transactions. Our team is investigating and we'll provide an update in 15 minutes."</p>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Internal Slack Update (All Hands)</h3>
+            <p style="color: #cbd5e1; margin-top: 10px;"><strong>What:</strong> Payment service returning 500 errors. <strong>Impact:</strong> 15% of transactions failing. <strong>Status:</strong> Identified database connection leak. <strong>ETA:</strong> 45 minutes to deploy fix.</p>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Executive Summary (Leadership)</h3>
+            <p style="color: #cbd5e1; margin-top: 10px;"><strong>Business Impact:</strong> ~$50K revenue impact in last hour. <strong>Scope:</strong> Payment processing only, other services unaffected. <strong>Resolution:</strong> Database fix deploying now, estimated 15min to full recovery.</p>
+        </div>
+    </div>
+
+    <div class="slide s-dark">
+        <h2>Incident Tooling Stack</h2>
+        <div class="card">
+            <h3>Detection & Alerting</h3>
+            <ul>
+                <li><strong>Prometheus / Datadog / New Relic:</strong> Metrics and alerting</li>
+                <li><strong>PagerDuty / OpsGenie:</strong> On-call escalation</li>
+            </ul>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Response & Management</h3>
+            <ul>
+                <li><strong>Slack:</strong> Real-time communication channel</li>
+                <li><strong>Google Docs / Notion:</strong> Shared incident timeline and decisions</li>
+                <li><strong>Rootly / FireHydrant:</strong> Incident command platform (full workflow)</li>
+            </ul>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Communication & Tracking</h3>
+            <ul>
+                <li><strong>Statuspage.io / Atlassian Status:</strong> Public incident page</li>
+                <li><strong>Jira:</strong> Tracking follow-up action items</li>
+                <li><strong>Confluence / Notion:</strong> Postmortem storage and runbooks</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide s-purple">
+        <h2>Quiz: Incident Management</h2>
+        <div class="quiz-box">
+            <div class="q-item">
+                <strong>Q1: What is the role of an Incident Commander?</strong>
+                <button onclick="reveal(this)">Show Answer</button>
+                <div class="answer">A: Owns the war room, makes decisions, coordinates the team. Not necessarily the most technical person. Prevents hero culture and manages cognitive load.</div>
+            </div>
+            <div class="q-item">
+                <strong>Q2: What makes a SEV1 incident different from SEV2?</strong>
+                <button onclick="reveal(this)">Show Answer</button>
+                <div class="answer">A: SEV1 is complete outage (all customers affected), requires all hands. SEV2 is major degradation (significant impact), requires immediate page.</div>
+            </div>
+            <div class="q-item">
+                <strong>Q3: Name three incident roles and their responsibilities.</strong>
+                <button onclick="reveal(this)">Show Answer</button>
+                <div class="answer">A: (1) IC: coordinates decisions, (2) Comms Lead: stakeholder updates, (3) Tech Lead: investigates, (4) Scribe: documents timeline</div>
+            </div>
+            <div class="q-item">
+                <strong>Q4: Why should theories in a war room be time-boxed (max 15 minutes)?</strong>
+                <button onclick="reveal(this)">Show Answer</button>
+                <div class="answer">A: Prevents endless investigation of dead ends. Encourages moving to next hypothesis when one doesn't pan out. Speeds up root cause finding.</div>
+            </div>
+            <div class="q-item">
+                <strong>Q5: What should a status page update NEVER do?</strong>
+                <button onclick="reveal(this)">Show Answer</button>
+                <div class="answer">A: Never go silent. Provide updates on a regular cadence. Even "still investigating" is better than no update.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide s-title">
+        <h2 style="color: #e2e8f0; font-size: 2rem;">End of Module</h2>
+        <p style="font-size: 1.2rem; margin-top: 40px;">You now understand incident severity, roles, and response best practices.</p>
+        <p style="margin-top: 40px;"><a href="index.html" class="back-link">← Back to Ktech SRE Portal</a></p>
+    </div>
+
+    <div class="nav-bar">
+        <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+        <div class="nav-title" id="slideTitle">Incident Management</div>
+        <div class="nav-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span id="slideCount">1 / 9</span>
+        </div>
+        <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+        <button class="nav-home" onclick="window.location.href='index.html'">🏠</button>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const titles = [
+            'Incident Management',
+            'Agenda',
+            'Severity Levels',
+            'Incident Lifecycle',
+            'Incident Roles',
+            'War Room Best Practices',
+            'Communication Templates',
+            'Incident Tooling Stack',
+            'Quiz: Incident Management',
+            'End of Module'
+        ];
+        let currentSlide = 0;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('slideTitle').textContent = titles[currentSlide];
+            document.getElementById('slideCount').textContent = `${currentSlide + 1} / ${slides.length}`;
+            document.getElementById('progressFill').style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === slides.length - 1;
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        function reveal(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('show');
+            btn.textContent = answer.classList.contains('show') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        showSlide(0);
+    </script>
+</body>
+</html>

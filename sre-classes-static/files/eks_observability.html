@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>EKS Observability Stack — Ktech SRE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#deck{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:40px 60px;animation:fadein .35s ease}
+.slide.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.s-title{background:linear-gradient(135deg,#0f172a,#0a1628)}.s-dark{background:#0f172a}.s-blue{background:#0f1f3d}.s-green{background:#0b1f14}.s-amber{background:#1c1200}.s-purple{background:#130d2e}
+.tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:16px;display:inline-block}
+.tag-eks{background:#FF990022;color:#FF9900;border:1px solid #FF990044}
+.tag-k8s{background:#326ce522;color:#6b8ff5;border:1px solid #326ce544}
+h1{font-size:42px;font-weight:700;line-height:1.15;text-align:center;margin-bottom:12px}
+h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
+.sub{font-size:17px;color:#94a3b8;text-align:center;max-width:680px;line-height:1.6}
+.accent{color:#6b8ff5}.accent2{color:#4ade80}.accent3{color:#fbbf24}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:860px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;width:100%;max-width:860px}
+.card{background:#ffffff0a;border:1px solid #ffffff15;border-radius:14px;padding:18px 20px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.card ul{list-style:none;padding:0}
+.card ul li{font-size:13px;color:#94a3b8;padding:4px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.agenda{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:820px}
+.ag-item{background:#ffffff0a;border:1px solid #ffffff15;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.ag-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.ag-text{font-size:14px;color:#cbd5e1;line-height:1.4}
+.ag-text strong{display:block;color:#f1f5f9;font-size:15px}
+.code{background:#0a0f1a;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:'Courier New',monospace;font-size:12px;line-height:1.8;width:100%;max-width:780px}
+.kw{color:#6b8ff5}.str{color:#4ade80}.cmt{color:#475569}.prop{color:#c084fc}.val{color:#fbbf24}
+.quiz-box{width:100%;max-width:760px}
+.q-item{background:#ffffff08;border:1px solid #ffffff12;border-radius:12px;padding:16px 20px;margin-bottom:10px}
+.q-item .q{font-size:15px;font-weight:500;color:#f1f5f9;margin-bottom:8px}
+.q-item .a{font-size:13px;color:#4ade80;display:none}
+.q-item .a.show{display:block}
+.q-item .btn{font-size:12px;background:#ffffff12;border:none;color:#94a3b8;padding:4px 12px;border-radius:20px;cursor:pointer;margin-top:4px}
+.q-item .btn:hover{background:#ffffff20;color:#fff}
+#nav{background:#0a1120;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px}
+.nav-btn{background:#ffffff0f;border:1px solid #ffffff15;color:#cbd5e1;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s}
+.nav-btn:hover{background:#ffffff20;color:#fff}.nav-btn:disabled{opacity:.3;cursor:default}
+#progress{flex:1;height:4px;background:#ffffff10;border-radius:2px}
+#bar{height:4px;background:linear-gradient(90deg,#FF9900,#FFB700);border-radius:2px;transition:width .3s}
+#slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
+#slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
+.home-link{font-size:12px;color:#475569;text-decoration:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<div class="slide s-title active">
+  <div class="tag tag-eks">Class 31 · Observability</div>
+  <h1>EKS Observability <span class="accent3">Stack</span></h1>
+  <p class="sub">Deploy Prometheus, Grafana, Loki, and Alertmanager on Amazon EKS — complete monitoring suite</p>
+  <div style="display:flex;gap:20px;margin-top:32px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#475569">☁️ AWS EKS</span>
+    <span style="font-size:13px;color:#475569">⏱ 60 minutes</span>
+    <span style="font-size:13px;color:#475569">🎯 Deployment</span>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-eks">Session Plan</div>
+  <h2>What We'll Cover</h2>
+  <div class="agenda">
+    <div class="ag-item"><div class="ag-num" style="background:#FF990022;color:#FF9900">01</div><div class="ag-text"><strong>Architecture</strong>Full stack design · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#FF990022;color:#FF9900">02</div><div class="ag-text"><strong>kube-prometheus-stack</strong>Helm deployment · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#FF990022;color:#FF9900">03</div><div class="ag-text"><strong>Storage</strong>EBS CSI + PVCs · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#FF990022;color:#FF9900">04</div><div class="ag-text"><strong>Loki on EKS</strong>S3 backend · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#FF990022;color:#FF9900">05</div><div class="ag-text"><strong>IRSA & Production</strong>IAM roles & scaling · 14 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#FF990022;color:#FF9900">🏠</div><div class="ag-text"><strong>Portal</strong><a href="index.html" style="color:#FF9900;font-size:12px">index.html</a></div></div>
+  </div>
+</div>
+
+<div class="slide s-amber">
+  <div class="tag tag-eks">Segment 1 — Full Stack Architecture</div>
+  <h2>EKS Observability Design</h2>
+  <div class="card" style="width:100%;max-width:820px;margin-bottom:16px">
+    <h3 class="accent3">Complete Data Flow</h3>
+    <div class="code" style="font-size:12px;padding:12px 16px;margin-top:12px">
+<span class="str">EKS Cluster</span> (Prometheus scrapes metrics + Promtail scrapes logs)<br>
+    ↓<br>
+├─ <span class="prop">Prometheus</span> (metrics) → <span class="val">EBS PVC</span> → <span class="str">TSDB</span><br>
+├─ <span class="prop">Loki</span> (logs) → <span class="val">S3</span> (backend storage)<br>
+├─ <span class="prop">Alertmanager</span> (rules) → <span class="prop">Slack/PagerDuty</span><br>
+└─ <span class="prop">Grafana</span> (dashboard) ← reads from Prometheus + Loki<br><br>
+<span class="cmt"># All deployed via Helm charts in monitoring namespace</span>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent3">What Gets Monitored</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>EKS cluster:</strong> API server, nodes, etcd</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>Workloads:</strong> Pod CPU/memory, restart counts</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>Network:</strong> Service latency, connection errors</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>Storage:</strong> PVC usage, attach failures</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>Logs:</strong> All pod logs indexed by labels</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent3">Components</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>node-exporter</strong> - Node metrics (CPU, disk, network)</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>kube-state-metrics</strong> - K8s object state</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>prometheus-operator</strong> - Manage Prometheus via CRDs</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>grafana</strong> - Dashboards + alerting UI</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>alertmanager</strong> - Route + suppress alerts</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-blue">
+  <div class="tag tag-eks">Segment 2 — kube-prometheus-stack</div>
+  <h2>Deploy Prometheus Stack via Helm</h2>
+  <div class="card" style="width:100%;max-width:820px">
+    <h3 class="accent">Installation & Customization</h3>
+    <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># 1. Add Prometheus community Helm repo</span><br>
+<span class="kw">helm repo add</span> prometheus-community \<br>
+&nbsp;&nbsp;https://prometheus-community.github.io/helm-charts<br><br>
+<span class="cmt"># 2. Create custom values.yaml</span><br>
+<span class="prop">prometheus:</span><br>
+&nbsp;&nbsp;<span class="prop">prometheusSpec:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">retention:</span> <span class="val">30d</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">storageSpec:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">volumeClaimTemplate:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">spec:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">storageClassName:</span> <span class="str">ebs-sc</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">resources:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">requests:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">storage:</span> <span class="val">100Gi</span><br><br>
+<span class="cmt"># 3. Install</span><br>
+<span class="kw">helm install</span> kube-prom prometheus-community/kube-prometheus-stack \<br>
+&nbsp;&nbsp;--namespace monitoring --create-namespace \<br>
+&nbsp;&nbsp;-f values.yaml
+    </div>
+  </div>
+</div>
+
+<div class="slide s-green">
+  <div class="tag tag-eks">Segment 3 — Persistent Storage</div>
+  <h2>EBS Storage for Prometheus & Grafana</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent2">EBS CSI Driver Setup</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong>Prerequisite:</strong> EBS CSI add-on installed in EKS</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Provides ebs.csi.aws.com provisioner</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Create StorageClass for gp3 volumes</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Prometheus TSDB stores on EBS</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Data persists across pod restarts</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Use encrypted volumes in production</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent2">Storage Configuration</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="prop">apiVersion:</span> <span class="str">storage.k8s.io/v1</span><br>
+<span class="prop">kind:</span> <span class="str">StorageClass</span><br>
+<span class="prop">metadata:</span><br>
+&nbsp;&nbsp;<span class="prop">name:</span> <span class="str">ebs-sc</span><br>
+<span class="prop">provisioner:</span> <span class="str">ebs.csi.aws.com</span><br>
+<span class="prop">parameters:</span><br>
+&nbsp;&nbsp;<span class="prop">type:</span> <span class="str">gp3</span><br>
+&nbsp;&nbsp;<span class="prop">iops:</span> <span class="val">3000</span><br>
+&nbsp;&nbsp;<span class="prop">throughput:</span> <span class="val">125</span><br>
+&nbsp;&nbsp;<span class="prop">encrypted:</span> <span class="str">"true"</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-purple">
+  <div class="tag tag-eks">Segment 4 — Loki on EKS</div>
+  <h2>Deploy Loki with S3 Backend</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#c084fc">Loki Stack Install</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># 1. Add Grafana Helm repo</span><br>
+<span class="kw">helm repo add</span> grafana \<br>
+&nbsp;&nbsp;https://grafana.github.io/helm-charts<br><br>
+<span class="cmt"># 2. Install loki-stack</span><br>
+<span class="kw">helm install</span> loki grafana/loki-stack \<br>
+&nbsp;&nbsp;--namespace monitoring \<br>
+&nbsp;&nbsp;--set loki.enabled=true \<br>
+&nbsp;&nbsp;--set promtail.enabled=true \<br>
+&nbsp;&nbsp;-f loki-values.yaml
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#c084fc">S3 Configuration</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="prop">loki:</span><br>
+&nbsp;&nbsp;<span class="prop">config:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">storage_config:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">aws:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">s3:</span> <span class="str">s3://my-loki-bucket</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">region:</span> <span class="str">us-east-1</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">sse_encryption:</span> <span class="val">true</span><br>
+&nbsp;&nbsp;<span class="prop">schema_config:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">configs:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;- <span class="prop">from:</span> <span class="val">2024-01-01</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">store:</span> <span class="str">boltdb-shipper</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-blue">
+  <div class="tag tag-eks">Segment 5 — IRSA & Production Readiness</div>
+  <h2>IAM Roles for Service Accounts (IRSA)</h2>
+  <div class="card" style="width:100%;max-width:820px;margin-bottom:16px">
+    <h3 class="accent">IRSA Setup for Loki S3 Access</h3>
+    <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># 1. Create IAM role with trust policy (OIDC)</span><br>
+<span class="kw">aws iam create-role</span> --role-name loki-s3-access \<br>
+&nbsp;&nbsp;--assume-role-policy-document <span class="str">'{...oidc...}'</span><br><br>
+<span class="cmt"># 2. Attach S3 policy to role</span><br>
+<span class="kw">aws iam attach-role-policy</span> --role-name loki-s3-access \<br>
+&nbsp;&nbsp;--policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess<br><br>
+<span class="cmt"># 3. Annotate ServiceAccount in K8s</span><br>
+<span class="prop">apiVersion:</span> <span class="str">v1</span><br>
+<span class="prop">kind:</span> <span class="str">ServiceAccount</span><br>
+<span class="prop">metadata:</span><br>
+&nbsp;&nbsp;<span class="prop">annotations:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">eks.amazonaws.com/role-arn:</span> <span class="str">arn:aws:iam::123456:role/loki-s3-access</span>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">Scaling Prometheus</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> <strong>Resource requests:</strong> 2 CPU, 8Gi memory typical</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> <strong>Thanos:</strong> Multi-cluster metrics federation</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> <strong>Cardinality limits:</strong> Prevent metric explosion</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> <strong>Vertical Pod Autoscaler:</strong> Auto-adjust requests</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> <strong>Sharding:</strong> Split scrape targets across Prometheus replicas</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent">Production Checklist</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Enable pod disruption budgets (PDB)</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Set resource requests + limits</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Use IRSA for S3/CloudWatch access</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Enable encryption (EBS, S3)</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Configure retention policies</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-eks">Quiz</div>
+  <h2>EKS Observability Quiz ⚡</h2>
+  <div class="quiz-box">
+    <div class="q-item"><div class="q">Q1. What does kube-prometheus-stack include?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Prometheus (metrics), Grafana (dashboards), Alertmanager (alert routing), node-exporter, kube-state-metrics, and prometheus-operator for managing CRDs.</div></div>
+    <div class="q-item"><div class="q">Q2. Why do you need EBS CSI driver for Prometheus?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ To provision persistent EBS volumes for Prometheus TSDB so metrics survive pod restarts. Without it, data is ephemeral and lost.</div></div>
+    <div class="q-item"><div class="q">Q3. How does Loki store logs in S3?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Promtail ships logs to Loki's distributor. Ingesters buffer and compress, then flush to S3 as chunks. Querier reads from S3 + cache via LogQL.</div></div>
+    <div class="q-item"><div class="q">Q4. What is IRSA and why use it?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ IAM Roles for Service Accounts — lets Kubernetes pods assume AWS IAM roles without storing access keys. Loki pod gets S3 access via OIDC, not credentials.</div></div>
+    <div class="q-item"><div class="q">Q5. How would you prevent Prometheus from consuming too much memory?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Set cardinality limits (--metric-relabel-configs), enable scrape limits, use PVCs to offload to disk, or deploy Thanos for federation + downsampling.</div></div>
+  </div>
+</div>
+
+<div class="slide s-title">
+  <div class="tag tag-eks">End of Session</div>
+  <h1 style="font-size:38px">EKS Observability Live! ☁️</h1>
+  <p class="sub">You now have a production-grade observability stack on AWS EKS with metrics, logs, and alerting.</p>
+  <div style="display:flex;gap:16px;margin-top:28px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#FF9900">✓ Prometheus + Grafana</span>
+    <span style="font-size:13px;color:#FF9900">✓ Loki logs on S3</span>
+    <span style="font-size:13px;color:#FF9900">✓ IRSA setup</span>
+    <span style="font-size:13px;color:#FF9900">✓ Production readiness</span>
+  </div>
+  <a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+</div>
+
+</div>
+<div id="nav">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
+  <div id="slide-title-nav">EKS Observability Stack</div>
+  <div id="progress"><div id="bar" style="width:11.11%"></div></div>
+  <div id="slide-info">1 / 9</div>
+  <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
+  <a href="index.html" class="home-link">🏠 Portal</a>
+</div>
+<script>
+const titles=["Title","Agenda","Architecture","kube-prometheus-stack","Storage","Loki on EKS","IRSA & Production","Quiz","Wrap Up"];
+let cur=0;const total=9;
+const slides=document.querySelectorAll('.slide');
+function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
+function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);});
+</script>
+</body>
+</html>

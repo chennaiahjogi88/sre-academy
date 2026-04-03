@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Observability Cost Control — Ktech SRE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#deck{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:40px 60px;animation:fadein .35s ease}
+.slide.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.s-title{background:linear-gradient(135deg,#0f172a,#0a1628)}.s-dark{background:#0f172a}.s-blue{background:#0f1f3d}.s-green{background:#0b1f14}.s-amber{background:#1c1200}.s-purple{background:#130d2e}
+.tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:16px;display:inline-block}
+.tag-obs-cost{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44}
+h1{font-size:42px;font-weight:700;line-height:1.15;text-align:center;margin-bottom:12px}
+h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
+.sub{font-size:17px;color:#94a3b8;text-align:center;max-width:680px;line-height:1.6}
+.accent{color:#fbbf24}.accent2{color:#4ade80}.accent3{color:#f87171}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:860px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;width:100%;max-width:860px}
+.card{background:#ffffff0a;border:1px solid #ffffff15;border-radius:14px;padding:18px 20px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.card ul{list-style:none;padding:0}
+.card ul li{font-size:13px;color:#94a3b8;padding:4px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.agenda{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:820px}
+.ag-item{background:#ffffff0a;border:1px solid #ffffff15;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.ag-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.ag-text{font-size:14px;color:#cbd5e1;line-height:1.4}
+.ag-text strong{display:block;color:#f1f5f9;font-size:15px}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:840px}
+.svc{background:#ffffff08;border:1px solid #ffffff12;border-radius:10px;padding:12px 14px}
+.svc .name{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:3px}
+.svc .cat{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:5px}
+.svc .desc{font-size:12px;color:#94a3b8;line-height:1.5}
+.code{background:#0a0f1a;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:'Courier New',monospace;font-size:12px;line-height:1.8;width:100%;max-width:780px}
+.kw{color:#6b8ff5}.str{color:#4ade80}.cmt{color:#475569}.prop{color:#c084fc}.val{color:#fbbf24}
+.quiz-box{width:100%;max-width:760px}
+.q-item{background:#ffffff08;border:1px solid #ffffff12;border-radius:12px;padding:16px 20px;margin-bottom:10px}
+.q-item .q{font-size:15px;font-weight:500;color:#f1f5f9;margin-bottom:8px}
+.q-item .a{font-size:13px;color:#4ade80;display:none}
+.q-item .a.show{display:block}
+.q-item .btn{font-size:12px;background:#ffffff12;border:none;color:#94a3b8;padding:4px 12px;border-radius:20px;cursor:pointer;margin-top:4px}
+.q-item .btn:hover{background:#ffffff20;color:#fff}
+#nav{background:#0a1120;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px}
+.nav-btn{background:#ffffff0f;border:1px solid #ffffff15;color:#cbd5e1;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s}
+.nav-btn:hover{background:#ffffff20;color:#fff}.nav-btn:disabled{opacity:.3;cursor:default}
+#progress{flex:1;height:4px;background:#ffffff10;border-radius:2px}
+#bar{height:4px;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:2px;transition:width .3s}
+#slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
+#slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
+.home-link{font-size:12px;color:#475569;text-decoration:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<div class="slide s-title active">
+  <div class="tag tag-obs-cost">Class 47 · Advanced SRE</div>
+  <h1>Observability <span class="accent">Cost</span> Control</h1>
+  <p class="sub">Managing metric cardinality, log volume, tracing costs — keeping observability affordable</p>
+  <div style="display:flex;gap:20px;margin-top:32px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#475569">📊 Observability</span>
+    <span style="font-size:13px;color:#475569">⏱ 90 minutes</span>
+    <span style="font-size:13px;color:#475569">🎯 Advanced SRE</span>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-obs-cost">Session Plan</div>
+  <h2>What We'll Cover</h2>
+  <div class="agenda">
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">01</div><div class="ag-text"><strong>Cost Drivers</strong>Storage, ingestion, compute · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">02</div><div class="ag-text"><strong>Metric Cardinality</strong>High cardinality explosion · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">03</div><div class="ag-text"><strong>Cardinality Management</strong>Relabeling, recording · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">04</div><div class="ag-text"><strong>Log Cost Control</strong>Sampling, levels, dedup · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">05</div><div class="ag-text"><strong>Tracing & Summary</strong>Sampling, tail-based · 14 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">06</div><div class="ag-text"><strong>Quiz + Portal</strong>Review · 20 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#f59e0b22;color:#fbbf24">🏠</div><div class="ag-text"><strong>Portal</strong><a href="index.html" style="color:#fbbf24;font-size:12px">index.html</a></div></div>
+  </div>
+</div>
+
+<div class="slide s-amber">
+  <div class="tag tag-obs-cost">Segment 1 — Cost Drivers</div>
+  <h2>Observability Cost Drivers</h2>
+  <div class="three-col">
+    <div class="card">
+      <h3 class="accent">Storage</h3>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">
+        Time-series database (Prometheus/TSDB), log storage (S3, Elasticsearch), trace spans. Cost per GB/month.
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="accent2">Ingestion</h3>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">
+        Datadog, New Relic charge per host, per GB ingested. More data = higher cost.
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="accent3">Query Compute</h3>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">
+        Complex queries over large datasets. More cardinality = slower queries = higher cost.
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="accent">Data Transfer</h3>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">
+        Egress from observability SaaS. Minimize by sampling and filtering at source.
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="accent2">Retention</h3>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">
+        Long-term storage. 30-day metrics is cheaper than 1-year retention.
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="accent3">Premium Features</h3>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">
+        APM, RUM, SLO management. Costs stack on top of base plan.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-blue">
+  <div class="tag tag-obs-cost">Segment 2 — Metric Cardinality</div>
+  <h2>The Cardinality Problem</h2>
+  <div class="card" style="max-width:800px;margin-bottom:20px">
+    <h3 class="accent">Cardinality Explosion Example</h3>
+    <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># Metric: http_requests_total</span><br>
+<span class="cmt"># Labels: method, path, status, user_id, request_id, pod_ip</span><br>
+<br>
+<span class="cmt"># Unique combinations:</span><br>
+<span class="kw">methods:</span> <span class="val">5</span> (GET, POST, PUT, DELETE, PATCH)<br>
+<span class="kw">paths:</span> <span class="val">100</span> (API endpoints)<br>
+<span class="kw">status:</span> <span class="val">10</span> (2xx, 3xx, 4xx, 5xx)<br>
+<span class="kw">user_id:</span> <span class="val">1000000</span> (unique users)<br>
+<span class="kw">request_id:</span> <span class="val">infinite</span> (unique per request!)<br>
+<span class="kw">pod_ip:</span> <span class="val">100</span> (pods)<br>
+<br>
+<span class="cmt"># Total cardinality:</span><br>
+<span class="kw">5 × 100 × 10 × 1M × ∞ × 100 = DISASTER</span>
+    </div>
+  </div>
+  <div class="card" style="max-width:800px">
+    <h3 class="accent2">Bad Labels</h3>
+    <ul>
+      <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong style="color:#f1f5f9">user_id, request_id, session_id</strong> — unique per user/request → explosion</li>
+      <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong style="color:#f1f5f9">pod_ip, container_id</strong> — high cardinality, use pod_name instead</li>
+      <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong style="color:#f1f5f9">Any unbounded value</strong> — anything that grows with data</li>
+    </ul>
+  </div>
+</div>
+
+<div class="slide s-green">
+  <div class="tag tag-obs-cost">Segment 3 — Cardinality Management</div>
+  <h2>Controlling Cardinality</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent2">Prometheus Strategies</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong style="color:#f1f5f9">limit_series in scrape config</strong> — drop metrics if cardinality > threshold</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong style="color:#f1f5f9">Recording rules</strong> — pre-aggregate high-cardinality to low-cardinality</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong style="color:#f1f5f9">Relabeling rules</strong> — drop bad labels before storage</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent">Grafana Tools</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#a78bfa">›</span> <strong style="color:#f1f5f9">Cardinality explorer</strong> — find worst offenders</li>
+        <li style="color:#94a3b8"><span style="color:#a78bfa">›</span> <strong style="color:#f1f5f9">Top-N queries</strong> — which metrics cost most</li>
+        <li style="color:#94a3b8"><span style="color:#a78bfa">›</span> <strong style="color:#f1f5f9">Label inspector</strong> — see all label values per metric</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-purple">
+  <div class="tag tag-obs-cost">Segment 4 — Log Cost Control</div>
+  <h2>Reducing Log Costs</h2>
+  <div class="card" style="max-width:800px;margin-bottom:20px">
+    <h3 class="accent">Log Volume Reduction</h3>
+    <div style="font-size:13px;color:#cbd5e1;line-height:1.8">
+      <div><strong style="color:#f1f5f9">Structured Logging:</strong> Only log necessary fields. Avoid verbose string output.</div>
+      <div><strong style="color:#f1f5f9">Log Sampling:</strong> 1% sample for INFO/DEBUG on high-traffic endpoints. 100% for errors.</div>
+      <div><strong style="color:#f1f5f9">Log Levels in Prod:</strong> Default INFO, not DEBUG. DEBUG only for troubleshooting.</div>
+      <div><strong style="color:#f1f5f9">Deduplication:</strong> Loki: dedupExpr to collapse identical logs within time window.</div>
+    </div>
+  </div>
+  <div class="card" style="max-width:800px">
+    <h3 class="accent2">Loki Optimization</h3>
+    <ul>
+      <li style="color:#94a3b8"><span style="color:#4ade80">›</span> S3 storage tiers: hot (1 day), warm (7 days), cold (archive)</li>
+      <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Retention policies per tenant, namespace, or service</li>
+      <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Bloom filters: reduce query time, lower cost</li>
+    </ul>
+  </div>
+</div>
+
+<div class="slide s-amber">
+  <div class="tag tag-obs-cost">Segment 5 — Tracing Cost</div>
+  <h2>Tracing Cost Optimization</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent3">Sampling Strategies</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#f87171">›</span> <strong style="color:#f1f5f9">Probabilistic</strong> — 1% of all traces</li>
+        <li style="color:#94a3b8"><span style="color:#f87171">›</span> <strong style="color:#f1f5f9">Error-driven</strong> — 100% of error traces, 1% of success</li>
+        <li style="color:#94a3b8"><span style="color:#f87171">›</span> <strong style="color:#f1f5f9">Latency-driven</strong> — Capture slow traces (p95+)</li>
+        <li style="color:#94a3b8"><span style="color:#f87171">›</span> <strong style="color:#f1f5f9">Tail-based</strong> — Sample after seeing full trace</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent">Keep What Matters</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong style="color:#f1f5f9">All errors</strong> — 100% sampling</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong style="color:#f1f5f9">Slow traces</strong> — p99+ latency</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong style="color:#f1f5f9">1% success</strong> — baseline performance</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong style="color:#f1f5f9">Drop healthy paths</strong> — 99% silent success</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-obs-cost">Quiz</div>
+  <h2>Observability Cost Quiz ⚡</h2>
+  <div class="quiz-box">
+    <div class="q-item"><div class="q">Q1. Metric has labels: method, path, status, user_id. Why is user_id a problem?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Unbounded cardinality. One unique value per user = millions of combinations. Use lower-cardinality labels instead (user_tier, region).</div></div>
+    <div class="q-item"><div class="q">Q2. Prometheus cardinality_explorer shows 10M unique series, limit_series=1M. What happens?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ 9M series are dropped. Find the worst offenders (e.g., user_id label), remove them from instrumentation.</div></div>
+    <div class="q-item"><div class="q">Q3. You want to keep logs but reduce cost 50%. Strategy?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Log sampling: 1% of INFO logs, 100% of errors. Switch DEBUG off. Loki dedup + compression. Result: 50% volume, 90% visibility.</div></div>
+    <div class="q-item"><div class="q">Q4. Tail-based tracing sampling. When is it sampled?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ After the complete trace arrives. Sampler sees all spans, decides if trace is worth keeping. Better decisions than head-based.</div></div>
+    <div class="q-item"><div class="q">Q5. You have 1M requests/sec. Trace sampling at 1%. How many traces stored?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ 10k traces/sec. With 10 spans per trace = 100k spans/sec. Lower cost, still catches most issues with proper sampling strategy.</div></div>
+  </div>
+</div>
+
+<div class="slide s-title">
+  <div class="tag tag-obs-cost">End of Session</div>
+  <h1 style="font-size:38px">Observe Smarter, Spend Less 📊</h1>
+  <p class="sub">Observability doesn't have to be expensive if you're thoughtful about what you capture.</p>
+  <div style="display:flex;gap:16px;margin-top:28px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#fbbf24">✓ Cardinality</span>
+    <span style="font-size:13px;color:#4ade80">✓ Log Sampling</span>
+    <span style="font-size:13px;color:#fbbf24">✓ Trace Sampling</span>
+    <span style="font-size:13px;color:#4ade80">✓ Cost Awareness</span>
+  </div>
+  <a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+</div>
+
+</div>
+<div id="nav">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
+  <div id="slide-title-nav">Observability Cost Control</div>
+  <div id="progress"><div id="bar" style="width:11%"></div></div>
+  <div id="slide-info">1 / 9</div>
+  <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
+  <a href="index.html" class="home-link">🏠 Portal</a>
+</div>
+<script>
+const titles=["Title","Agenda","Cost Drivers","Metric Cardinality","Cardinality Management","Log Cost Control","Tracing Cost","Quiz","Wrap Up"];
+let cur=0;const total=9;
+const slides=document.querySelectorAll('.slide');
+function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
+function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);});
+</script>
+</body>
+</html>

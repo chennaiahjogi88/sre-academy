@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ktech SRE Training — Jan 2026 Batch</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#060d1a;color:#e2e8f0;min-height:100vh}
+
+nav{background:#0a1628;border-bottom:1px solid #1e293b;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{font-size:18px;font-weight:700;color:#38bdf8;letter-spacing:.01em}
+.nav-brand span{color:#94a3b8;font-weight:400;font-size:14px;margin-left:8px}
+.nav-links{display:flex;gap:20px;flex-wrap:wrap}
+.nav-links a{color:#94a3b8;text-decoration:none;font-size:13px;font-weight:500;transition:.2s}
+.nav-links a:hover{color:#e2e8f0}
+
+.hero{background:linear-gradient(135deg,#060d1a 0%,#0f2040 50%,#0a1628 100%);padding:80px 40px 60px;text-align:center;border-bottom:1px solid #1e293b}
+.hero-badge{display:inline-block;background:#1e3a5f;color:#38bdf8;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px;border:1px solid #2563eb40}
+.hero h1{font-size:52px;font-weight:800;line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#e2e8f0,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:18px;color:#94a3b8;max-width:620px;margin:0 auto 36px;line-height:1.7}
+.stats-row{display:flex;justify-content:center;gap:40px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-size:36px;font-weight:800;color:#38bdf8;display:block}
+.stat-label{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+
+.page{max-width:1280px;margin:0 auto;padding:48px 40px}
+
+.progress-section{background:#0a1628;border:1px solid #1e293b;border-radius:16px;padding:28px 32px;margin-bottom:48px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.progress-header h2{font-size:15px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}
+.progress-header span{font-size:13px;color:#38bdf8;font-weight:600}
+.progress-bar-bg{background:#1e293b;border-radius:8px;height:10px;overflow:hidden}
+.progress-bar-fill{background:linear-gradient(90deg,#2563eb,#38bdf8);height:100%;border-radius:8px;width:100%}
+.progress-legend{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#64748b}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-done{background:#38bdf8}
+
+.module-section{margin-bottom:52px}
+.module-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid #1e293b}
+.module-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.module-title{font-size:22px;font-weight:700}
+.module-count{font-size:12px;color:#64748b;margin-top:2px}
+.module-badge{margin-left:auto;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px}
+.badge-done{background:#0e3a20;color:#4ade80;border:1px solid #14532d}
+
+.class-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.class-card{background:#0a1628;border:1px solid #1e293b;border-radius:12px;padding:18px 20px;display:flex;align-items:flex-start;gap:14px;transition:.2s;position:relative;overflow:hidden;text-decoration:none;color:inherit}
+.class-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2563eb,#38bdf8)}
+.class-card:hover{border-color:#2563eb50;background:#0d1f3a;transform:translateY(-1px)}
+
+.class-num{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;letter-spacing:.03em;background:#1e3a5f;color:#38bdf8;border:1px solid #2563eb40}
+.class-info{flex:1;min-width:0}
+.class-num-label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.class-title{font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.class-topics{font-size:12px;color:#64748b;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.class-tools{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tool-tag{font-size:10px;background:#1e293b;color:#94a3b8;padding:2px 8px;border-radius:10px;border:1px solid #334155}
+.ppt-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#1e3a5f;color:#38bdf8;font-size:16px;flex-shrink:0;border:1px solid #2563eb40;transition:.2s;align-self:center}
+.class-card:hover .ppt-icon{background:#2563eb;color:#fff}
+
+.icon-sre{background:#1a0d2e;color:#c084fc;border:1px solid #4c1d9540}
+.icon-aws{background:#0f1f12;color:#4ade80;border:1px solid #14532d40}
+.icon-docker{background:#0b1929;color:#38bdf8;border:1px solid #0369a140}
+.icon-k8s{background:#0f1929;color:#60a5fa;border:1px solid #1d4ed840}
+.icon-helm{background:#1a1208;color:#fbbf24;border:1px solid #78350f40}
+.icon-obs{background:#1a0f08;color:#fb923c;border:1px solid #7c2d1240}
+.icon-iac{background:#0f1a1a;color:#2dd4bf;border:1px solid #0f766e40}
+.icon-cicd{background:#0d1a12;color:#86efac;border:1px solid #15803d40}
+.icon-reliability{background:#1a1208;color:#f59e0b;border:1px solid #92400e40}
+.icon-advanced{background:#1a0a10;color:#f472b6;border:1px solid #9d174d40}
+
+.tools-section{background:#0a1628;border:1px solid #1e293b;border-radius:16px;padding:32px;margin-top:12px}
+.tools-section h2{font-size:18px;font-weight:700;margin-bottom:20px;color:#e2e8f0}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.tool-chip{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;font-size:13px;color:#94a3b8;font-weight:500}
+
+footer{text-align:center;padding:32px;color:#334155;font-size:13px;border-top:1px solid #1e293b;margin-top:20px}
+
+@media(max-width:768px){
+  .hero h1{font-size:32px}
+  .page{padding:32px 20px}
+  nav{padding:14px 20px}
+  .stats-row{gap:24px}
+  .class-grid{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Ktech SRE <span>Training Platform</span></div>
+  <div class="nav-links">
+    <a href="#sre">SRE Foundations</a>
+    <a href="#aws">AWS</a>
+    <a href="#docker">Docker</a>
+    <a href="#kubernetes">Kubernetes</a>
+    <a href="#observability">Observability</a>
+    <a href="#cicd">CI/CD</a>
+    <a href="#reliability">SRE Practices</a>
+    <a href="#advanced">Advanced</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">🎓 SRE Batch — Jan 2026</div>
+  <h1>Site Reliability Engineering<br>Training Program</h1>
+  <p class="hero-sub">A comprehensive 48-class curriculum covering AWS, Docker, Kubernetes, Observability, CI/CD, and core SRE practices.</p>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-num">48</span><div class="stat-label">Total Classes</div></div>
+    <div class="stat"><span class="stat-num">48</span><div class="stat-label">PPTs Available</div></div>
+    <div class="stat"><span class="stat-num">10</span><div class="stat-label">Modules</div></div>
+    <div class="stat"><span class="stat-num">15+</span><div class="stat-label">Tools Covered</div></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="progress-section">
+    <div class="progress-header">
+      <h2>Course Progress</h2>
+      <span>48 / 48 PPTs Ready ✓</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+    <div class="progress-legend">
+      <div class="legend-item"><div class="dot dot-done"></div> All PPTs available — click any card to open</div>
+    </div>
+  </div>
+
+  <!-- MODULE 1: SRE Foundations -->
+  <div class="module-section" id="sre">
+    <div class="module-header">
+      <div class="module-icon icon-sre">🛡</div>
+      <div><div class="module-title">SRE Foundations</div><div class="module-count">2 classes · Class 1–2</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="sre_foundations_1.html" class="class-card">
+        <div class="class-num">C1</div>
+        <div class="class-info">
+          <div class="class-num-label">class-1</div>
+          <div class="class-title">SRE Foundations — Part 1</div>
+          <div class="class-topics">SRE vs DevOps, Google SRE principles, 4 Golden Signals, Toil</div>
+          <div class="class-tools"><span class="tool-tag">Concepts</span><span class="tool-tag">SRE</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="sre_foundations_2.html" class="class-card">
+        <div class="class-num">C2</div>
+        <div class="class-info">
+          <div class="class-num-label">class-2</div>
+          <div class="class-title">SRE Foundations — Part 2</div>
+          <div class="class-topics">SRE roles, production mindset, on-call culture, career path</div>
+          <div class="class-tools"><span class="tool-tag">Concepts</span><span class="tool-tag">Career</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 2: AWS -->
+  <div class="module-section" id="aws">
+    <div class="module-header">
+      <div class="module-icon icon-aws">☁</div>
+      <div><div class="module-title">AWS Cloud</div><div class="module-count">5 classes · Class 3–7</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="aws_ppt.html" class="class-card">
+        <div class="class-num">C3</div>
+        <div class="class-info">
+          <div class="class-num-label">class-3</div>
+          <div class="class-title">AWS Basics</div>
+          <div class="class-topics">AWS overview, global infrastructure, shared responsibility model</div>
+          <div class="class-tools"><span class="tool-tag">AWS</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="aws_class2.html" class="class-card">
+        <div class="class-num">C4</div>
+        <div class="class-info">
+          <div class="class-num-label">class-4</div>
+          <div class="class-title">AWS Compute</div>
+          <div class="class-topics">EC2 deep dive, AMI, instance types, ASG basics</div>
+          <div class="class-tools"><span class="tool-tag">AWS EC2</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="aws_vpc.html" class="class-card">
+        <div class="class-num">C5</div>
+        <div class="class-info">
+          <div class="class-num-label">class-5</div>
+          <div class="class-title">AWS Networking — VPC Basics</div>
+          <div class="class-topics">VPC, Subnets, Route Tables, IGW, NAT</div>
+          <div class="class-tools"><span class="tool-tag">AWS VPC</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="aws_elb.html" class="class-card">
+        <div class="class-num">C6</div>
+        <div class="class-info">
+          <div class="class-num-label">class-6</div>
+          <div class="class-title">AWS Networking — Load Balancing</div>
+          <div class="class-topics">ALB, NLB, Security Groups, NACLs</div>
+          <div class="class-tools"><span class="tool-tag">AWS ELB</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="aws_vpc_deep.html" class="class-card">
+        <div class="class-num">C7</div>
+        <div class="class-info">
+          <div class="class-num-label">class-7</div>
+          <div class="class-title">AWS Networking — VPC Deep Dive</div>
+          <div class="class-topics">VPC deep dive, advanced security groups, peering, endpoints</div>
+          <div class="class-tools"><span class="tool-tag">AWS</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 3: Docker -->
+  <div class="module-section" id="docker">
+    <div class="module-header">
+      <div class="module-icon icon-docker">🐳</div>
+      <div><div class="module-title">Docker & Containers</div><div class="module-count">3 classes · Class 8–10</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="docker_fundamentals.html" class="class-card">
+        <div class="class-num">C8</div>
+        <div class="class-info">
+          <div class="class-num-label">class-8</div>
+          <div class="class-title">Docker Fundamentals</div>
+          <div class="class-topics">Docker images, containers, Dockerfile, registries</div>
+          <div class="class-tools"><span class="tool-tag">Docker</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="docker_advanced.html" class="class-card">
+        <div class="class-num">C9</div>
+        <div class="class-info">
+          <div class="class-num-label">class-9</div>
+          <div class="class-title">Docker Advanced</div>
+          <div class="class-topics">Volumes, networking, multi-stage builds, best practices</div>
+          <div class="class-tools"><span class="tool-tag">Docker</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="docker_compose.html" class="class-card">
+        <div class="class-num">C10</div>
+        <div class="class-info">
+          <div class="class-num-label">class-10</div>
+          <div class="class-title">Docker Compose</div>
+          <div class="class-topics">Compose files, multi-container apps, service dependencies</div>
+          <div class="class-tools"><span class="tool-tag">Docker Compose</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 4: Kubernetes -->
+  <div class="module-section" id="kubernetes">
+    <div class="module-header">
+      <div class="module-icon icon-k8s">⚙</div>
+      <div><div class="module-title">Kubernetes</div><div class="module-count">9 classes · Class 11–19</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="k8s_basics.html" class="class-card">
+        <div class="class-num">C11</div>
+        <div class="class-info">
+          <div class="class-num-label">class-11</div>
+          <div class="class-title">Kubernetes Basics</div>
+          <div class="class-topics">Pods, Services, Deployments, Namespaces</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_architecture.html" class="class-card">
+        <div class="class-num">C12</div>
+        <div class="class-info">
+          <div class="class-num-label">class-12</div>
+          <div class="class-title">K8s Architecture</div>
+          <div class="class-topics">Control plane, etcd, API server, scheduler, kubelet</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_scheduling.html" class="class-card">
+        <div class="class-num">C13</div>
+        <div class="class-info">
+          <div class="class-num-label">class-13</div>
+          <div class="class-title">K8s Scheduling</div>
+          <div class="class-topics">Scheduling, taints & tolerations, requests & limits</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_reliability.html" class="class-card">
+        <div class="class-num">C14</div>
+        <div class="class-info">
+          <div class="class-num-label">class-14</div>
+          <div class="class-title">K8s Reliability Patterns</div>
+          <div class="class-topics">Probes, PDBs, readiness & liveness, reliability patterns</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_workloads.html" class="class-card">
+        <div class="class-num">C15</div>
+        <div class="class-info">
+          <div class="class-num-label">class-15</div>
+          <div class="class-title">K8s Workloads</div>
+          <div class="class-topics">ConfigMaps, Secrets, DaemonSets, StatefulSets, Jobs</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_scaling.html" class="class-card">
+        <div class="class-num">C16</div>
+        <div class="class-info">
+          <div class="class-num-label">class-16</div>
+          <div class="class-title">K8s Scaling Basics</div>
+          <div class="class-topics">Scaling basics, HPA intro, ReplicaSets</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="minikube.html" class="class-card">
+        <div class="class-num">C17</div>
+        <div class="class-info">
+          <div class="class-num-label">class-17</div>
+          <div class="class-title">Minikube Labs</div>
+          <div class="class-topics">Minikube setup, local cluster, hands-on labs</div>
+          <div class="class-tools"><span class="tool-tag">Minikube</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_production.html" class="class-card">
+        <div class="class-num">C18</div>
+        <div class="class-info">
+          <div class="class-num-label">class-18</div>
+          <div class="class-title">K8s Production Best Practices</div>
+          <div class="class-topics">Production hardening, RBAC, namespaces, resource quotas</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="helm.html" class="class-card">
+        <div class="class-num">C19</div>
+        <div class="class-info">
+          <div class="class-num-label">class-19</div>
+          <div class="class-title">Helm Charts & Packaging</div>
+          <div class="class-topics">Helm charts, values, templates, release management</div>
+          <div class="class-tools"><span class="tool-tag">Helm</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 5: EKS -->
+  <div class="module-section" id="eks">
+    <div class="module-header">
+      <div class="module-icon icon-helm">🚀</div>
+      <div><div class="module-title">AWS EKS</div><div class="module-count">1 class · Class 20</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="eks.html" class="class-card">
+        <div class="class-num">C20</div>
+        <div class="class-info">
+          <div class="class-num-label">class-20</div>
+          <div class="class-title">EKS Architecture & Components</div>
+          <div class="class-topics">EKS cluster setup, node groups, managed addons, IAM/IRSA</div>
+          <div class="class-tools"><span class="tool-tag">AWS EKS</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 6: Observability -->
+  <div class="module-section" id="observability">
+    <div class="module-header">
+      <div class="module-icon icon-obs">📈</div>
+      <div><div class="module-title">Observability</div><div class="module-count">9 classes · Class 21–31</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="observability_intro.html" class="class-card">
+        <div class="class-num">C21</div>
+        <div class="class-info">
+          <div class="class-num-label">class-21</div>
+          <div class="class-title">Observability Foundations</div>
+          <div class="class-topics">Three pillars: metrics, logs, traces. Maturity model</div>
+          <div class="class-tools"><span class="tool-tag">Concepts</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="prometheus.html" class="class-card">
+        <div class="class-num">C23</div>
+        <div class="class-info">
+          <div class="class-num-label">class-23</div>
+          <div class="class-title">Prometheus Architecture</div>
+          <div class="class-topics">Prometheus setup, scraping, exporters, alerting rules</div>
+          <div class="class-tools"><span class="tool-tag">Prometheus</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="promql.html" class="class-card">
+        <div class="class-num">C24</div>
+        <div class="class-info">
+          <div class="class-num-label">class-24</div>
+          <div class="class-title">PromQL & Alerting</div>
+          <div class="class-topics">PromQL queries, recording rules, alerting rules</div>
+          <div class="class-tools"><span class="tool-tag">Prometheus</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="grafana.html" class="class-card">
+        <div class="class-num">C25</div>
+        <div class="class-info">
+          <div class="class-num-label">class-25</div>
+          <div class="class-title">Grafana Dashboards</div>
+          <div class="class-topics">Dashboard creation, panels, variables, data sources</div>
+          <div class="class-tools"><span class="tool-tag">Grafana</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="grafana_alerts.html" class="class-card">
+        <div class="class-num">C26</div>
+        <div class="class-info">
+          <div class="class-num-label">class-26</div>
+          <div class="class-title">Grafana Alerts & Integrations</div>
+          <div class="class-topics">Alert rules, contact points, notification policies, on-call</div>
+          <div class="class-tools"><span class="tool-tag">Grafana</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="loki.html" class="class-card">
+        <div class="class-num">C27</div>
+        <div class="class-info">
+          <div class="class-num-label">class-27</div>
+          <div class="class-title">Loki — Log Aggregation</div>
+          <div class="class-topics">Logging architecture, Loki setup, LogQL, Promtail</div>
+          <div class="class-tools"><span class="tool-tag">Loki</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="jaeger.html" class="class-card">
+        <div class="class-num">C28</div>
+        <div class="class-info">
+          <div class="class-num-label">class-28</div>
+          <div class="class-title">Distributed Tracing — Jaeger</div>
+          <div class="class-topics">Tracing concepts, Jaeger setup, OpenTelemetry, sampling</div>
+          <div class="class-tools"><span class="tool-tag">Jaeger</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="alertmanager.html" class="class-card">
+        <div class="class-num">C29</div>
+        <div class="class-info">
+          <div class="class-num-label">class-29</div>
+          <div class="class-title">Alertmanager</div>
+          <div class="class-topics">Alert routing, grouping, inhibition, silences, on-call flows</div>
+          <div class="class-tools"><span class="tool-tag">Alertmanager</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="eks_observability.html" class="class-card">
+        <div class="class-num">C31</div>
+        <div class="class-info">
+          <div class="class-num-label">class-31</div>
+          <div class="class-title">EKS Observability Stack</div>
+          <div class="class-topics">Deploy Prometheus, Grafana, Loki on EKS with IRSA</div>
+          <div class="class-tools"><span class="tool-tag">EKS</span><span class="tool-tag">Prometheus</span><span class="tool-tag">Grafana</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 7: IaC -->
+  <div class="module-section" id="iac">
+    <div class="module-header">
+      <div class="module-icon icon-iac">🏗</div>
+      <div><div class="module-title">Infrastructure as Code</div><div class="module-count">1 class · Class 30</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="terraform.html" class="class-card">
+        <div class="class-num">C30</div>
+        <div class="class-info">
+          <div class="class-num-label">class-30</div>
+          <div class="class-title">Terraform Basics & EKS Provisioning</div>
+          <div class="class-topics">HCL, providers, state management, modules, EKS with Terraform</div>
+          <div class="class-tools"><span class="tool-tag">Terraform</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 8: CI/CD & GitOps -->
+  <div class="module-section" id="cicd">
+    <div class="module-header">
+      <div class="module-icon icon-cicd">🔄</div>
+      <div><div class="module-title">CI/CD & GitOps</div><div class="module-count">4 classes · Class 32–35</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="git_basics.html" class="class-card">
+        <div class="class-num">C32</div>
+        <div class="class-info">
+          <div class="class-num-label">class-32</div>
+          <div class="class-title">Git Fundamentals</div>
+          <div class="class-topics">Branching strategy, merge vs rebase, trunk-based development</div>
+          <div class="class-tools"><span class="tool-tag">Git</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="github_actions.html" class="class-card">
+        <div class="class-num">C33</div>
+        <div class="class-info">
+          <div class="class-num-label">class-33</div>
+          <div class="class-title">GitHub Actions Pipelines</div>
+          <div class="class-topics">Workflow syntax, jobs, triggers, secrets, matrix builds, Docker</div>
+          <div class="class-tools"><span class="tool-tag">GitHub Actions</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="argocd.html" class="class-card">
+        <div class="class-num">C34</div>
+        <div class="class-info">
+          <div class="class-num-label">class-34</div>
+          <div class="class-title">GitOps with ArgoCD</div>
+          <div class="class-topics">GitOps principles, ArgoCD applications, sync policies, app-of-apps</div>
+          <div class="class-tools"><span class="tool-tag">ArgoCD</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="deploy_strategies.html" class="class-card">
+        <div class="class-num">C35</div>
+        <div class="class-info">
+          <div class="class-num-label">class-35</div>
+          <div class="class-title">Deployment Strategies</div>
+          <div class="class-topics">Rolling, Blue/Green, Canary, feature flags, ArgoCD Rollouts</div>
+          <div class="class-tools"><span class="tool-tag">ArgoCD</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 9: SRE Practices -->
+  <div class="module-section" id="reliability">
+    <div class="module-header">
+      <div class="module-icon icon-reliability">📐</div>
+      <div><div class="module-title">SRE Reliability Practices</div><div class="module-count">6 classes · Class 36–41</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="sre_metrics.html" class="class-card">
+        <div class="class-num">C36</div>
+        <div class="class-info">
+          <div class="class-num-label">class-36</div>
+          <div class="class-title">SRE Metrics — SLIs, SLOs & SLAs</div>
+          <div class="class-topics">Defining SLIs, setting SLOs, SLA contracts, nines table</div>
+          <div class="class-tools"><span class="tool-tag">Prometheus</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="error_budgets.html" class="class-card">
+        <div class="class-num">C37</div>
+        <div class="class-info">
+          <div class="class-num-label">class-37</div>
+          <div class="class-title">Error Budgets</div>
+          <div class="class-topics">Budget calculation, tracking, policy, when to freeze releases</div>
+          <div class="class-tools"><span class="tool-tag">Prometheus</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="burn_rate.html" class="class-card">
+        <div class="class-num">C38</div>
+        <div class="class-info">
+          <div class="class-num-label">class-38</div>
+          <div class="class-title">Burn Rate Alerts</div>
+          <div class="class-topics">Burn rate calculation, multi-window alerting, severity tiers</div>
+          <div class="class-tools"><span class="tool-tag">Prometheus</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="incident_management.html" class="class-card">
+        <div class="class-num">C39</div>
+        <div class="class-info">
+          <div class="class-num-label">class-39</div>
+          <div class="class-title">Incident Management</div>
+          <div class="class-topics">SEV1/2/3 classification, lifecycle, war room, escalation</div>
+          <div class="class-tools"><span class="tool-tag">Process</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="incident_command.html" class="class-card">
+        <div class="class-num">C40</div>
+        <div class="class-info">
+          <div class="class-num-label">class-40</div>
+          <div class="class-title">Incident Command</div>
+          <div class="class-topics">IC role, communication cadence, stakeholder updates, handoffs</div>
+          <div class="class-tools"><span class="tool-tag">Process</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="postmortems.html" class="class-card">
+        <div class="class-num">C41</div>
+        <div class="class-info">
+          <div class="class-num-label">class-41</div>
+          <div class="class-title">Postmortems & RCA</div>
+          <div class="class-topics">Blameless postmortems, 5 Whys, action items, review meetings</div>
+          <div class="class-tools"><span class="tool-tag">Process</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODULE 10: Advanced Topics -->
+  <div class="module-section" id="advanced">
+    <div class="module-header">
+      <div class="module-icon icon-advanced">🔬</div>
+      <div><div class="module-title">Advanced SRE Topics</div><div class="module-count">7 classes · Class 42–48</div></div>
+      <span class="module-badge badge-done">✓ Ready</span>
+    </div>
+    <div class="class-grid">
+      <a href="capacity_planning.html" class="class-card">
+        <div class="class-num">C42</div>
+        <div class="class-info">
+          <div class="class-num-label">class-42</div>
+          <div class="class-title">Capacity Planning</div>
+          <div class="class-topics">Demand forecasting, load modeling, K8s capacity, cloud quotas</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="autoscaling.html" class="class-card">
+        <div class="class-num">C43</div>
+        <div class="class-info">
+          <div class="class-num-label">class-43</div>
+          <div class="class-title">Advanced Autoscaling</div>
+          <div class="class-topics">HPA, VPA, KEDA, Cluster Autoscaler, Karpenter</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes</span><span class="tool-tag">Karpenter</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="load_testing.html" class="class-card">
+        <div class="class-num">C44</div>
+        <div class="class-info">
+          <div class="class-num-label">class-44</div>
+          <div class="class-title">Load Testing</div>
+          <div class="class-topics">Test types, K6, Locust, JMeter, analyzing results vs SLOs</div>
+          <div class="class-tools"><span class="tool-tag">K6</span><span class="tool-tag">Locust</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="chaos_engineering.html" class="class-card">
+        <div class="class-num">C45</div>
+        <div class="class-info">
+          <div class="class-num-label">class-45</div>
+          <div class="class-title">Chaos Engineering</div>
+          <div class="class-topics">Chaos principles, GameDays, LitmusChaos, Chaos Mesh</div>
+          <div class="class-tools"><span class="tool-tag">LitmusChaos</span><span class="tool-tag">Chaos Mesh</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="cost_optimization.html" class="class-card">
+        <div class="class-num">C46</div>
+        <div class="class-info">
+          <div class="class-num-label">class-46</div>
+          <div class="class-title">Cost Optimization</div>
+          <div class="class-topics">FinOps, AWS cost tools, EC2 right-sizing, spot instances, K8s cost</div>
+          <div class="class-tools"><span class="tool-tag">AWS</span><span class="tool-tag">Kubernetes</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="observability_cost.html" class="class-card">
+        <div class="class-num">C47</div>
+        <div class="class-info">
+          <div class="class-num-label">class-47</div>
+          <div class="class-title">Observability Cost Control</div>
+          <div class="class-topics">Cardinality management, log volume, sampling, Loki/Prom cost</div>
+          <div class="class-tools"><span class="tool-tag">Prometheus</span><span class="tool-tag">Grafana</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+      <a href="k8s_security.html" class="class-card">
+        <div class="class-num">C48</div>
+        <div class="class-info">
+          <div class="class-num-label">class-48</div>
+          <div class="class-title">K8s Security & Production Readiness</div>
+          <div class="class-topics">RBAC, Network Policies, Pod Security, image scanning, secrets</div>
+          <div class="class-tools"><span class="tool-tag">Kubernetes Security</span></div>
+        </div>
+        <div class="ppt-icon">📊</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- TOOLS OVERVIEW -->
+  <div class="tools-section">
+    <h2>🧰 Tools & Technologies Covered</h2>
+    <div class="tools-grid">
+      <div class="tool-chip">☁ AWS &amp; EKS</div>
+      <div class="tool-chip">🐳 Docker</div>
+      <div class="tool-chip">⚙ Kubernetes</div>
+      <div class="tool-chip">⛵ Helm</div>
+      <div class="tool-chip">📦 Minikube</div>
+      <div class="tool-chip">📈 Prometheus</div>
+      <div class="tool-chip">📊 Grafana</div>
+      <div class="tool-chip">📝 Loki</div>
+      <div class="tool-chip">🔍 Jaeger</div>
+      <div class="tool-chip">🔔 Alertmanager</div>
+      <div class="tool-chip">🏗 Terraform</div>
+      <div class="tool-chip">🔄 GitHub Actions</div>
+      <div class="tool-chip">🚢 ArgoCD</div>
+      <div class="tool-chip">🌀 LitmusChaos</div>
+      <div class="tool-chip">🔀 Karpenter</div>
+      <div class="tool-chip">⚡ K6 / Locust</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Ktech SRE Training · Jan 2026 Batch · 48 Classes · All PPTs Ready ✓
+</footer>
+
+</body>
+</html>

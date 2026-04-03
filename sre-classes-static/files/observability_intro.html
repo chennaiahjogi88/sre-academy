@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observability Foundations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .slides {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 4rem;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .s-dark {
+            background-color: #0f172a;
+        }
+
+        .s-blue {
+            background-color: #0f1f3d;
+        }
+
+        .s-green {
+            background-color: #0b1f14;
+        }
+
+        .s-amber {
+            background-color: #1c1200;
+        }
+
+        .s-purple {
+            background-color: #130d2e;
+        }
+
+        .s-coral {
+            background-color: #1f0b06;
+        }
+
+        .slide h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .slide h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .slide h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .slide p {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .slide ul, .slide ol {
+            text-align: left;
+            display: inline-block;
+            font-size: 1.3rem;
+            line-height: 2;
+        }
+
+        .slide li {
+            margin-bottom: 0.8rem;
+        }
+
+        .code {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: left;
+            margin: 1rem 0;
+            overflow-x: auto;
+            color: #cbd5e1;
+        }
+
+        .kw { color: #6b8ff5; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .tag-obs {
+            background-color: #1a0f0833;
+            color: #fb923c;
+            border: 1px solid #7c2d1255;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .ag-item {
+            display: inline-block;
+            margin: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .ag-item:hover {
+            background-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .ag-item.portal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .ag-item.portal:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-bar {
+            background-color: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1rem;
+            height: 80px;
+        }
+
+        .nav-left, .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 0 0 auto;
+        }
+
+        .nav-center {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .slide-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background-color: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .slide-count {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            min-width: 50px;
+        }
+
+        .nav-button {
+            background-color: transparent;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .nav-button:hover {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .portal-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .portal-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);
+        }
+
+        .quiz {
+            text-align: left;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: #1e293b;
+            border-left: 4px solid #667eea;
+            border-radius: 0.5rem;
+        }
+
+        .quiz-question h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+
+        .quiz-question p {
+            margin-bottom: 0.8rem;
+            text-align: left;
+        }
+
+        .toggle-answer {
+            background-color: #667eea;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-answer:hover {
+            background-color: #764ba2;
+        }
+
+        .answer {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #0f172a;
+            border-radius: 0.25rem;
+            color: #4ade80;
+        }
+
+        .answer.visible {
+            display: block;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="slides">
+        <div class="slide s-title active">
+            <h1>Observability Foundations</h1>
+            <p style="font-size: 1.8rem; margin-top: 2rem;">Understanding Metrics, Logs, and Traces</p>
+        </div>
+
+        <div class="slide s-dark">
+            <h2>Agenda</h2>
+            <div style="margin-top: 2rem;">
+                <a href="#" class="ag-item">Three Pillars</a>
+                <a href="#" class="ag-item">Metrics</a>
+                <a href="#" class="ag-item">Logs</a>
+                <a href="#" class="ag-item">Traces</a>
+                <a href="#" class="ag-item">Maturity Model</a>
+                <a href="#" class="ag-item">Quiz</a>
+                <a href="index.html" class="ag-item portal">🏠 Portal</a>
+            </div>
+        </div>
+
+        <div class="slide s-blue">
+            <h2>Observability vs Monitoring</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p><strong>Monitoring:</strong> Known unknowns</p>
+                <ul style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li>Pre-defined dashboards</li>
+                    <li>Specific alerts you know to check</li>
+                </ul>
+                <p><strong>Observability:</strong> Unknown unknowns</p>
+                <ul style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li>Drill down into any dimension</li>
+                    <li>Correlate signals automatically</li>
+                </ul>
+                <p style="font-size: 1.5rem; margin-top: 2rem; font-style: italic; color: #fbbf24;">Can you answer questions you haven't thought of yet?</p>
+            </div>
+        </div>
+
+        <div class="slide s-green">
+            <h2>The Three Pillars</h2>
+            <ul style="text-align: left; margin-left: 3rem;">
+                <li><strong>Metrics:</strong> Numeric time-series (Prometheus, Graphite)</li>
+                <li style="margin-top: 1.5rem;"><strong>Logs:</strong> Text events with context (Loki, ELK Stack)</li>
+                <li style="margin-top: 1.5rem;"><strong>Traces:</strong> Request paths across services (Jaeger, Zipkin)</li>
+            </ul>
+        </div>
+
+        <div class="slide s-amber">
+            <h2>Metrics Deep Dive</h2>
+            <div style="text-align: left; display: inline-block;">
+                <p><strong>Counter:</strong> Ever-increasing value (requests, errors, bytes processed)</p>
+                <p style="margin-top: 1.5rem;"><strong>Gauge:</strong> Can go up or down (CPU %, memory, temperature)</p>
+                <p style="margin-top: 1.5rem;"><strong>Histogram:</strong> Distribution across buckets (request latency)</p>
+                <p style="margin-top: 1.5rem;"><strong>Summary:</strong> Quantiles (p50, p95, p99 latency)</p>
+            </div>
+        </div>
+
+        <div class="slide s-purple">
+            <h2>Logs Deep Dive</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p><strong>Structured vs Unstructured:</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 2rem;">
+                    <li>Structured: JSON with key-value pairs (queryable)</li>
+                    <li>Unstructured: Free text (human-readable, hard to parse)</li>
+                </ul>
+                <p><strong>Log Levels:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>DEBUG → INFO → WARN → ERROR</li>
+                </ul>
+                <p style="margin-top: 2rem;"><strong>Centralized Logging:</strong> Aggregate from all services for correlation</p>
+            </div>
+        </div>
+
+        <div class="slide s-coral">
+            <h2>Distributed Tracing</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p><strong>Trace ID:</strong> Unique identifier for entire request flow</p>
+                <p style="margin-top: 1.5rem;"><strong>Span:</strong> Single operation within a service</p>
+                <p style="margin-top: 1.5rem;"><strong>Parent Span:</strong> Relationship between spans across services</p>
+                <p style="margin-top: 1.5rem;"><strong>Sampling:</strong> 100% (high cost), adaptive, or error-based strategies</p>
+                <p style="margin-top: 2rem; color: #fbbf24;"><em>Essential in microservices architecture for end-to-end visibility</em></p>
+            </div>
+        </div>
+
+        <div class="slide s-blue">
+            <h2>Observability Maturity Model</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p><strong>Level 1:</strong> Logs only → Limited visibility</p>
+                <p style="margin-top: 1.5rem;"><strong>Level 2:</strong> Metrics + Logs → Dashboard awareness</p>
+                <p style="margin-top: 1.5rem;"><strong>Level 3:</strong> Metrics + Logs + Traces → Full context</p>
+                <p style="margin-top: 1.5rem;"><strong>Level 4:</strong> Correlated signals + Automated correlation → AIOps</p>
+            </div>
+        </div>
+
+        <div class="slide s-dark">
+            <h2>Quiz: Observability Foundations</h2>
+            <div class="quiz">
+                <div class="quiz-question">
+                    <h4>1. Which of the three pillars would best help you identify that user requests are taking longer in a specific region?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        <strong>Metrics</strong> - Use time-series data with geographic labels to identify latency by region. Traces could also help but metrics are more efficient for this aggregated view.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>2. What is the key difference between observability and monitoring?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        Monitoring answers known questions with pre-defined dashboards and alerts. Observability enables you to ask and answer new questions about your system that you hadn't anticipated.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>3. Which metric type would you use to track the number of HTTP requests received?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        <strong>Counter</strong> - It only increases (monotonic), perfect for counting occurrences like total requests, errors, or bytes processed.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>4. In distributed tracing, what is a Trace ID used for?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        A Trace ID uniquely identifies an entire request flow across all services and systems, allowing you to correlate all spans (operations) for that request.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>5. Why is centralized logging important in observability?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        Centralized logging aggregates logs from all services into one place, making it possible to correlate events across services and trace the full context of an issue.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-title">
+            <h1>Thank You</h1>
+            <p style="font-size: 1.8rem; margin-top: 2rem;">Questions?</p>
+            <a href="index.html" class="back-link">← Back to Ktech SRE Portal</a>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-left">
+            <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+        </div>
+        <div class="nav-center">
+            <span class="slide-title" id="slideTitle">Observability Foundations</span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <span class="slide-count"><span id="currentSlide">1</span> / <span id="totalSlides">10</span></span>
+            <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+            <a href="index.html" class="portal-link">🏠 Portal</a>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        const slideTitles = [
+            'Observability Foundations',
+            'Agenda',
+            'Observability vs Monitoring',
+            'The Three Pillars',
+            'Metrics Deep Dive',
+            'Logs Deep Dive',
+            'Distributed Tracing',
+            'Observability Maturity Model',
+            'Quiz: Observability Foundations',
+            'Thank You'
+        ];
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+
+            document.getElementById('slideTitle').textContent = slideTitles[currentSlide];
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                showSlide();
+            }
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+        showSlide();
+    </script>
+</body>
+</html>

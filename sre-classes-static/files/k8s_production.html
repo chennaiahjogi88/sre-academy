@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>K8s Production Best Practices</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#deck{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:36px 60px;animation:fadein .35s ease}
+.slide.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.s-title{background:linear-gradient(135deg,#0f172a 0%,#1a2e1a 100%)}
+.s-blue{background:#0f1f3d}.s-dark{background:#0f172a}.s-green{background:#0b1f14}
+.s-amber{background:#1c1200}.s-purple{background:#130d2e}.s-coral{background:#1f0b06}
+.s-teal{background:#071a1a}.s-end{background:linear-gradient(135deg,#0f172a,#1a3a1a)}
+.s-navy{background:#0a1628}.s-indigo{background:#0f0d2e}.s-rose{background:#1f0a14}
+.tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:14px;display:inline-block}
+.tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+.tag-green{background:#14532d33;color:#4ade80;border:1px solid #14532d55}
+.tag-amber{background:#78350f33;color:#fbbf24;border:1px solid #78350f55}
+.tag-coral{background:#7c1d0d33;color:#fb923c;border:1px solid #7c1d0d55}
+.tag-purple{background:#2e106533;color:#c084fc;border:1px solid #4c1d9555}
+.tag-teal{background:#0f3333;color:#2dd4bf;border:1px solid #14b8a655}
+.tag-rose{background:#4c0d2033;color:#fb7185;border:1px solid #9f123955}
+.tag-indigo{background:#1e1b4b33;color:#818cf8;border:1px solid #3730a355}
+h1{font-size:40px;font-weight:700;line-height:1.15;text-align:center;margin-bottom:12px}
+h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
+.sub{font-size:15px;color:#94a3b8;text-align:center;max-width:700px;line-height:1.6}
+.accent{color:#38bdf8}.accent2{color:#4ade80}.accent3{color:#fbbf24}.accent4{color:#2dd4bf}
+.agenda{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:840px;margin-top:6px}
+.ag-item{background:#ffffff0a;border:1px solid #ffffff15;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.ag-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.ag-text{font-size:13px;color:#cbd5e1;line-height:1.4}
+.ag-text strong{display:block;color:#f1f5f9;font-size:14px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:880px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:100%;max-width:900px}
+.card{background:#ffffff0a;border:1px solid #ffffff15;border-radius:14px;padding:16px 18px}
+.card h3{font-size:15px;font-weight:600;margin-bottom:10px}
+.card ul{list-style:none;padding:0}
+.card ul li{font-size:13px;color:#94a3b8;padding:3px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.card ul li::before{content:"›";font-weight:700;flex-shrink:0}
+.card ul li b{color:#e2e8f0}
+.hbox{background:#ffffff08;border-left:3px solid #38bdf8;border-radius:0 10px 10px 0;padding:10px 16px;margin:6px 0;font-size:13px;color:#cbd5e1;line-height:1.5}
+.hbox.green{border-color:#4ade80}.hbox.amber{border-color:#fbbf24}.hbox.coral{border-color:#fb923c}
+.hbox.purple{border-color:#c084fc}.hbox.teal{border-color:#2dd4bf}.hbox.rose{border-color:#fb7185}
+.hbox.indigo{border-color:#818cf8}.hbox b{color:#f1f5f9}
+.diagram{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.drow{display:flex;gap:8px;justify-content:center;align-items:center}
+.dbox{border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;text-align:center;border:1px solid;min-width:100px}
+.dbox-blue{background:#1e3a5f55;border-color:#3b82f655;color:#93c5fd}
+.dbox-green{background:#14532d44;border-color:#22c55e55;color:#86efac}
+.dbox-amber{background:#78350f44;border-color:#f59e0b55;color:#fcd34d}
+.dbox-red{background:#4c0d0d44;border-color:#ef444455;color:#fca5a5}
+.dbox-purple{background:#2e106544;border-color:#a855f755;color:#d8b4fe}
+.dbox-teal{background:#0f333344;border-color:#14b8a655;color:#5eead4}
+.dbox-gray{background:#1e293b44;border-color:#47556955;color:#94a3b8}
+.dbox-rose{background:#4c0d2044;border-color:#f4365855;color:#fda4af}
+.dbox-orange{background:#7c2d1244;border-color:#ea580c55;color:#fdba74}
+.arrow{color:#475569;font-size:16px;display:flex;align-items:center}
+.arrow-d{color:#475569;font-size:20px;line-height:1;text-align:center}
+.data-table{width:100%;max-width:840px;border-collapse:collapse}
+.data-table th{padding:9px 14px;font-size:12px;text-align:left;border-bottom:1px solid #ffffff20;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+.data-table td{padding:8px 14px;font-size:13px;color:#94a3b8;border-bottom:1px solid #ffffff0a}
+.data-table tr:last-child td{border-bottom:none}
+.data-table td:first-child{color:#f1f5f9;font-weight:500}
+.chip{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block}
+.chip-blue{background:#1e40af33;color:#60a5fa}.chip-green{background:#14532d33;color:#4ade80}
+.chip-amber{background:#78350f33;color:#fbbf24}.chip-red{background:#4c0d0d33;color:#f87171}
+.chip-purple{background:#2e106533;color:#c084fc}.chip-teal{background:#0f333333;color:#2dd4bf}
+.chip-rose{background:#4c0d2033;color:#fb7185}.chip-indigo{background:#1e1b4b33;color:#818cf8}
+.quiz-box{width:100%;max-width:780px}
+.q-item{background:#ffffff08;border:1px solid #ffffff12;border-radius:12px;padding:14px 18px;margin-bottom:8px}
+.q-item .q{font-size:14px;font-weight:500;color:#f1f5f9;margin-bottom:6px}
+.q-item .a{font-size:13px;color:#4ade80;display:none}
+.q-item .a.show{display:block}
+.q-item .btn{font-size:12px;background:#ffffff12;border:none;color:#94a3b8;padding:3px 12px;border-radius:20px;cursor:pointer;margin-top:4px}
+.q-item .btn:hover{background:#ffffff20;color:#fff}
+#nav{background:#0a1120;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px}
+.nav-btn{background:#ffffff0f;border:1px solid #ffffff15;color:#cbd5e1;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s}
+.nav-btn:hover{background:#ffffff20;color:#fff}
+.nav-btn:disabled{opacity:.3;cursor:default}
+#progress{flex:1;height:4px;background:#ffffff10;border-radius:2px;position:relative}
+#bar{height:4px;border-radius:2px;transition:width .3s}
+#slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
+#slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
+.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;overflow-x:auto}
+.prop{color:#c084fc}.str{color:#4ade80}.val{color:#fbbf24}.cmt{color:#475569}.kw{color:#60a5fa}
+.badge-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.badge{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+#bar{background:linear-gradient(90deg,#60a5fa,#c084fc)}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- Slide 1 -->
+<div class="slide s-title active" data-title="K8s Production Best Practices">
+  <div class="tag tag-blue">Class 16 · Kubernetes Track</div>
+  <h1>Kubernetes in <span class="accent">Production</span><br><span class="accent3">RBAC</span>, <span class="accent2">NetworkPolicy</span> &amp; GitOps</h1>
+  <p class="sub" style="margin-top:14px">RBAC · NetworkPolicies · Resource Quotas · GitOps · SRE Runbooks</p>
+  <div style="display:flex;gap:20px;margin-top:28px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#475569">⏱ 60 minutes</span>
+    <span style="font-size:13px;color:#475569">📦 4 Segments + Quiz</span>
+    <span style="font-size:13px;color:#475569">🎯 Advanced</span>
+  </div>
+</div>
+
+<!-- Slide 2: Agenda -->
+<div class="slide s-dark" data-title="Agenda">
+  <div class="tag tag-blue">Session Plan</div>
+  <h2>What We'll Cover</h2>
+  <div class="agenda">
+    <div class="ag-item">
+      <div class="ag-num" style="background:#2e106533;color:#c084fc">01</div>
+      <div class="ag-text"><strong>RBAC</strong>Roles, ClusterRoles, ServiceAccounts</div>
+    </div>
+    <div class="ag-item">
+      <div class="ag-num" style="background:#1e40af33;color:#60a5fa">02</div>
+      <div class="ag-text"><strong>NetworkPolicies</strong>Zero-trust pod networking</div>
+    </div>
+    <div class="ag-item">
+      <div class="ag-num" style="background:#14532d33;color:#4ade80">03</div>
+      <div class="ag-text"><strong>Resource Quotas &amp; LimitRanges</strong>Multi-tenant guardrails</div>
+    </div>
+    <div class="ag-item">
+      <div class="ag-num" style="background:#78350f33;color:#fbbf24">04</div>
+      <div class="ag-text"><strong>GitOps &amp; SRE Runbooks</strong>ArgoCD, runbooks, SLOs</div>
+    </div>
+    <div class="ag-item" style="grid-column:1/-1;justify-self:center;max-width:380px">
+      <div class="ag-num" style="background:#0f333333;color:#2dd4bf">05</div>
+      <div class="ag-text"><strong>Quiz &amp; Recap</strong>Final class review</div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 3: RBAC -->
+<div class="slide s-purple" data-title="RBAC">
+  <div class="tag tag-purple">Segment 1 — RBAC</div>
+  <h2>Role-Based Access Control</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#c084fc">🔑 Core Concepts</h3>
+      <ul>
+        <li><b>Role</b> — permissions within a namespace</li>
+        <li><b>ClusterRole</b> — cluster-wide permissions</li>
+        <li><b>RoleBinding</b> — bind role to user/group/SA</li>
+        <li><b>ServiceAccount</b> — identity for pods</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#c084fc">📄 Example Role</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="kw">kind</span>: Role
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">pod-reader</span>
+  <span class="prop">namespace</span>: <span class="str">prod</span>
+<span class="prop">rules</span>:
+- <span class="prop">apiGroups</span>: [<span class="str">""</span>]
+  <span class="prop">resources</span>: [<span class="str">"pods"</span>, <span class="str">"logs"</span>]
+  <span class="prop">verbs</span>: [<span class="str">"get"</span>, <span class="str">"list"</span>, <span class="str">"watch"</span>]
+      </div>
+    </div>
+  </div>
+  <div class="hbox green" style="margin-top:12px;max-width:860px">🏆 <b>Least privilege:</b> Give pods their own ServiceAccount with only the permissions they need. Never use the default ServiceAccount — it's too permissive.</div>
+</div>
+
+<!-- Slide 4: NetworkPolicy -->
+<div class="slide s-blue" data-title="NetworkPolicies">
+  <div class="tag tag-blue">Segment 2 — NetworkPolicy</div>
+  <h2>NetworkPolicies — Zero Trust</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">🔒 Default Deny All</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="kw">kind</span>: NetworkPolicy
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">default-deny-all</span>
+<span class="prop">spec</span>:
+  <span class="prop">podSelector</span>: {}      <span class="cmt"># all pods</span>
+  <span class="prop">policyTypes</span>:
+  - <span class="kw">Ingress</span>
+  - <span class="kw">Egress</span>
+  <span class="cmt"># no ingress/egress rules = deny all</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#60a5fa">✅ Allow Specific Traffic</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="kw">kind</span>: NetworkPolicy
+<span class="prop">spec</span>:
+  <span class="prop">podSelector</span>:
+    <span class="prop">matchLabels</span>: { <span class="prop">app</span>: <span class="str">db</span> }
+  <span class="prop">ingress</span>:
+  - <span class="prop">from</span>:
+    - <span class="prop">podSelector</span>:
+        <span class="prop">matchLabels</span>: { <span class="prop">app</span>: <span class="str">api</span> }
+    <span class="prop">ports</span>:
+    - <span class="prop">port</span>: <span class="val">5432</span>
+      </div>
+    </div>
+  </div>
+  <div class="hbox amber" style="margin-top:12px;max-width:860px">⚠️ NetworkPolicies require a CNI that supports them (Calico, Cilium, Weave). Flannel does NOT enforce NetworkPolicies.</div>
+</div>
+
+<!-- Slide 5: Resource Quotas -->
+<div class="slide s-green" data-title="Resource Quotas &amp; LimitRanges">
+  <div class="tag tag-green">Segment 3 — Quotas</div>
+  <h2>Resource Quotas &amp; LimitRanges</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#4ade80">📊 ResourceQuota (per namespace)</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="kw">kind</span>: ResourceQuota
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">team-quota</span>
+  <span class="prop">namespace</span>: <span class="str">team-a</span>
+<span class="prop">spec</span>:
+  <span class="prop">hard</span>:
+    <span class="prop">requests.cpu</span>: <span class="str">"4"</span>
+    <span class="prop">requests.memory</span>: <span class="str">8Gi</span>
+    <span class="prop">pods</span>: <span class="str">"20"</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#4ade80">📏 LimitRange (per pod/container)</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="kw">kind</span>: LimitRange
+<span class="prop">spec</span>:
+  <span class="prop">limits</span>:
+  - <span class="prop">type</span>: <span class="kw">Container</span>
+    <span class="prop">default</span>:          <span class="cmt"># applied if not set</span>
+      <span class="prop">cpu</span>: <span class="str">500m</span>
+      <span class="prop">memory</span>: <span class="str">256Mi</span>
+    <span class="prop">max</span>:
+      <span class="prop">cpu</span>: <span class="str">"2"</span>
+      <span class="prop">memory</span>: <span class="str">2Gi</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: GitOps & SRE -->
+<div class="slide s-amber" data-title="GitOps &amp; SRE Practices">
+  <div class="tag tag-amber">Segment 4 — GitOps</div>
+  <h2>GitOps &amp; SRE Runbooks</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#fbbf24">🔄 GitOps with ArgoCD</h3>
+      <ul>
+        <li>Git = single source of truth</li>
+        <li>ArgoCD watches Git repo for changes</li>
+        <li>Automatically syncs cluster to desired state</li>
+        <li>Drift detection &amp; alerting</li>
+        <li>Full audit trail via Git history</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#fbbf24">📋 SRE Runbook Essentials</h3>
+      <ul>
+        <li><b>Alert name</b> &amp; severity</li>
+        <li><b>Impact</b> — what's broken for users</li>
+        <li><b>Symptoms</b> — what you'll see in dashboards</li>
+        <li><b>Diagnosis steps</b> — kubectl commands to run</li>
+        <li><b>Remediation</b> — exact steps to fix</li>
+        <li><b>Escalation</b> — who to page next</li>
+      </ul>
+    </div>
+  </div>
+  <div class="hbox green" style="margin-top:12px;max-width:860px">🏆 <b>SRE Golden Signals:</b> Latency · Traffic · Errors · Saturation (LETS). Define SLOs for each. Alert when SLO budget is at risk, not just when something breaks.</div>
+</div>
+
+<!-- Slide 7: Quiz -->
+<div class="slide s-dark" data-title="Quiz">
+  <div class="tag tag-teal">Knowledge Check</div>
+  <h2>Final Quiz 🎯</h2>
+  <div class="quiz-box">
+    <div class="q-item">
+      <div class="q">1. What is the difference between a Role and a ClusterRole?</div>
+      <div class="a">Role is namespace-scoped (only applies within one namespace). ClusterRole applies across the entire cluster — used for cluster-wide resources like nodes, PersistentVolumes.</div>
+      <button class="btn">Show Answer</button>
+    </div>
+    <div class="q-item">
+      <div class="q">2. You apply a "default deny all" NetworkPolicy. What happens to existing pod traffic?</div>
+      <div class="a">All ingress and egress traffic is immediately blocked for matching pods. You must create explicit allow policies for any traffic you need (DNS on port 53, inter-service, etc.).</div>
+      <button class="btn">Show Answer</button>
+    </div>
+    <div class="q-item">
+      <div class="q">3. What does a LimitRange do that ResourceQuota doesn't?</div>
+      <div class="a">LimitRange sets default and max limits per individual container/pod. ResourceQuota sets total resource budget for the entire namespace. LimitRange prevents any single pod from being a resource hog.</div>
+      <button class="btn">Show Answer</button>
+    </div>
+    <div class="q-item">
+      <div class="q">4. Name the 4 SRE Golden Signals.</div>
+      <div class="a">Latency (how long requests take), Traffic (how many requests), Errors (rate of failed requests), Saturation (how full the system is — CPU, memory, queue depth).</div>
+      <button class="btn">Show Answer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: Wrap Up -->
+<div class="slide s-end" data-title="Wrap Up">
+  <div class="tag tag-blue">Class 16 — Complete ✅</div>
+  <h1 style="font-size:32px">Course Complete! 🏆</h1>
+  <p class="sub">You've completed the full SRE curriculum — AWS, Docker, Kubernetes &amp; Production practices</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px;max-width:700px;width:100%">
+    <div class="hbox green">✅ RBAC &amp; least-privilege access</div>
+    <div class="hbox green">✅ NetworkPolicies — zero trust</div>
+    <div class="hbox green">✅ Resource Quotas &amp; LimitRanges</div>
+    <div class="hbox green">✅ GitOps with ArgoCD</div>
+    <div class="hbox green">✅ SRE runbooks &amp; golden signals</div>
+    <div class="hbox green">✅ Full SRE curriculum finished!</div>
+  </div>
+  <a href="index.html" style="margin-top:24px;color:#60a5fa;font-size:14px;text-decoration:none">← Back to Portal</a>
+</div>
+
+</div>
+<nav id="nav">
+  <a href="index.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
+  <button class="nav-btn" id="btnPrev">← Prev</button>
+  <div id="progress"><div id="bar"></div></div>
+  <span id="slide-title-nav"></span>
+  <button class="nav-btn" id="btnNext">Next →</button>
+  <span id="slide-info"></span>
+</nav>
+<script>
+
+const slides=document.querySelectorAll('.slide'),total=slides.length;
+let cur=0;
+function goTo(n){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(n,total-1));slides[cur].classList.add('active');document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-info').textContent=(cur+1)+' / '+total;const t=slides[cur].dataset.title||'';document.getElementById('slide-title-nav').textContent=t;document.getElementById('btnPrev').disabled=cur===0;document.getElementById('btnNext').disabled=cur===total-1;}
+document.getElementById('btnPrev').onclick=()=>goTo(cur-1);
+document.getElementById('btnNext').onclick=()=>goTo(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')goTo(cur+1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')goTo(cur-1);});
+document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',function(){const a=this.closest('.q-item').querySelector('.a');a.classList.toggle('show');this.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}));
+goTo(0);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AWS VPC — Ktech SRE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#deck{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:40px 60px;animation:fadein .35s ease}
+.slide.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.s-title{background:linear-gradient(135deg,#0f172a 0%,#0d2b0d 100%)}
+.s-dark{background:#0f172a}.s-green{background:#0b1f14}.s-blue{background:#0f1f3d}.s-amber{background:#1c1200}.s-purple{background:#130d2e}.s-teal{background:#071a1a}
+.tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:16px;display:inline-block}
+.tag-green{background:#14532d33;color:#4ade80;border:1px solid #14532d55}
+.tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+.tag-amber{background:#78350f33;color:#fbbf24;border:1px solid #78350f55}
+.tag-teal{background:#0d423f33;color:#2dd4bf;border:1px solid #0d423f55}
+h1{font-size:42px;font-weight:700;line-height:1.15;text-align:center;margin-bottom:12px}
+h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
+.sub{font-size:17px;color:#94a3b8;text-align:center;max-width:680px;line-height:1.6}
+.accent{color:#4ade80}.accent2{color:#38bdf8}.accent3{color:#fbbf24}.accent4{color:#2dd4bf}
+.agenda{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:820px;margin-top:8px}
+.ag-item{background:#ffffff0a;border:1px solid #ffffff15;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.ag-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.ag-text{font-size:14px;color:#cbd5e1;line-height:1.4}
+.ag-text strong{display:block;color:#f1f5f9;font-size:15px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:860px}
+.card{background:#ffffff0a;border:1px solid #ffffff15;border-radius:14px;padding:18px 20px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.card ul{list-style:none;padding:0}
+.card ul li{font-size:13.5px;color:#94a3b8;padding:4px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.card ul li::before{content:"›";color:#4ade80;font-weight:700;flex-shrink:0}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:840px}
+.svc{background:#ffffff08;border:1px solid #ffffff12;border-radius:10px;padding:12px 14px}
+.svc .name{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:3px}
+.svc .cat{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:5px;color:#4ade80}
+.svc .desc{font-size:12px;color:#94a3b8;line-height:1.5}
+/* VPC diagram */
+.vpc-diagram{width:100%;max-width:780px;border:2px solid #4ade8033;border-radius:16px;padding:20px;background:#4ade8008;position:relative}
+.vpc-label{position:absolute;top:-12px;left:20px;font-size:11px;font-weight:700;background:#0b1f14;padding:2px 10px;color:#4ade80;border-radius:20px}
+.az-row{display:flex;gap:12px;margin-top:8px}
+.az-box{flex:1;border:1px solid #38bdf833;border-radius:10px;padding:12px;background:#38bdf808}
+.az-title{font-size:10px;font-weight:700;color:#38bdf8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.subnet{border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;font-weight:600}
+.subnet-pub{background:#4ade8022;border:1px solid #4ade8044;color:#4ade80}
+.subnet-priv{background:#fbbf2422;border:1px solid #fbbf2444;color:#fbbf24}
+.igw-row{display:flex;justify-content:center;margin-bottom:10px}
+.igw{background:#2dd4bf22;border:1px solid #2dd4bf44;color:#2dd4bf;border-radius:8px;padding:6px 18px;font-size:12px;font-weight:700}
+.quiz-box{width:100%;max-width:760px}
+.q-item{background:#ffffff08;border:1px solid #ffffff12;border-radius:12px;padding:16px 20px;margin-bottom:10px}
+.q-item .q{font-size:15px;font-weight:500;color:#f1f5f9;margin-bottom:8px}
+.q-item .a{font-size:13px;color:#4ade80;display:none}
+.q-item .a.show{display:block}
+.q-item .btn{font-size:12px;background:#ffffff12;border:none;color:#94a3b8;padding:4px 12px;border-radius:20px;cursor:pointer;margin-top:4px}
+.q-item .btn:hover{background:#ffffff20;color:#fff}
+#nav{background:#0a1120;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px}
+.nav-btn{background:#ffffff0f;border:1px solid #ffffff15;color:#cbd5e1;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s}
+.nav-btn:hover{background:#ffffff20;color:#fff}
+.nav-btn:disabled{opacity:.3;cursor:default}
+#progress{flex:1;height:4px;background:#ffffff10;border-radius:2px;position:relative}
+#bar{height:4px;background:linear-gradient(90deg,#4ade80,#2dd4bf);border-radius:2px;transition:width .3s}
+#slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
+#slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
+.home-link{font-size:12px;color:#475569;text-decoration:none;white-space:nowrap}
+.home-link:hover{color:#94a3b8}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<div class="slide s-title active">
+  <div class="tag tag-green">Class 03 · AWS Networking</div>
+  <h1>AWS <span class="accent">VPC</span></h1>
+  <p class="sub">Virtual Private Cloud — build your isolated network in AWS</p>
+  <div style="display:flex;gap:20px;margin-top:32px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#475569">⏱ 60 minutes</span>
+    <span style="font-size:13px;color:#475569">🌐 5 Segments</span>
+    <span style="font-size:13px;color:#475569">🎯 Networking Focus</span>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-green">Session Plan</div>
+  <h2>What We'll Cover</h2>
+  <div class="agenda">
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">01</div><div class="ag-text"><strong>What is a VPC?</strong>Isolation, CIDR, defaults · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#1e40af33;color:#60a5fa">02</div><div class="ag-text"><strong>Subnets</strong>Public vs Private, AZs · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>Route Tables & IGW</strong>Traffic routing · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">04</div><div class="ag-text"><strong>NAT Gateway</strong>Outbound for private subnets · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">05</div><div class="ag-text"><strong>Lab & Quiz</strong>Hands-on + review · 14 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">🏠</div><div class="ag-text"><strong>Back to Portal</strong><a href="index.html" style="color:#4ade80;font-size:12px">index.html</a></div></div>
+  </div>
+</div>
+
+<div class="slide s-green">
+  <div class="tag tag-green">Segment 1 — VPC Basics</div>
+  <h2>What is a VPC?</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">Virtual Private Cloud</h3>
+      <ul>
+        <li>Logically isolated network in AWS</li>
+        <li>You define the IP range (CIDR block)</li>
+        <li>Spans all AZs in a Region</li>
+        <li>Default VPC exists in every region</li>
+        <li>You can have up to 5 VPCs per region</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent2">Why VPC?</h3>
+      <ul>
+        <li>Complete control over network topology</li>
+        <li>Isolate workloads from the internet</li>
+        <li>Define inbound/outbound traffic rules</li>
+        <li>Connect to on-premise via VPN/DirectConnect</li>
+        <li>Foundation for all AWS networking</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:16px;background:#ffffff08;border:1px solid #4ade8033;border-radius:10px;padding:12px 20px;text-align:center;font-size:13px;color:#94a3b8;max-width:600px">
+    💡 CIDR example: <span style="color:#4ade80">10.0.0.0/16</span> gives you 65,536 IP addresses to slice into subnets
+  </div>
+</div>
+
+<div class="slide s-blue">
+  <div class="tag tag-blue">Segment 2 — Subnets</div>
+  <h2>Subnets — Public vs Private</h2>
+  <div class="vpc-diagram">
+    <div class="vpc-label">VPC — 10.0.0.0/16</div>
+    <div class="igw-row"><div class="igw">🌐 Internet Gateway (IGW)</div></div>
+    <div class="az-row">
+      <div class="az-box">
+        <div class="az-title">AZ-1a</div>
+        <div class="subnet subnet-pub">Public Subnet 10.0.1.0/24<br><span style="font-size:10px;opacity:.7">EC2 · ALB · Bastion</span></div>
+        <div class="subnet subnet-priv">Private Subnet 10.0.2.0/24<br><span style="font-size:10px;opacity:.7">App Servers · RDS</span></div>
+      </div>
+      <div class="az-box">
+        <div class="az-title">AZ-1b</div>
+        <div class="subnet subnet-pub">Public Subnet 10.0.3.0/24<br><span style="font-size:10px;opacity:.7">EC2 · ALB replica</span></div>
+        <div class="subnet subnet-priv">Private Subnet 10.0.4.0/24<br><span style="font-size:10px;opacity:.7">App Servers · RDS replica</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:16px;margin-top:14px">
+    <span style="font-size:12px;color:#4ade80">🟢 Public — has route to IGW</span>
+    <span style="font-size:12px;color:#fbbf24">🟡 Private — no direct internet route</span>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-amber">Segment 3 — Routing</div>
+  <h2>Route Tables & Internet Gateway</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent3">Route Table</h3>
+      <ul>
+        <li>Every subnet is associated with a route table</li>
+        <li>Rules decide where traffic goes</li>
+        <li>Local route (10.0.0.0/16) is always implicit</li>
+        <li>Public subnet: adds 0.0.0.0/0 → IGW</li>
+        <li>Private subnet: adds 0.0.0.0/0 → NAT GW</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent2">Internet Gateway (IGW)</h3>
+      <ul>
+        <li>Horizontally scaled, HA by default</li>
+        <li>Attach one IGW per VPC</li>
+        <li>Enables EC2 instances with public IPs to reach internet</li>
+        <li>Performs 1:1 NAT for Elastic IPs</li>
+        <li>Free to use — you pay for data transfer</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:14px;background:#fbbf2410;border:1px solid #fbbf2430;border-radius:10px;padding:10px 20px;font-size:13px;color:#94a3b8;max-width:700px">
+    📌 <strong style="color:#fbbf24">Key rule:</strong> Public subnet = subnet whose route table has 0.0.0.0/0 pointing to an IGW
+  </div>
+</div>
+
+<div class="slide s-teal">
+  <div class="tag tag-teal">Segment 4 — NAT</div>
+  <h2>NAT Gateway</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent4">Why NAT?</h3>
+      <ul>
+        <li>Private subnet instances need outbound internet (updates, APIs)</li>
+        <li>But they must NOT be reachable from the internet</li>
+        <li>NAT Gateway sits in a public subnet</li>
+        <li>Translates private IPs to NAT GW's Elastic IP</li>
+        <li>Return traffic is allowed back automatically</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent3">NAT Gateway vs NAT Instance</h3>
+      <ul>
+        <li>NAT GW: managed by AWS, HA within AZ</li>
+        <li>NAT Instance: self-managed EC2 (old approach)</li>
+        <li>NAT GW: up to 100 Gbps bandwidth</li>
+        <li>Deploy 1 NAT GW per AZ for HA</li>
+        <li>Cost: ~$0.045/hr + data transfer fees</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-green">Segment 5 — Quiz</div>
+  <h2>VPC Quick Quiz ⚡</h2>
+  <div class="quiz-box">
+    <div class="q-item"><div class="q">Q1. What makes a subnet "public"?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Its route table has a route to an Internet Gateway (0.0.0.0/0 → igw-xxxx).</div></div>
+    <div class="q-item"><div class="q">Q2. How many IGWs can you attach to a VPC?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ One. A VPC can only have one Internet Gateway attached at a time.</div></div>
+    <div class="q-item"><div class="q">Q3. Where does a NAT Gateway live?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ In a public subnet — it needs internet access to forward traffic outbound for private instances.</div></div>
+    <div class="q-item"><div class="q">Q4. What is the default VPC CIDR block AWS assigns?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ 172.31.0.0/16 — AWS creates a default VPC with this CIDR in every region.</div></div>
+    <div class="q-item"><div class="q">Q5. Can a subnet span multiple Availability Zones?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ No. A subnet exists in exactly one AZ. You create multiple subnets across AZs for HA.</div></div>
+  </div>
+</div>
+
+<div class="slide s-title">
+  <div class="tag tag-green">End of Session</div>
+  <h1 style="font-size:38px">VPC Mastered! 🌐</h1>
+  <p class="sub" style="margin-top:14px">You can now design isolated networks, route traffic correctly and keep private workloads safe.</p>
+  <div style="display:flex;gap:16px;margin-top:28px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#4ade80">✓ VPC & CIDR</span>
+    <span style="font-size:13px;color:#38bdf8">✓ Public vs Private Subnets</span>
+    <span style="font-size:13px;color:#fbbf24">✓ Route Tables & IGW</span>
+    <span style="font-size:13px;color:#2dd4bf">✓ NAT Gateway</span>
+  </div>
+  <a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+</div>
+
+</div>
+<div id="nav">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
+  <div id="slide-title-nav">AWS VPC</div>
+  <div id="progress"><div id="bar" style="width:12.5%"></div></div>
+  <div id="slide-info">1 / 8</div>
+  <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
+  <a href="index.html" class="home-link">🏠 Portal</a>
+</div>
+<script>
+const titles=["Title","Agenda","What is VPC","Subnets","Route Tables & IGW","NAT Gateway","Quiz","Wrap Up"];
+let cur=0;const total=8;
+const slides=document.querySelectorAll('.slide');
+function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
+function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);});
+</script>
+</body>
+</html>

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRE Foundations — Part 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        #slides {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            position: relative;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #e2e8f0;
+        }
+
+        .slide p {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .slide ul, .slide ol {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-left: 40px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            margin-bottom: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .tag-sre {
+            background: #2e106533;
+            color: #c084fc;
+        }
+
+        .tag-green {
+            background: #15803d33;
+            color: #4ade80;
+        }
+
+        .tag-amber {
+            background: #92400e33;
+            color: #fbbf24;
+        }
+
+        .tag-blue {
+            background: #1e3a8a33;
+            color: #60a5fa;
+        }
+
+        .tag-k8s {
+            background: #326ce522;
+            color: #6b8ff5;
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .s-title h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+        }
+
+        .s-title p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .s-title .subtitle {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .s-dark {
+            background: #0f172a;
+        }
+
+        .s-blue {
+            background: #0f1f3d;
+        }
+
+        .s-green {
+            background: #0b1f14;
+        }
+
+        .s-amber {
+            background: #1c1200;
+        }
+
+        .s-purple {
+            background: #130d2e;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card h3 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #fbbf24;
+        }
+
+        .card ul {
+            margin-left: 20px;
+        }
+
+        .code {
+            background: #1e293b;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            color: #e2e8f0;
+        }
+
+        .kw { color: #6b8ff5; font-weight: 600; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            height: 70px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            transition: color 0.2s;
+        }
+
+        .nav-btn:hover {
+            color: #93c5fd;
+        }
+
+        .nav-btn:disabled {
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .nav-title {
+            flex: 1;
+            text-align: center;
+            font-size: 1em;
+            color: #cbd5e1;
+            margin: 0 20px;
+        }
+
+        .nav-progress {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .slide-count {
+            font-size: 0.9em;
+            color: #94a3b8;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .portal-link {
+            color: #60a5fa;
+            text-decoration: none;
+            margin-left: 20px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .portal-link:hover {
+            background: #1e293b;
+            color: #93c5fd;
+        }
+
+        .quiz-container {
+            margin-top: 20px;
+        }
+
+        .quiz-question {
+            background: #1e293b;
+            border-left: 4px solid #fbbf24;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .quiz-question strong {
+            color: #fbbf24;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .quiz-answer {
+            background: #0b1f14;
+            border-left: 4px solid #4ade80;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            display: none;
+            color: #86efac;
+        }
+
+        .quiz-answer.visible {
+            display: block;
+        }
+
+        .toggle-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #764ba2;
+        }
+
+        .agenda-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        .agenda-time {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            margin-left: 15px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .table-content {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table-content th {
+            background: #1e293b;
+            color: #fbbf24;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .table-content td {
+            padding: 12px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .table-content tr:hover {
+            background: #1e293b;
+        }
+
+        a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #93c5fd;
+        }
+
+        .end-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .end-slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        .end-slide .end-link {
+            margin-top: 40px;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 1.1em;
+            transition: background 0.2s;
+        }
+
+        .end-slide .end-link:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div id="slides">
+        <!-- Slide 1: Title -->
+        <div class="slide s-title">
+            <h1>SRE Foundations</h1>
+            <p>Part 1: Core Concepts & Principles</p>
+            <p class="subtitle">Building Reliable Systems</p>
+        </div>
+
+        <!-- Slide 2: Agenda -->
+        <div class="slide s-dark">
+            <span class="tag tag-sre">class-1</span>
+            <h2>Agenda</h2>
+            <div class="agenda-item">
+                <span>(1) SRE vs DevOps</span>
+                <span class="agenda-time">12 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(2) Google's SRE Book</span>
+                <span class="agenda-time">10 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(3) Core Principles</span>
+                <span class="agenda-time">12 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(4) Toil</span>
+                <span class="agenda-time">10 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(5) Quiz</span>
+                <span class="agenda-time">6 min</span>
+            </div>
+            <div class="agenda-item" style="background: #1c1200;">
+                <a href="index.html" style="flex: 1;">🏠 Portal</a>
+            </div>
+        </div>
+
+        <!-- Slide 3: SRE vs DevOps -->
+        <div class="slide s-blue">
+            <span class="tag tag-sre">SRE Foundations</span>
+            <h2>SRE vs DevOps</h2>
+            <div class="two-col">
+                <div class="card">
+                    <h3>DevOps</h3>
+                    <ul>
+                        <li><strong>Culture & Practice</strong> - bridging dev and ops</li>
+                        <li><strong>CI/CD Focus</strong> - rapid deployment pipelines</li>
+                        <li><strong>Automation</strong> - eliminate manual processes</li>
+                        <li><strong>Collaboration</strong> - shared responsibility</li>
+                        <li><strong>Infrastructure as Code</strong> - version everything</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>SRE</h3>
+                    <ul>
+                        <li><strong>Reliability Engineering</strong> - systems thinking</li>
+                        <li><strong>SLOs & SLIs</strong> - quantified reliability</li>
+                        <li><strong>Error Budgets</strong> - balance innovation and stability</li>
+                        <li><strong>Toil Reduction</strong> - automate operational work</li>
+                        <li><strong>Blameless Culture</strong> - learn from failures</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Google SRE Book -->
+        <div class="slide s-purple">
+            <span class="tag tag-sre">Principles</span>
+            <h2>Google's SRE Book</h2>
+            <p><strong>Three Pillars of SRE:</strong></p>
+            <ul>
+                <li><strong>Reliability</strong> - systems that stay up and perform</li>
+                <li><strong>Scalability</strong> - handling growth without reinventing</li>
+                <li><strong>Efficiency</strong> - resource optimization and cost control</li>
+            </ul>
+            <p style="margin-top: 30px;"><strong>The 4 Golden Signals:</strong></p>
+            <ul>
+                <li><strong>Latency</strong> - response time of requests</li>
+                <li><strong>Traffic</strong> - demand on the system</li>
+                <li><strong>Errors</strong> - rate of failed requests</li>
+                <li><strong>Saturation</strong> - how "full" the system is</li>
+            </ul>
+        </div>
+
+        <!-- Slide 5: Reliability Fundamentals -->
+        <div class="slide s-blue">
+            <span class="tag tag-green">Metrics</span>
+            <h2>Reliability Fundamentals</h2>
+            <p><strong>Key Definitions:</strong></p>
+            <ul>
+                <li><strong>MTTF</strong> (Mean Time To Failure) - average time before failure occurs</li>
+                <li><strong>MTTR</strong> (Mean Time To Repair) - average time to fix after failure</li>
+                <li><strong>MTBF</strong> (Mean Time Between Failures) - total time / number of failures</li>
+            </ul>
+            <p style="margin-top: 30px;"><strong>Availability Formula:</strong></p>
+            <div class="code">
+Availability (%) = MTBF / (MTBF + MTTR) × 100
+99.9% = 8.7 hours downtime per year
+99.99% = 52.6 minutes downtime per year
+99.999% = 5.26 minutes downtime per year
+            </div>
+        </div>
+
+        <!-- Slide 6: The 4 Golden Signals -->
+        <div class="slide s-green">
+            <span class="tag tag-blue">Observability</span>
+            <h2>The 4 Golden Signals</h2>
+            <div class="two-col">
+                <div class="card">
+                    <h3>Latency</h3>
+                    <p>Response time of requests (p50, p95, p99)</p>
+                    <p><strong>Example:</strong> API response time &lt; 100ms</p>
+                </div>
+                <div class="card">
+                    <h3>Traffic</h3>
+                    <p>Request rate and demand on system</p>
+                    <p><strong>Example:</strong> Requests per second (RPS)</p>
+                </div>
+                <div class="card">
+                    <h3>Errors</h3>
+                    <p>Rate of failed requests (4xx, 5xx)</p>
+                    <p><strong>Example:</strong> Error rate &lt; 0.1%</p>
+                </div>
+                <div class="card">
+                    <h3>Saturation</h3>
+                    <p>How "full" is the resource (CPU, memory, disk)</p>
+                    <p><strong>Example:</strong> CPU &lt; 70%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Toil -->
+        <div class="slide s-amber">
+            <span class="tag tag-sre">Culture</span>
+            <h2>Toil & Project Work</h2>
+            <p><strong>What is Toil?</strong></p>
+            <ul>
+                <li>Manual, repetitive, automatable work</li>
+                <li>No enduring value - must be repeated tomorrow</li>
+                <li>Scales linearly with system growth</li>
+                <li><strong>Examples:</strong> Log rotation, manual deployments, password resets</li>
+            </ul>
+            <p style="margin-top: 30px;"><strong>Google's 50% Rule:</strong></p>
+            <ul>
+                <li>SRE teams should spend max 50% of time on toil</li>
+                <li>Remaining 50% on project work, improvements, automation</li>
+                <li>Reduces burnout and enables innovation</li>
+            </ul>
+        </div>
+
+        <!-- Slide 8: SRE Career Roadmap -->
+        <div class="slide s-dark">
+            <span class="tag tag-sre">Career</span>
+            <h2>SRE Skills Roadmap</h2>
+            <ul>
+                <li><strong>Linux Fundamentals</strong> - OS internals, bash, system calls</li>
+                <li><strong>Networking</strong> - TCP/IP, DNS, load balancing, protocols</li>
+                <li><strong>Cloud Platforms</strong> - AWS, GCP, Azure architecture</li>
+                <li><strong>Containers & Orchestration</strong> - Docker, Kubernetes, Helm</li>
+                <li><strong>Observability Stack</strong> - Prometheus, Grafana, ELK, tracing</li>
+                <li><strong>Infrastructure as Code</strong> - Terraform, Ansible, CloudFormation</li>
+                <li><strong>Coding</strong> - Python, Go, scripting automation</li>
+                <li><strong>System Design</strong> - scaling, reliability patterns, trade-offs</li>
+            </ul>
+        </div>
+
+        <!-- Slide 9: Quiz -->
+        <div class="slide s-blue">
+            <span class="tag tag-sre">Quiz</span>
+            <h2>Knowledge Check</h2>
+            <div class="quiz-container">
+                <div class="quiz-question">
+                    <strong>Q1: What is the primary difference between SRE and DevOps?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        DevOps is a culture/practice, while SRE is a discipline focused on reliability engineering with quantified objectives (SLOs, error budgets).
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q2: What is MTTR?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Mean Time To Repair - the average time it takes to fix a system after a failure occurs.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q3: Name the 4 Golden Signals:</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Latency, Traffic, Errors, and Saturation.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q4: What is toil in SRE?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Manual, repetitive, automatable work with no enduring value that must be repeated.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q5: What is Google's rule about toil allocation?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        The 50% rule - SRE teams should spend max 50% of time on toil, rest on improvements.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: End -->
+        <div class="slide s-title end-slide">
+            <h2>Keep Learning</h2>
+            <p>Read: Google SRE Book (free online)</p>
+            <a href="index.html" class="end-link">← Back to Ktech SRE Portal</a>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← Prev</button>
+        <div class="nav-title" id="slideTitle">SRE Foundations — Part 1</div>
+        <div class="nav-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="slide-count"><span id="currentSlide">1</span>/<span id="totalSlides">10</span></span>
+        </div>
+        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Next →</button>
+        <a href="index.html" class="portal-link">🏠 Portal</a>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[n].classList.add('active');
+            document.getElementById('currentSlide').textContent = n + 1;
+            document.getElementById('progressFill').style.width = ((n + 1) / totalSlides * 100) + '%';
+            document.getElementById('prevBtn').disabled = n === 0;
+            document.getElementById('nextBtn').disabled = n === totalSlides - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>
