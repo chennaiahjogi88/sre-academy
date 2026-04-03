@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .slides {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 4rem;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .s-dark {
+            background-color: #0f172a;
+        }
+
+        .s-blue {
+            background-color: #0f1f3d;
+        }
+
+        .s-green {
+            background-color: #0b1f14;
+        }
+
+        .s-amber {
+            background-color: #1c1200;
+        }
+
+        .s-purple {
+            background-color: #130d2e;
+        }
+
+        .s-coral {
+            background-color: #1f0b06;
+        }
+
+        .slide h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .slide h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .slide h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .slide p {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .slide ul, .slide ol {
+            text-align: left;
+            display: inline-block;
+            font-size: 1.3rem;
+            line-height: 2;
+        }
+
+        .slide li {
+            margin-bottom: 0.8rem;
+        }
+
+        .code {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: left;
+            margin: 1rem 0;
+            overflow-x: auto;
+            color: #cbd5e1;
+        }
+
+        .kw { color: #6b8ff5; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .tag-prom {
+            background-color: #ff6b0022;
+            color: #ff9a44;
+            border: 1px solid #ff6b0044;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .ag-item {
+            display: inline-block;
+            margin: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .ag-item:hover {
+            background-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .ag-item.portal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .ag-item.portal:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-bar {
+            background-color: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1rem;
+            height: 80px;
+        }
+
+        .nav-left, .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 0 0 auto;
+        }
+
+        .nav-center {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .slide-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background-color: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .slide-count {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            min-width: 50px;
+        }
+
+        .nav-button {
+            background-color: transparent;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .nav-button:hover {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .portal-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .portal-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);
+        }
+
+        .quiz {
+            text-align: left;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: #1e293b;
+            border-left: 4px solid #ff6b00;
+            border-radius: 0.5rem;
+        }
+
+        .quiz-question h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+
+        .quiz-question p {
+            margin-bottom: 0.8rem;
+            text-align: left;
+        }
+
+        .toggle-answer {
+            background-color: #ff6b00;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-answer:hover {
+            background-color: #ff9a44;
+        }
+
+        .answer {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #0f172a;
+            border-radius: 0.25rem;
+            color: #4ade80;
+        }
+
+        .answer.visible {
+            display: block;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #ff6b00;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #ff9a44;
+            text-decoration: underline;
+        }
+
+        .two-col {
+            display: inline-block;
+            text-align: left;
+            max-width: 90%;
+        }
+
+        .col-left, .col-right {
+            display: inline-block;
+            width: 48%;
+            vertical-align: top;
+            margin: 0 1%;
+        }
+    </style>
+</head>
+<body>
+    <div class="slides">
+        <div class="slide s-title active">
+            <h1>Prometheus</h1>
+            <p style="font-size: 1.8rem; margin-top: 2rem;">Metrics & Alerting</p>
+        </div>
+
+        <div class="slide s-dark">
+            <h2>Agenda</h2>
+            <div style="margin-top: 2rem;">
+                <a href="#" class="ag-item">Architecture</a>
+                <a href="#" class="ag-item">Data Model</a>
+                <a href="#" class="ag-item">PromQL Intro</a>
+                <a href="#" class="ag-item">Exporters</a>
+                <a href="#" class="ag-item">Alerting</a>
+                <a href="#" class="ag-item">Quiz</a>
+                <a href="/portal.html" class="ag-item portal">🏠 Portal</a>
+            </div>
+        </div>
+
+        <div class="slide s-blue">
+            <h2>Prometheus Architecture</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%; margin-top: 1.5rem;">
+                <p><strong>Pull-based Model:</strong> Prometheus actively scrapes targets</p>
+                <div class="code" style="margin: 1.5rem 0;">
+<span class="cmt"># Prometheus Server pulls metrics</span>
+Prometheus Server → scrapes → /metrics endpoints
+↓
+TSDB (Time Series Database)
+↓
+Rules Engine + Alertmanager
+                </div>
+                <p style="margin-top: 1.5rem;"><strong>Components:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>TSDB: Local storage for time series</li>
+                    <li>Rules Engine: Recording & alerting rules</li>
+                    <li>Alertmanager: Alert routing & grouping</li>
+                    <li>Pushgateway: For short-lived jobs</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide s-green">
+            <h2>Data Model</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Format:</strong> <span class="code" style="padding: 0.3rem 0.5rem; font-size: 1rem;">metric_name{label="value"} timestamp value</span></p>
+                <p style="margin-top: 1.5rem;"><strong>Example:</strong></p>
+                <div class="code">
+<span class="prop">http_requests_total</span>{<span class="str">job</span>=<span class="val">"api"</span>, <span class="str">method</span>=<span class="val">"GET"</span>} 1645678901000 1234
+                </div>
+                <p style="margin-top: 1.5rem;"><strong>Vector Types:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li><strong>Instant Vector:</strong> Single value per series at a point in time</li>
+                    <li><strong>Range Vector:</strong> Time range of values [5m], [1h]</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide s-amber">
+            <h2>Metric Types</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Counter:</strong> Monotonically increasing</p>
+                <div class="code">
+<span class="prop">http_requests_total</span>{path=<span class="val">"/api"</span>} 5234
+<span class="cmt"># Only increases, useful for rate() calculations</span>
+                </div>
+                <p style="margin-top: 1.5rem;"><strong>Gauge:</strong> Can increase or decrease</p>
+                <div class="code">
+<span class="prop">memory_usage_bytes</span> 2147483648
+<span class="cmt"># Up and down, shows current state</span>
+                </div>
+                <p style="margin-top: 1.5rem;"><strong>Histogram & Summary:</strong> Distribution of values</p>
+                <ul style="margin-left: 2rem;">
+                    <li>Histogram: Buckets for percentiles</li>
+                    <li>Summary: Pre-calculated quantiles</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide s-purple">
+            <h2>Prometheus Configuration</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>prometheus.yml:</strong></p>
+                <div class="code">
+<span class="kw">global</span>:
+  <span class="prop">scrape_interval</span>: 15s
+  <span class="prop">evaluation_interval</span>: 15s
+
+<span class="kw">scrape_configs</span>:
+  - <span class="prop">job_name</span>: '<span class="str">prometheus</span>'
+    <span class="prop">static_configs</span>:
+      - <span class="prop">targets</span>: ['<span class="str">localhost:9090</span>']
+
+  - <span class="prop">job_name</span>: '<span class="str">kubernetes</span>'
+    <span class="prop">kubernetes_sd_configs</span>:
+      - <span class="prop">role</span>: '<span class="str">pod</span>'
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-coral">
+            <h2>Exporters & Instrumentation</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Node Exporter:</strong> Host metrics (CPU, disk, network)</p>
+                <p style="margin-top: 1rem;"><strong>kube-state-metrics:</strong> Kubernetes object metrics</p>
+                <p style="margin-top: 1rem;"><strong>Blackbox Exporter:</strong> Probe endpoints (HTTP, DNS, TCP)</p>
+                <p style="margin-top: 1rem;"><strong>Application /metrics:</strong> Built-in with client libraries</p>
+                <div class="code" style="margin-top: 1.5rem;">
+<span class="cmt"># Go example</span>
+<span class="kw">import</span> "<span class="str">github.com/prometheus/client_golang/prometheus</span>"
+
+<span class="prop">counter</span> := prometheus.<span class="kw">NewCounter</span>(prometheus.CounterOpts{
+  <span class="str">Name</span>: "<span class="val">requests_total</span>",
+})
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-blue">
+            <h2>Alerting Rules</h2>
+            <div style="text-align: left; display: inline-block; max-width: 90%;">
+                <p style="margin-top: 1rem;"><strong>Alert Rule YAML:</strong></p>
+                <div class="code">
+<span class="kw">groups</span>:
+  - <span class="prop">name</span>: '<span class="str">app_alerts</span>'
+    <span class="prop">rules</span>:
+      - <span class="prop">alert</span>: <span class="str">HighErrorRate</span>
+        <span class="prop">expr</span>: <span class="str">rate(errors_total[5m]) > 0.1</span>
+        <span class="prop">for</span>: 5m
+        <span class="prop">labels</span>:
+          <span class="str">severity</span>: <span class="val">critical</span>
+        <span class="prop">annotations</span>:
+          <span class="str">summary</span>: <span class="val">"High error rate detected"</span>
+          <span class="str">description</span>: <span class="val">"{{ $value | humanizePercentage }} errors"</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-dark">
+            <h2>Quiz: Prometheus</h2>
+            <div class="quiz">
+                <div class="quiz-question">
+                    <h4>1. Why does Prometheus use a pull-based scraping model instead of push?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        Pull-based allows Prometheus to control scrape timing, detect if a target is down (no response), and requires no agent configuration on targets. It's also simpler for service discovery.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>2. What is the difference between a Counter and a Gauge metric?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        Counter only increases (monotonic) and resets on restart - good for counts. Gauge can go up or down - good for current state like memory usage or temperature.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>3. Which exporter would you use to monitor Kubernetes object states?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        <strong>kube-state-metrics</strong> - Exports metrics about Kubernetes objects like Deployments, Pods, StatefulSets, etc.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>4. In an alerting rule, what does the "for" field control?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        The "for" field specifies how long a condition must be true before the alert fires. This prevents flaky alerts from temporary spikes (e.g., "for: 5m").
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <h4>5. What is the purpose of the Pushgateway?</h4>
+                    <button class="toggle-answer" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="answer">
+                        Pushgateway allows short-lived jobs to push their metrics before they exit, since Prometheus won't be able to scrape them. Essential for batch jobs, cron tasks, and one-off processes.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide s-title">
+            <h1>Thank You</h1>
+            <p style="font-size: 1.8rem; margin-top: 2rem;">Questions?</p>
+            <a href="/portal.html" class="back-link">← Back to Ktech SRE Portal</a>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-left">
+            <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+        </div>
+        <div class="nav-center">
+            <span class="slide-title" id="slideTitle">Prometheus</span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <span class="slide-count"><span id="currentSlide">1</span> / <span id="totalSlides">10</span></span>
+            <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+            <a href="/portal.html" class="portal-link">🏠 Portal</a>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        const slideTitles = [
+            'Prometheus',
+            'Agenda',
+            'Prometheus Architecture',
+            'Data Model',
+            'Metric Types',
+            'Prometheus Configuration',
+            'Exporters & Instrumentation',
+            'Alerting Rules',
+            'Quiz: Prometheus',
+            'Thank You'
+        ];
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+
+            document.getElementById('slideTitle').textContent = slideTitles[currentSlide];
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                showSlide();
+            }
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+        showSlide();
+    </script>
+</body>
+</html>

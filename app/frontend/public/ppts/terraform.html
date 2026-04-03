@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform — Infrastructure as Code</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #e5e7eb; overflow: hidden; }
+        .slideshow { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        .nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid #334155; gap: 12px; }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav button { background: none; border: 1px solid #475569; color: #cbd5e1; padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; transition: all 0.3s; }
+        .nav button:hover { background: #1e293b; border-color: #64748b; }
+        .nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nav-title { font-weight: 600; color: #e5e7eb; min-width: 200px; text-align: center; }
+        .progress-bar { flex: 1; height: 2px; background: #1e293b; margin: 0 16px; border-radius: 1px; overflow: hidden; max-width: 400px; }
+        .progress { height: 100%; background: linear-gradient(90deg, #6b8ff5, #c084fc); width: 0%; transition: width 0.3s; }
+        .slide-counter { color: #94a3b8; font-size: 14px; min-width: 40px; text-align: right; }
+        .nav a { color: #6b8ff5; text-decoration: none; padding: 8px 12px; border: 1px solid #475569; border-radius: 6px; transition: all 0.3s; }
+        .nav a:hover { background: #1e293b; border-color: #6b8ff5; }
+        .slides { flex: 1; overflow: hidden; position: relative; }
+        .slide { position: absolute; width: 100%; height: 100%; display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .slide.active { display: flex; opacity: 1; }
+        .s-title { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #3f0f5c 100%); }
+        .s-dark { background: #0f172a; }
+        .s-blue { background: #0f1f3d; }
+        .s-green { background: #0b1f14; }
+        .s-amber { background: #1c1200; }
+        .s-purple { background: #130d2e; }
+        .slide { padding: 48px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .slide h1 { font-size: 3.5rem; margin-bottom: 16px; text-align: center; background: linear-gradient(135deg, #a57be8, #6b8ff5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .slide h2 { font-size: 2.5rem; margin-bottom: 32px; text-align: center; color: #a57be8; }
+        .tag-tf { display: inline-block; background: #7B42BC22; color: #a57be8; border: 1px solid #7B42BC44; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+        .slide-content { max-width: 1000px; width: 100%; }
+        .agenda { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 1000px; }
+        .ag-item { background: rgba(30, 41, 59, 0.6); border-left: 4px solid #6b8ff5; padding: 16px; border-radius: 8px; line-height: 1.8; }
+        .ag-item strong { color: #a57be8; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+        .card { background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 24px; }
+        .card h3 { color: #a57be8; margin-bottom: 12px; font-size: 1.2rem; }
+        .card p { line-height: 1.6; color: #cbd5e1; margin-bottom: 8px; font-size: 14px; }
+        .code { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 16px 0; }
+        .code .kw { color: #6b8ff5; }
+        .code .prop { color: #c084fc; }
+        .code .str { color: #4ade80; }
+        .code .val { color: #fbbf24; }
+        .code .cmt { color: #475569; }
+        .svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px; }
+        .svc { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 16px; }
+        .svc strong { color: #6b8ff5; display: block; margin-bottom: 8px; }
+        .svc p { font-size: 13px; line-height: 1.5; color: #cbd5e1; }
+        .quiz-box { background: rgba(30, 41, 59, 0.8); border: 2px solid #c084fc; border-radius: 8px; padding: 24px; margin-top: 16px; }
+        .q-item { background: rgba(15, 23, 42, 0.6); border-left: 3px solid #6b8ff5; padding: 16px; margin: 16px 0; border-radius: 4px; }
+        .q-item p { margin-bottom: 12px; color: #e5e7eb; }
+        .q-item button { background: #6b8ff5; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s; }
+        .q-item button:hover { background: #7b91ff; }
+        .answer { display: none; background: rgba(107, 143, 245, 0.1); border-left: 3px solid #4ade80; padding: 12px; margin-top: 12px; border-radius: 4px; color: #4ade80; font-size: 13px; }
+        .list-item { margin: 12px 0; padding-left: 24px; position: relative; line-height: 1.6; }
+        .list-item::before { content: "›"; position: absolute; left: 0; color: #6b8ff5; }
+        .portal-link { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #6b8ff5; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; transition: all 0.3s; }
+        .portal-link:hover { background: #7b91ff; }
+        .end-slide-content { text-align: center; }
+        .end-slide-content h2 { font-size: 2rem; margin-bottom: 32px; }
+        .end-slide-content a { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #6b8ff5; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="slideshow">
+        <div class="nav">
+            <div class="nav-left">
+                <button id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+            </div>
+            <div class="nav-title" id="navTitle">Terraform — IaC for SREs</div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <div class="slide-counter">
+                <span id="slideNum">1</span>/<span id="totalSlides">10</span>
+            </div>
+            <div class="nav-right">
+                <button id="nextBtn" onclick="changeSlide(1)">Next →</button>
+                <a href="/portal.html">🏠 Portal</a>
+                <button onclick="closeSlideshow()">✕</button>
+            </div>
+        </div>
+        <div class="slides">
+            <!-- Slide 1: Title -->
+            <div class="slide s-title active">
+                <div class="tag-tf">Terraform Module</div>
+                <h1>Terraform</h1>
+                <p style="font-size: 1.5rem; color: #cbd5e1; margin-top: 16px;">Infrastructure as Code</p>
+                <p style="color: #94a3b8; margin-top: 32px; font-size: 1.1rem;">class-30 | IaC Fundamentals</p>
+            </div>
+
+            <!-- Slide 2: Agenda -->
+            <div class="slide s-dark">
+                <h2>Course Agenda</h2>
+                <div class="agenda">
+                    <div class="ag-item"><strong>Why Terraform?</strong> Declarative IaC, multi-cloud, state mgmt</div>
+                    <div class="ag-item"><strong>HCL Basics</strong> Providers, resources, data sources</div>
+                    <div class="ag-item"><strong>Core Commands</strong> Init, plan, apply, destroy</div>
+                    <div class="ag-item"><strong>State Management</strong> Remote state, locking, security</div>
+                    <div class="ag-item"><strong>Modules</strong> Structure, versioning, registry</div>
+                    <div class="ag-item"><strong>EKS on Terraform</strong> Cluster provisioning, node groups</div>
+                </div>
+                <a href="/portal.html" class="portal-link">🏠 Back to Portal</a>
+            </div>
+
+            <!-- Slide 3: Why Terraform -->
+            <div class="slide s-blue">
+                <h2>Why Terraform?</h2>
+                <div class="slide-content">
+                    <div class="list-item"><strong>Declarative IaC:</strong> Describe desired state, Terraform handles how</div>
+                    <div class="list-item"><strong>Multi-Cloud:</strong> AWS, Azure, GCP, on-prem all supported</div>
+                    <div class="list-item"><strong>State Management:</strong> Tracks infrastructure state for safe updates</div>
+                    <div class="list-item"><strong>Plan Before Apply:</strong> Preview changes before executing</div>
+                    <div class="list-item"><strong>GitOps-Friendly:</strong> Infrastructure in version control</div>
+                    <div class="list-item"><strong>Idempotent:</strong> Running multiple times yields same result</div>
+                </div>
+            </div>
+
+            <!-- Slide 4: HCL Basics -->
+            <div class="slide s-dark">
+                <h2>HCL Basics</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">terraform</span> {
+  <span class="prop">required_version</span> = <span class="str">"~> 1.5"</span>
+  <span class="prop">required_providers</span> {
+    <span class="prop">aws</span> = {
+      <span class="prop">source</span>  = <span class="str">"hashicorp/aws"</span>
+      <span class="prop">version</span> = <span class="str">"~> 5.0"</span>
+    }
+  }
+}
+
+<span class="kw">provider</span> <span class="str">"aws"</span> {
+  <span class="prop">region</span> = <span class="val">var.aws_region</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_vpc"</span> <span class="str">"main"</span> {
+  <span class="prop">cidr_block</span>           = <span class="str">"10.0.0.0/16"</span>
+  <span class="prop">enable_dns_hostnames</span> = <span class="val">true</span>
+}
+
+<span class="kw">output</span> <span class="str">"vpc_id"</span> {
+  <span class="prop">value</span>       = <span class="val">aws_vpc.main.id</span>
+  <span class="prop">description</span> = <span class="str">"VPC ID"</span>
+}</div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Core Commands -->
+            <div class="slide s-purple">
+                <h2>Core Terraform Commands</h2>
+                <div class="slide-content">
+                    <div class="svc-grid">
+                        <div class="svc">
+                            <strong>terraform init</strong>
+                            <p>Initialize working directory, download provider plugins</p>
+                        </div>
+                        <div class="svc">
+                            <strong>terraform plan</strong>
+                            <p>Show what will be created/changed/destroyed</p>
+                        </div>
+                        <div class="svc">
+                            <strong>terraform apply</strong>
+                            <p>Apply planned changes to infrastructure</p>
+                        </div>
+                        <div class="svc">
+                            <strong>terraform destroy</strong>
+                            <p>Destroy all managed infrastructure</p>
+                        </div>
+                        <div class="svc">
+                            <strong>terraform validate</strong>
+                            <p>Check syntax and config validity</p>
+                        </div>
+                        <div class="svc">
+                            <strong>terraform state list</strong>
+                            <p>List all resources in state file</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: State Management -->
+            <div class="slide s-green">
+                <h2>State Management</h2>
+                <div class="slide-content">
+                    <div class="card">
+                        <h3>Local vs Remote State</h3>
+                        <p><strong>Local (terraform.tfstate):</strong> Simple, risky for teams, prone to corruption</p>
+                        <p><strong>Remote State (S3 + DynamoDB):</strong> Shared, locked, auditable, encrypted</p>
+                    </div>
+                    <div class="code" style="margin-top: 20px;"><span class="kw">terraform</span> {
+  <span class="prop">backend</span> <span class="str">"s3"</span> {
+    <span class="prop">bucket</span>         = <span class="str">"my-tf-state"</span>
+    <span class="prop">key</span>            = <span class="str">"prod/terraform.tfstate"</span>
+    <span class="prop">region</span>         = <span class="str">"us-east-1"</span>
+    <span class="prop">encrypt</span>        = <span class="val">true</span>
+    <span class="prop">dynamodb_table</span> = <span class="str">"tf-locks"</span>
+  }
+}</div>
+                    <p style="color: #94a3b8; margin-top: 16px; font-size: 13px;">Always commit state lock requirements, never commit state files to git</p>
+                </div>
+            </div>
+
+            <!-- Slide 7: Modules -->
+            <div class="slide s-dark">
+                <h2>Terraform Modules</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="cmt"># Module structure</span>
+<span class="str">my-vpc-module/</span>
+├── <span class="str">main.tf</span>        <span class="cmt"># Resource definitions</span>
+├── <span class="str">variables.tf</span>  <span class="cmt"># Input variables</span>
+├── <span class="str">outputs.tf</span>    <span class="cmt"># Output values</span>
+└── <span class="str">terraform.tf</span>  <span class="cmt"># Version requirements</span>
+
+<span class="cmt"># Using a module</span>
+<span class="kw">module</span> <span class="str">"vpc"</span> {
+  <span class="prop">source</span>  = <span class="str">"./modules/vpc"</span>
+  <span class="prop">version</span> = <span class="str">"1.2.0"</span>
+  <span class="prop">cidr</span>    = <span class="str">"10.0.0.0/16"</span>
+}</div>
+                    <p style="margin-top: 20px; color: #cbd5e1;">Public Registry: <span style="color: #4ade80;">registry.terraform.io</span> — versioning for reproducibility</p>
+                </div>
+            </div>
+
+            <!-- Slide 8: Terraform EKS -->
+            <div class="slide s-blue">
+                <h2>Terraform EKS Provisioning</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">resource</span> <span class="str">"aws_eks_cluster"</span> <span class="str">"main"</span> {
+  <span class="prop">name</span>    = <span class="str">"my-cluster"</span>
+  <span class="prop">version</span> = <span class="str">"1.28"</span>
+  <span class="prop">role_arn</span> = <span class="val">aws_iam_role.eks_role.arn</span>
+
+  <span class="prop">vpc_config</span> {
+    <span class="prop">subnet_ids</span> = <span class="val">aws_subnet.public[*].id</span>
+  }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_eks_node_group"</span> <span class="str">"workers"</span> {
+  <span class="prop">cluster_name</span>    = <span class="val">aws_eks_cluster.main.name</span>
+  <span class="prop">node_role_arn</span>   = <span class="val">aws_iam_role.node_role.arn</span>
+  <span class="prop">subnet_ids</span>      = <span class="val">aws_subnet.private[*].id</span>
+  <span class="prop">instance_types</span>  = [<span class="str">"t3.medium"</span>]
+  <span class="prop">desired_size</span>    = <span class="val">3</span>
+}</div>
+                    <p style="margin-top: 16px; color: #cbd5e1;">Tip: Use terraform-aws-eks module for simplified provisioning</p>
+                </div>
+            </div>
+
+            <!-- Slide 9: Quiz -->
+            <div class="slide s-purple">
+                <h2>Knowledge Check</h2>
+                <div class="slide-content" style="max-width: 900px;">
+                    <div class="quiz-box">
+                        <div class="q-item">
+                            <p><strong>Q1:</strong> What is the purpose of terraform.tfstate?</p>
+                            <button onclick="toggleAnswer(0)">Show Answer</button>
+                            <div class="answer" id="answer0">Stores the actual state of provisioned infrastructure, enabling Terraform to track and manage resources.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q2:</strong> What command shows changes before applying them?</p>
+                            <button onclick="toggleAnswer(1)">Show Answer</button>
+                            <div class="answer" id="answer1"><span class="code">terraform plan</span> — displays what will be created, modified, or destroyed.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q3:</strong> Why use S3 + DynamoDB for state locking?</p>
+                            <button onclick="toggleAnswer(2)">Show Answer</button>
+                            <div class="answer" id="answer2">DynamoDB provides distributed locking to prevent concurrent state modifications by multiple teams.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q4:</strong> What is idempotency in Terraform?</p>
+                            <button onclick="toggleAnswer(3)">Show Answer</button>
+                            <div class="answer" id="answer3">Running Terraform multiple times with same config yields the same result — safe to re-apply.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q5:</strong> When would you use modules?</p>
+                            <button onclick="toggleAnswer(4)">Show Answer</button>
+                            <div class="answer" id="answer4">To organize, reuse, and version infrastructure components across projects and teams.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 10: End -->
+            <div class="slide s-title">
+                <div class="end-slide-content">
+                    <h2 style="color: #a57be8; margin-bottom: 32px;">Thank You!</h2>
+                    <p style="font-size: 1.2rem; color: #cbd5e1; margin-bottom: 32px;">You're ready to provision infrastructure with Terraform</p>
+                    <a href="/portal.html" style="display: inline-block; padding: 12px 24px; background: #6b8ff5; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">← Back to Ktech SRE Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        const titles = [
+            'Terraform — IaC for SREs',
+            'Course Agenda',
+            'Why Terraform?',
+            'HCL Basics',
+            'Core Terraform Commands',
+            'State Management',
+            'Terraform Modules',
+            'Terraform EKS Provisioning',
+            'Knowledge Check',
+            'Thank You!'
+        ];
+
+        function updateSlide() {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+            document.getElementById('navTitle').textContent = titles[currentSlide];
+            document.getElementById('slideNum').textContent = currentSlide + 1;
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(n) {
+            const newSlide = currentSlide + n;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                updateSlide();
+            }
+        }
+
+        function toggleAnswer(id) {
+            const answer = document.getElementById('answer' + id);
+            answer.style.display = answer.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function closeSlideshow() {
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'Escape') closeSlideshow();
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

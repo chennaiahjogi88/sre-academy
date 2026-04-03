@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sre-platform-config
+  namespace: sre-platform
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  PGHOST: "postgres-service"
+  PGPORT: "5432"
+  PGDATABASE: "sre_platform"
+  PGUSER: "sre_user"
+  UPLOAD_DIR: "/app/uploads"
+  MAX_FILE_SIZE_MB: "500"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sre-platform-secrets
+  namespace: sre-platform
+type: Opaque
+stringData:
+  JWT_SECRET: "change_this_in_production"
+  POSTGRES_PASSWORD: "sre_password_2024"
+  PGPASSWORD: "sre_password_2024"
+  GRAFANA_PASSWORD: "Grafana@123"

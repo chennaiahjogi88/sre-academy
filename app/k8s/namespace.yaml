@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sre-platform
+  labels:
+    app.kubernetes.io/name: sre-platform
+    app.kubernetes.io/part-of: ktech-sre

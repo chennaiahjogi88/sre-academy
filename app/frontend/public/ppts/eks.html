@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon EKS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        #slides {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            position: relative;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #e2e8f0;
+        }
+
+        .slide p {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .slide ul, .slide ol {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-left: 40px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            margin-bottom: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .tag-green {
+            background: #15803d33;
+            color: #4ade80;
+        }
+
+        .tag-k8s {
+            background: #326ce522;
+            color: #6b8ff5;
+        }
+
+        .tag-sre {
+            background: #2e106533;
+            color: #c084fc;
+        }
+
+        .tag-blue {
+            background: #1e3a8a33;
+            color: #60a5fa;
+        }
+
+        .tag-amber {
+            background: #92400e33;
+            color: #fbbf24;
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .s-title h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+        }
+
+        .s-title p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .s-title .subtitle {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .s-dark {
+            background: #0f172a;
+        }
+
+        .s-blue {
+            background: #0f1f3d;
+        }
+
+        .s-green {
+            background: #0b1f14;
+        }
+
+        .s-amber {
+            background: #1c1200;
+        }
+
+        .s-purple {
+            background: #130d2e;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .three-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 30px;
+            border-left: 4px solid #4ade80;
+        }
+
+        .card h3 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #4ade80;
+        }
+
+        .card ul {
+            margin-left: 20px;
+        }
+
+        .card p {
+            margin-bottom: 15px;
+        }
+
+        .code {
+            background: #1e293b;
+            border-left: 4px solid #4ade80;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .kw { color: #6b8ff5; font-weight: 600; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            height: 70px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            transition: color 0.2s;
+        }
+
+        .nav-btn:hover {
+            color: #93c5fd;
+        }
+
+        .nav-btn:disabled {
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .nav-title {
+            flex: 1;
+            text-align: center;
+            font-size: 1em;
+            color: #cbd5e1;
+            margin: 0 20px;
+        }
+
+        .nav-progress {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .slide-count {
+            font-size: 0.9em;
+            color: #94a3b8;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .portal-link {
+            color: #60a5fa;
+            text-decoration: none;
+            margin-left: 20px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .portal-link:hover {
+            background: #1e293b;
+            color: #93c5fd;
+        }
+
+        .quiz-container {
+            margin-top: 20px;
+        }
+
+        .quiz-question {
+            background: #1e293b;
+            border-left: 4px solid #fbbf24;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .quiz-question strong {
+            color: #fbbf24;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .quiz-answer {
+            background: #0b1f14;
+            border-left: 4px solid #4ade80;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            display: none;
+            color: #86efac;
+        }
+
+        .quiz-answer.visible {
+            display: block;
+        }
+
+        .toggle-btn {
+            background: #4ade80;
+            border: none;
+            color: #0f172a;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background 0.2s;
+            font-weight: 600;
+        }
+
+        .toggle-btn:hover {
+            background: #86efac;
+        }
+
+        .agenda-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        .agenda-time {
+            background: #4ade80;
+            color: #0f172a;
+            padding: 6px 12px;
+            border-radius: 4px;
+            margin-left: 15px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #93c5fd;
+        }
+
+        .end-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .end-slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        .end-slide .end-link {
+            margin-top: 40px;
+            padding: 15px 30px;
+            background: #4ade80;
+            color: #0f172a;
+            border-radius: 4px;
+            font-size: 1.1em;
+            transition: background 0.2s;
+            font-weight: 600;
+        }
+
+        .end-slide .end-link:hover {
+            background: #86efac;
+        }
+
+        .highlight {
+            background: #0b1f14;
+            padding: 15px;
+            border-left: 4px solid #4ade80;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #4ade80;
+        }
+
+        .benefit-list {
+            background: #1e293b;
+            border: 1px solid #4ade80;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .benefit-item {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            border-left: 3px solid #4ade80;
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="slides">
+        <!-- Slide 1: Title -->
+        <div class="slide s-title">
+            <h1>Amazon EKS</h1>
+            <p>Elastic Kubernetes Service</p>
+            <p class="subtitle">Managed Kubernetes on AWS</p>
+        </div>
+
+        <!-- Slide 2: Agenda -->
+        <div class="slide s-dark">
+            <span class="tag tag-green">class-20</span>
+            <h2>Agenda</h2>
+            <div class="agenda-item">
+                <span>(1) EKS Overview</span>
+                <span class="agenda-time">10 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(2) EKS Architecture</span>
+                <span class="agenda-time">12 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(3) Node Groups</span>
+                <span class="agenda-time">12 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(4) IAM & IRSA</span>
+                <span class="agenda-time">10 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(5) Quiz</span>
+                <span class="agenda-time">6 min</span>
+            </div>
+            <div class="agenda-item" style="background: #1c1200;">
+                <a href="/portal.html" style="flex: 1;">🏠 Portal</a>
+            </div>
+        </div>
+
+        <!-- Slide 3: EKS vs Self-Managed -->
+        <div class="slide s-blue">
+            <span class="tag tag-green">AWS</span>
+            <h2>EKS vs Self-Managed Kubernetes</h2>
+            <p><strong>Why Choose Amazon EKS?</strong></p>
+            <div class="benefit-list">
+                <div class="benefit-item">Managed control plane (etcd, API server, scheduler)</div>
+                <div class="benefit-item">Native AWS integrations (IAM, VPC, ALB, RDS)</div>
+                <div class="benefit-item">Automatic updates and patches</div>
+                <div class="benefit-item">99.95% SLA availability guarantee</div>
+                <div class="benefit-item">Multi-AZ redundancy</div>
+                <div class="benefit-item">No master node management</div>
+            </div>
+            <div class="highlight">
+                You pay for EC2 nodes and EKS control plane per cluster-hour (~$0.10/hour)
+            </div>
+        </div>
+
+        <!-- Slide 4: EKS Architecture -->
+        <div class="slide s-green">
+            <span class="tag tag-green">Architecture</span>
+            <h2>EKS Architecture</h2>
+            <p><strong>Control Plane (AWS Managed):</strong></p>
+            <ul>
+                <li>Kubernetes API Server</li>
+                <li>etcd (data store)</li>
+                <li>Controller Manager & Scheduler</li>
+                <li>Runs in AWS-managed subnets</li>
+            </ul>
+            <p style="margin-top: 30px;"><strong>Data Plane (Your Responsibility):</strong></p>
+            <ul>
+                <li>EC2 worker nodes (or Fargate)</li>
+                <li>Custom VPC with public/private subnets</li>
+                <li>Security groups and IAM roles</li>
+                <li>Kubelet, kube-proxy running on nodes</li>
+            </ul>
+            <div class="highlight">
+                Control Plane communicates with nodes over VPC networking
+            </div>
+        </div>
+
+        <!-- Slide 5: Node Groups -->
+        <div class="slide s-purple">
+            <span class="tag tag-green">Compute</span>
+            <h2>Node Groups in EKS</h2>
+            <p><strong>Three Types of Node Groups:</strong></p>
+            <div class="three-col">
+                <div class="card">
+                    <h3>Managed</h3>
+                    <p>AWS manages patching, scaling, updates</p>
+                    <p><strong>Best for:</strong> Most workloads</p>
+                </div>
+                <div class="card">
+                    <h3>Self-Managed</h3>
+                    <p>You control AMI, patches, scaling</p>
+                    <p><strong>Best for:</strong> Custom requirements</p>
+                </div>
+                <div class="card">
+                    <h3>Fargate</h3>
+                    <p>Serverless compute, no nodes</p>
+                    <p><strong>Best for:</strong> Burstable workloads</p>
+                </div>
+            </div>
+            <p style="margin-top: 30px;"><strong>Instance Types:</strong></p>
+            <ul>
+                <li><strong>On-Demand</strong> - Full price, always available</li>
+                <li><strong>Spot</strong> - Up to 90% discount, but interruptible</li>
+            </ul>
+        </div>
+
+        <!-- Slide 6: IAM & IRSA -->
+        <div class="slide s-amber">
+            <span class="tag tag-green">Security</span>
+            <h2>IAM & IRSA</h2>
+            <p><strong>aws-auth ConfigMap:</strong> Maps IAM users/roles to K8s groups</p>
+            <div class="code"><span class="kw">apiVersion</span>: v1
+<span class="kw">kind</span>: ConfigMap
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: aws-auth
+<span class="kw">data</span>:
+  <span class="kw">mapRoles</span>: |
+    - <span class="kw">rolearn</span>: arn:aws:iam::ACCOUNT:role/NodeInstanceRole
+      <span class="kw">username</span>: system:node:{{EC2PrivateDNSName}}</div>
+            <p style="margin-top: 30px;"><strong>IRSA (IAM Roles for Service Accounts):</strong></p>
+            <ul>
+                <li>Pods assume IAM roles via OIDC provider</li>
+                <li>Fine-grained permissions per pod</li>
+                <li>More secure than sharing node credentials</li>
+            </ul>
+            <div class="highlight">
+                Pod can call AWS APIs with temporary credentials via IRSA
+            </div>
+        </div>
+
+        <!-- Slide 7: EKS Managed Add-ons -->
+        <div class="slide s-dark">
+            <span class="tag tag-green">Add-ons</span>
+            <h2>EKS Managed Add-ons</h2>
+            <p><strong>Essential Add-ons for EKS:</strong></p>
+            <div class="two-col">
+                <div class="card">
+                    <h3>CoreDNS</h3>
+                    <p>DNS resolution for service discovery</p>
+                </div>
+                <div class="card">
+                    <h3>kube-proxy</h3>
+                    <p>Network proxy for service routing</p>
+                </div>
+                <div class="card">
+                    <h3>VPC CNI</h3>
+                    <p>Container networking for EC2</p>
+                </div>
+                <div class="card">
+                    <h3>EBS CSI Driver</h3>
+                    <p>Persistent volumes using AWS EBS</p>
+                </div>
+            </div>
+            <p style="margin-top: 30px;"><strong>Optional Add-ons:</strong></p>
+            <ul>
+                <li>AWS Load Balancer Controller (ALB/NLB integration)</li>
+                <li>AWS for Fluent Bit (log aggregation)</li>
+                <li>Amazon CloudWatch Observability</li>
+            </ul>
+        </div>
+
+        <!-- Slide 8: EKS Cluster Setup -->
+        <div class="slide s-blue">
+            <span class="tag tag-green">Operations</span>
+            <h2>Creating an EKS Cluster</h2>
+            <p><strong>Option 1: Using eksctl (easiest):</strong></p>
+            <div class="code"><span class="cmt"># Create cluster with default settings</span>
+eksctl create cluster --name my-cluster --region us-east-1
+
+<span class="cmt"># Create cluster with custom config</span>
+eksctl create cluster -f cluster.yaml</div>
+            <p style="margin-top: 30px;"><strong>Option 2: Using AWS CLI:</strong></p>
+            <div class="code"><span class="cmt"># Create EKS cluster</span>
+aws eks create-cluster --name my-cluster \\
+  --version 1.27 --role-arn arn:aws:iam::ACCOUNT:role/eks-service-role \\
+  --resources-vpc-config subnetIds=subnet-xxx,subnet-yyy
+
+<span class="cmt"># Update kubeconfig</span>
+aws eks update-kubeconfig --name my-cluster --region us-east-1
+
+<span class="cmt"># Verify connection</span>
+kubectl get nodes</div>
+        </div>
+
+        <!-- Slide 9: Quiz -->
+        <div class="slide s-blue">
+            <span class="tag tag-green">Quiz</span>
+            <h2>Knowledge Check</h2>
+            <div class="quiz-container">
+                <div class="quiz-question">
+                    <strong>Q1: What is the main advantage of EKS over self-managed K8s?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        AWS manages the control plane (etcd, API server, scheduler), patches, updates, and provides 99.95% SLA.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q2: What are the three node group types in EKS?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Managed (AWS handles patching/scaling), Self-Managed (you control everything), Fargate (serverless).
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q3: What is IRSA and why use it?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        IAM Roles for Service Accounts - allows pods to assume IAM roles via OIDC, giving fine-grained AWS permissions per pod.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q4: Name 2 essential EKS managed add-ons:</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        CoreDNS (DNS), kube-proxy (networking), VPC CNI (container networking), EBS CSI Driver (volumes).
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q5: What tool makes creating EKS clusters easiest?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        eksctl - a CLI tool by Weaveworks that simplifies EKS cluster creation with YAML configuration.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: End -->
+        <div class="slide s-title end-slide">
+            <h2>EKS: Production Kubernetes on AWS</h2>
+            <p>Managed reliability, native AWS integrations</p>
+            <a href="/portal.html" class="end-link">← Back to Ktech SRE Portal</a>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← Prev</button>
+        <div class="nav-title" id="slideTitle">Amazon EKS</div>
+        <div class="nav-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="slide-count"><span id="currentSlide">1</span>/<span id="totalSlides">10</span></span>
+        </div>
+        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Next →</button>
+        <a href="/portal.html" class="portal-link">🏠 Portal</a>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[n].classList.add('active');
+            document.getElementById('currentSlide').textContent = n + 1;
+            document.getElementById('progressFill').style.width = ((n + 1) / totalSlides * 100) + '%';
+            document.getElementById('prevBtn').disabled = n === 0;
+            document.getElementById('nextBtn').disabled = n === totalSlides - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>

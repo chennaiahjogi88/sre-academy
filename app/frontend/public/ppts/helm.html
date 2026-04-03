@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helm — K8s Package Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        #slides {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            position: relative;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #e2e8f0;
+        }
+
+        .slide p {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .slide ul, .slide ol {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-left: 40px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            margin-bottom: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .tag-k8s {
+            background: #326ce522;
+            color: #6b8ff5;
+        }
+
+        .tag-sre {
+            background: #2e106533;
+            color: #c084fc;
+        }
+
+        .tag-green {
+            background: #15803d33;
+            color: #4ade80;
+        }
+
+        .tag-amber {
+            background: #92400e33;
+            color: #fbbf24;
+        }
+
+        .tag-blue {
+            background: #1e3a8a33;
+            color: #60a5fa;
+        }
+
+        .s-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .s-title h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+        }
+
+        .s-title p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .s-title .subtitle {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .s-dark {
+            background: #0f172a;
+        }
+
+        .s-blue {
+            background: #0f1f3d;
+        }
+
+        .s-green {
+            background: #0b1f14;
+        }
+
+        .s-amber {
+            background: #1c1200;
+        }
+
+        .s-purple {
+            background: #130d2e;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .three-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 30px;
+            border-left: 4px solid #6b8ff5;
+        }
+
+        .card h3 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #60a5fa;
+        }
+
+        .card ul {
+            margin-left: 20px;
+        }
+
+        .card p {
+            margin-bottom: 15px;
+        }
+
+        .code {
+            background: #1e293b;
+            border-left: 4px solid #6b8ff5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .kw { color: #6b8ff5; font-weight: 600; }
+        .prop { color: #c084fc; }
+        .str { color: #4ade80; }
+        .val { color: #fbbf24; }
+        .cmt { color: #475569; }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            height: 70px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            transition: color 0.2s;
+        }
+
+        .nav-btn:hover {
+            color: #93c5fd;
+        }
+
+        .nav-btn:disabled {
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .nav-title {
+            flex: 1;
+            text-align: center;
+            font-size: 1em;
+            color: #cbd5e1;
+            margin: 0 20px;
+        }
+
+        .nav-progress {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .slide-count {
+            font-size: 0.9em;
+            color: #94a3b8;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .portal-link {
+            color: #60a5fa;
+            text-decoration: none;
+            margin-left: 20px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .portal-link:hover {
+            background: #1e293b;
+            color: #93c5fd;
+        }
+
+        .quiz-container {
+            margin-top: 20px;
+        }
+
+        .quiz-question {
+            background: #1e293b;
+            border-left: 4px solid #fbbf24;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .quiz-question strong {
+            color: #fbbf24;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .quiz-answer {
+            background: #0b1f14;
+            border-left: 4px solid #4ade80;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            display: none;
+            color: #86efac;
+        }
+
+        .quiz-answer.visible {
+            display: block;
+        }
+
+        .toggle-btn {
+            background: #6b8ff5;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #667eea;
+        }
+
+        .agenda-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        .agenda-time {
+            background: #6b8ff5;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            margin-left: 15px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #93c5fd;
+        }
+
+        .end-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .end-slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        .end-slide .end-link {
+            margin-top: 40px;
+            padding: 15px 30px;
+            background: #6b8ff5;
+            color: white;
+            border-radius: 4px;
+            font-size: 1.1em;
+            transition: background 0.2s;
+        }
+
+        .end-slide .end-link:hover {
+            background: #667eea;
+        }
+
+        .helm-flow {
+            background: #1e293b;
+            border: 1px solid #6b8ff5;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .helm-flow p {
+            margin: 10px 0;
+            color: #60a5fa;
+        }
+
+        .dir-tree {
+            background: #1e293b;
+            border-left: 4px solid #6b8ff5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+            font-size: 0.9em;
+            text-align: left;
+        }
+
+        .highlight {
+            background: #0b1f14;
+            padding: 15px;
+            border-left: 4px solid #4ade80;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+    <div id="slides">
+        <!-- Slide 1: Title -->
+        <div class="slide s-title">
+            <h1>Helm</h1>
+            <p>The Kubernetes Package Manager</p>
+            <p class="subtitle">Deploy, version, and manage K8s applications</p>
+        </div>
+
+        <!-- Slide 2: Agenda -->
+        <div class="slide s-dark">
+            <span class="tag tag-k8s">class-19</span>
+            <h2>Agenda</h2>
+            <div class="agenda-item">
+                <span>(1) What is Helm?</span>
+                <span class="agenda-time">10 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(2) Chart Structure</span>
+                <span class="agenda-time">12 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(3) Values & Templates</span>
+                <span class="agenda-time">12 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(4) Helm Commands</span>
+                <span class="agenda-time">10 min</span>
+            </div>
+            <div class="agenda-item">
+                <span>(5) Quiz</span>
+                <span class="agenda-time">6 min</span>
+            </div>
+            <div class="agenda-item" style="background: #1c1200;">
+                <a href="/portal.html" style="flex: 1;">🏠 Portal</a>
+            </div>
+        </div>
+
+        <!-- Slide 3: What is Helm -->
+        <div class="slide s-blue">
+            <span class="tag tag-k8s">Kubernetes</span>
+            <h2>What is Helm?</h2>
+            <p><strong>Helm is the package manager for Kubernetes</strong> — like apt, npm, or brew.</p>
+            <ul>
+                <li><strong>Versioning</strong> - Track versions of applications</li>
+                <li><strong>Templating</strong> - Generate YAML from templates + values</li>
+                <li><strong>Dependency Management</strong> - Define and manage chart dependencies</li>
+                <li><strong>Rollbacks</strong> - Easily revert to previous versions</li>
+                <li><strong>Repositories</strong> - Share and discover charts</li>
+            </ul>
+            <p style="margin-top: 30px;"><strong>Problem Helm Solves:</strong></p>
+            <p>Instead of managing hundreds of YAML files, you manage reusable, configurable templates.</p>
+            <div class="highlight">
+                ⎈ One chart = One application that can be deployed to many environments
+            </div>
+        </div>
+
+        <!-- Slide 4: Helm Architecture -->
+        <div class="slide s-purple">
+            <span class="tag tag-k8s">Architecture</span>
+            <h2>Helm Architecture</h2>
+            <p><strong>Three Core Concepts:</strong></p>
+            <div class="three-col">
+                <div class="card">
+                    <h3>Chart</h3>
+                    <p>A Helm package</p>
+                    <p>Templated YAML files + metadata</p>
+                </div>
+                <div class="card">
+                    <h3>Release</h3>
+                    <p>Instance of a chart</p>
+                    <p>Running deployment in K8s</p>
+                </div>
+                <div class="card">
+                    <h3>Repository</h3>
+                    <p>Collection of charts</p>
+                    <p>Public (Helm Hub) or private</p>
+                </div>
+            </div>
+            <div class="helm-flow">
+                <p>Helm CLI → Chart Repo → values.yaml → templates/ → YAML → kubectl → K8s cluster</p>
+            </div>
+        </div>
+
+        <!-- Slide 5: Chart Structure -->
+        <div class="slide s-green">
+            <span class="tag tag-k8s">Helm</span>
+            <h2>Chart Structure</h2>
+            <p><strong>A Helm chart is a directory with:</strong></p>
+            <div class="dir-tree">
+my-chart/
+├── Chart.yaml          (chart metadata)
+├── values.yaml         (default values)
+├── values-prod.yaml    (production values)
+├── templates/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── configmap.yaml
+│   ├── ingress.yaml
+│   ├── _helpers.tpl
+│   └── NOTES.txt
+├── charts/             (dependencies)
+└── README.md
+            </div>
+            <ul>
+                <li><strong>Chart.yaml</strong> - Version, name, description</li>
+                <li><strong>values.yaml</strong> - Default configuration values</li>
+                <li><strong>templates/</strong> - YAML templates with {{ .Values.xxx }}</li>
+                <li><strong>_helpers.tpl</strong> - Template functions and macros</li>
+            </ul>
+        </div>
+
+        <!-- Slide 6: Values & Templates -->
+        <div class="slide s-blue">
+            <span class="tag tag-k8s">Templates</span>
+            <h2>Values & Templating</h2>
+            <p><strong>values.yaml (defaults):</strong></p>
+            <div class="code"><span class="prop">replicaCount</span>: <span class="val">3</span>
+<span class="prop">image</span>:
+  <span class="prop">repository</span>: <span class="str">nginx</span>
+  <span class="prop">tag</span>: <span class="str">1.21.0</span>
+<span class="prop">service</span>:
+  <span class="prop">type</span>: <span class="str">ClusterIP</span>
+  <span class="prop">port</span>: <span class="val">80</span></div>
+            <p><strong>Template file (templates/deployment.yaml):</strong></p>
+            <div class="code"><span class="kw">apiVersion</span>: apps/v1
+<span class="kw">kind</span>: Deployment
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: {{ .Release.Name }}
+<span class="kw">spec</span>:
+  <span class="kw">replicas</span>: {{ .Values.replicaCount }}
+  <span class="kw">template</span>:
+    <span class="kw">spec</span>:
+      <span class="kw">containers</span>:
+      - <span class="kw">image</span>: {{ .Values.image.repository }}:{{ .Values.image.tag }}</div>
+        </div>
+
+        <!-- Slide 7: Core Helm Commands -->
+        <div class="slide s-amber">
+            <span class="tag tag-k8s">Commands</span>
+            <h2>Core Helm Commands</h2>
+            <div class="code"><span class="cmt"># Add a chart repository</span>
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+<span class="cmt"># Install a chart (create release)</span>
+helm install my-release bitnami/nginx
+
+<span class="cmt"># Upgrade a release</span>
+helm upgrade my-release bitnami/nginx --values custom-values.yaml
+
+<span class="cmt"># Rollback to previous version</span>
+helm rollback my-release 1
+
+<span class="cmt"># List all releases</span>
+helm list
+
+<span class="cmt"># Show release values</span>
+helm get values my-release
+
+<span class="cmt"># Uninstall release</span>
+helm uninstall my-release
+
+<span class="cmt"># Test chart (dry run)</span>
+helm template my-release ./my-chart --debug</div>
+        </div>
+
+        <!-- Slide 8: Best Practices -->
+        <div class="slide s-dark">
+            <span class="tag tag-k8s">Best Practices</span>
+            <h2>Helm Best Practices</h2>
+            <ul>
+                <li><strong>--dry-run</strong> - Always test before applying: <code>helm install --dry-run --debug</code></li>
+                <li><strong>Pin Chart Versions</strong> - Don't use latest, lock to specific versions</li>
+                <li><strong>Use Helmfile</strong> - Manage multiple charts with one file</li>
+                <li><strong>Lint Charts</strong> - Check for errors: <code>helm lint ./my-chart</code></li>
+                <li><strong>Values Overrides</strong> - Use <code>-f</code> and <code>--set</code> for different environments</li>
+                <li><strong>Semantic Versioning</strong> - Follow semver for chart versions</li>
+                <li><strong>Document Values</strong> - Explain what each value does in values.yaml</li>
+                <li><strong>Test Installs</strong> - Create test environments before production</li>
+            </ul>
+        </div>
+
+        <!-- Slide 9: Quiz -->
+        <div class="slide s-blue">
+            <span class="tag tag-k8s">Quiz</span>
+            <h2>Knowledge Check</h2>
+            <div class="quiz-container">
+                <div class="quiz-question">
+                    <strong>Q1: What are the three core concepts in Helm?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Chart (package), Release (running instance), Repository (chart collection).
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q2: What does the values.yaml file do?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Provides default configuration values that are injected into templates using {{ .Values.xxx }} syntax.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q3: How do you test a Helm chart before installing?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        Use <code>helm install --dry-run --debug</code> or <code>helm template</code> to see the generated YAML.
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q4: What command rolls back a release to a previous version?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        <code>helm rollback &lt;release-name&gt; &lt;revision-number&gt;</code>
+                    </div>
+                </div>
+                <div class="quiz-question">
+                    <strong>Q5: When should you use Helmfile?</strong>
+                    <button class="toggle-btn" onclick="toggleAnswer(this)">Show Answer</button>
+                    <div class="quiz-answer">
+                        When you need to manage multiple Helm charts and releases together as a single unit.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: End -->
+        <div class="slide s-title end-slide">
+            <h2>Helm: Package K8s Like a Pro</h2>
+            <p>⎈ Use Helm for everything in K8s</p>
+            <a href="/portal.html" class="end-link">← Back to Ktech SRE Portal</a>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← Prev</button>
+        <div class="nav-title" id="slideTitle">Helm — K8s Package Manager</div>
+        <div class="nav-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="slide-count"><span id="currentSlide">1</span>/<span id="totalSlides">10</span></span>
+        </div>
+        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Next →</button>
+        <a href="/portal.html" class="portal-link">🏠 Portal</a>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[n].classList.add('active');
+            document.getElementById('currentSlide').textContent = n + 1;
+            document.getElementById('progressFill').style.width = ((n + 1) / totalSlides * 100) + '%';
+            document.getElementById('prevBtn').disabled = n === 0;
+            document.getElementById('nextBtn').disabled = n === totalSlides - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide Answer' : 'Show Answer';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>

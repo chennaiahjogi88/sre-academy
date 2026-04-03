@@ -1,0 +1,121 @@
+version: '3.9'
+
+services:
+  # ── Frontend (Nginx) ──────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sre_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - sre_net
+    restart: unless-stopped
+
+  # ── Backend (Node.js) ─────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sre_backend
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-ktech_sre_super_secret_change_in_prod}
+      JWT_EXPIRES_IN: 24h
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: sre_platform
+      PGUSER: sre_user
+      PGPASSWORD: ${POSTGRES_PASSWORD:-sre_password_2024}
+      UPLOAD_DIR: /app/uploads
+      MAX_FILE_SIZE_MB: 500
+    volumes:
+      - recordings_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sre_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── PostgreSQL ────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: sre_postgres
+    environment:
+      POSTGRES_DB: sre_platform
+      POSTGRES_USER: sre_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sre_password_2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - sre_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sre_user -d sre_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Prometheus ────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: sre_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - sre_net
+    restart: unless-stopped
+
+  # ── Grafana ───────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: sre_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-Grafana@123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_FEATURE_TOGGLES_ENABLE: "publicDashboards"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - sre_net
+    restart: unless-stopped
+
+networks:
+  sre_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  recordings_data:
+  prometheus_data:
+  grafana_data:

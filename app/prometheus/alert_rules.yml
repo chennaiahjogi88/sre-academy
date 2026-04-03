@@ -1,0 +1,38 @@
+groups:
+  - name: sre_platform
+    rules:
+      - alert: HighLoginFailureRate
+        expr: rate(login_attempts_total{result="failure"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High login failure rate detected"
+          description: "More than 0.5 failed logins/sec for 2+ minutes"
+
+      - alert: BackendDown
+        expr: up{job="sre_backend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "SRE Platform backend is down"
+          description: "The backend service has been unreachable for 30 seconds"
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency is above 1 second"
+
+      - alert: NoActiveUsers
+        expr: active_websocket_users == 0
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "No students currently active"
+          description: "No WebSocket connections for 30+ minutes"

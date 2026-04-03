@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal — Ktech SRE Training</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #060d1a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(6, 13, 26, 0.98) 0%, rgba(6, 13, 26, 0.95) 100%);
+            border-bottom: 1px solid #1e293b;
+            backdrop-filter: blur(10px);
+            padding: 0 40px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: #38bdf8;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-logo-icon {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+
+        .nav-logo-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+
+        .nav-logo-text .brand-main {
+            font-size: 18px;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 1px;
+        }
+
+        .nav-logo-text .brand-sub {
+            font-size: 9px;
+            font-weight: 600;
+            color: #64748b;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .nav-center {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex: 1;
+            margin-left: 60px;
+        }
+
+        .active-users {
+            font-size: 13px;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-badge {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 12px;
+            background: #0a1628;
+            border-radius: 6px;
+            border: 1px solid #1e293b;
+            font-size: 13px;
+        }
+
+        .role-badge {
+            background: #38bdf8;
+            color: #0a1628;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .admin-badge {
+            background: #f97316;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            padding: 8px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            color: #cbd5e1;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: #1e293b;
+            color: #38bdf8;
+        }
+
+        .btn-logout {
+            padding: 6px 14px;
+            background: #f87171;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #ef4444;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 40px;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1f35 100%);
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #e2e8f0;
+        }
+
+        .hero .subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* Announcements Banner */
+        .announcements-banner {
+            background: rgba(56, 189, 248, 0.05);
+            border-bottom: 1px solid #1e293b;
+            padding: 16px 40px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        .announcement-content {
+            flex: 1;
+        }
+
+        .announcement-title {
+            font-weight: 700;
+            color: #38bdf8;
+            font-size: 13px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .announcement-text {
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        .close-announcement {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .close-announcement:hover {
+            color: #38bdf8;
+        }
+
+        .announcements-banner.hidden {
+            display: none;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            padding: 40px;
+            background: #0a1628;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .progress-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        .section {
+            margin-bottom: 80px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #e2e8f0;
+        }
+
+        .section-title .accent {
+            color: #38bdf8;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .class-card {
+            background: #0a1628;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .class-card:hover {
+            border-color: #38bdf8;
+            box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .class-card.completed {
+            border-color: #4ade80;
+            background: linear-gradient(135deg, #0a1628 0%, rgba(74, 222, 128, 0.05) 100%);
+        }
+
+        .class-num {
+            font-size: 20px;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+
+        .class-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .class-topics {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            flex-grow: 1;
+        }
+
+        .class-footer {
+            border-top: 1px solid #1e293b;
+            padding-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .progress-indicator {
+            font-size: 11px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-dot {
+            width: 4px;
+            height: 4px;
+            background: #38bdf8;
+            border-radius: 50%;
+        }
+
+        .completion-badge {
+            background: #4ade80;
+            color: #0a1628;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Modules Grid */
+        .module-row {
+            margin-bottom: 60px;
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        /* Loading & Empty States */
+        .loading {
+            text-align: center;
+            padding: 60px 40px;
+            color: #94a3b8;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #1e293b;
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 1024px) {
+            nav {
+                padding: 0 24px;
+            }
+
+            .nav-center {
+                margin-left: 30px;
+                gap: 20px;
+            }
+
+            .container {
+                padding: 40px 24px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                height: auto;
+                padding: 12px 16px;
+                gap: 12px;
+            }
+
+            .nav-center {
+                width: 100%;
+                margin-left: 0;
+                gap: 16px;
+            }
+
+            .nav-right {
+                width: 100%;
+                gap: 12px;
+            }
+
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 30px 16px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <a href="/portal.html" class="nav-brand">
+            <svg class="nav-logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="18,2 32,10 32,26 18,34 4,26 4,10" fill="#0a1628" stroke="#38bdf8" stroke-width="1.5"/>
+                <line x1="18" y1="10" x2="18" y2="26" stroke="#1e293b" stroke-width="1"/>
+                <line x1="10" y1="18" x2="26" y2="18" stroke="#1e293b" stroke-width="1"/>
+                <line x1="13" y1="11" x2="13" y2="25" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+                <line x1="13" y1="18" x2="23" y2="11" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+                <line x1="13" y1="18" x2="23" y2="25" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="28" cy="10" r="2.5" fill="#38bdf8" opacity="0.6"/>
+            </svg>
+            <span class="nav-logo-text">
+                <span class="brand-main">Ktech</span>
+                <span class="brand-sub">SRE Academy</span>
+            </span>
+        </a>
+        <div class="nav-center">
+            <div class="active-users">
+                <div class="online-badge"></div>
+                <span id="activeUsers">Loading...</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="user-info">
+                <span id="userName">User</span>
+                <span class="role-badge" id="userRole">Student</span>
+            </div>
+            <div class="nav-links">
+                <a id="recordingsLink" href="/recordings.html">Recordings</a>
+                <a id="adminLink" href="/admin.html" style="display: none;">Admin</a>
+                <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Announcements Banner -->
+    <div class="announcements-banner hidden" id="announcementsBanner">
+        <div class="announcement-content">
+            <div class="announcement-title" id="announcementTitle">Announcement</div>
+            <div class="announcement-text" id="announcementText">Loading...</div>
+        </div>
+        <button class="close-announcement" onclick="document.getElementById('announcementsBanner').classList.add('hidden')">×</button>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="progress-section">
+        <div class="progress-label">Overall Progress</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text" id="progressText">Loading...</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <h1>Welcome back, <span id="heroName">Student</span>!</h1>
+        <p class="subtitle">Jan 2026 Batch — Continue your SRE journey</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading classes...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/ws.js"></script>
+    <script>
+        // Require authentication
+        if (!Auth.requireAuth()) {
+            throw new Error('Redirecting to login...');
+        }
+
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.name || 'User';
+        document.getElementById('heroName').textContent = user.name.split(' ')[0] || 'Student';
+        document.getElementById('userRole').textContent = user.role.toUpperCase();
+
+        // Show admin link if user is admin
+        if (Auth.isAdmin()) {
+            document.getElementById('adminLink').style.display = 'block';
+            document.getElementById('userRole').classList.add('admin-badge');
+        }
+
+        // Initialize WebSocket
+        WS.init();
+
+        // Listen for active users
+        WS.on('active_users', (data) => {
+            document.getElementById('activeUsers').textContent = `${data.count} online`;
+        });
+
+        // Listen for announcements
+        WS.on('announcement', (data) => {
+            const banner = document.getElementById('announcementsBanner');
+            document.getElementById('announcementTitle').textContent = data.title;
+            document.getElementById('announcementText').textContent = data.message;
+            banner.classList.remove('hidden');
+        });
+
+        // Fetch classes and progress
+        async function loadContent() {
+            try {
+                const [classesRes, progressRes] = await Promise.all([
+                    Auth.fetch('/api/classes'),
+                    Auth.fetch('/api/classes/progress/all')
+                ]);
+
+                if (!classesRes || !progressRes) {
+                    throw new Error('Failed to load data');
+                }
+
+                const classes = await classesRes.json();
+                const progress = await progressRes.json();
+
+                // Backend returns { classes: [...], isAuthenticated, role }
+                const classList = classes.classes || [];
+                // Backend returns progress as a flat object { class_id: row, ... }
+                const progressMap = progress || {};
+
+                // Group classes by module
+                const modules = {};
+                classList.forEach(cls => {
+                    if (!modules[cls.module]) {
+                        modules[cls.module] = [];
+                    }
+                    modules[cls.module].push(cls);
+                });
+
+                // Calculate total progress
+                const totalClasses = classList.length;
+                const completedClasses = Object.keys(progressMap).filter(id => progressMap[id].completed).length;
+                const progressPercent = totalClasses > 0 ? Math.round((completedClasses / totalClasses) * 100) : 0;
+
+                document.getElementById('progressFill').style.width = progressPercent + '%';
+                document.getElementById('progressText').textContent = `${completedClasses} of ${totalClasses} classes completed`;
+
+                // Render content
+                const contentHtml = Object.entries(modules)
+                    .map(([moduleName, moduleClasses]) => {
+                        const cardsHtml = moduleClasses
+                            .map(cls => {
+                                const p = progressMap[cls.id];
+                                const isCompleted = p && p.completed;
+                                // current_slide / total_slides from progress row
+                                const currentSlide = p ? (p.current_slide || 0) : 0;
+                                const totalSlides = p ? (p.total_slides || 0) : 0;
+                                const slidePercent = totalSlides > 0
+                                    ? Math.round((currentSlide / totalSlides) * 100)
+                                    : 0;
+                                // Derive display number from id (class-1 → 01)
+                                const classNum = cls.id.replace('class-', '').padStart(2, '0');
+
+                                return `
+                                    <a href="/ppts/${cls.file}" class="class-card ${isCompleted ? 'completed' : ''}">
+                                        <div class="class-num">${classNum}</div>
+                                        <div class="class-title">${cls.title}</div>
+                                        <div class="class-footer">
+                                            <div class="progress-indicator">
+                                                <div class="progress-dot"></div>
+                                                <span>${slidePercent > 0 ? slidePercent + '%' : 'Not started'}</span>
+                                            </div>
+                                            ${isCompleted ? '<div class="completion-badge">✓ Done</div>' : ''}
+                                        </div>
+                                    </a>
+                                `;
+                            })
+                            .join('');
+
+                        return `
+                            <div class="module-row">
+                                <div class="module-title">${moduleName}</div>
+                                <div class="cards-grid">${cardsHtml}</div>
+                            </div>
+                        `;
+                    })
+                    .join('');
+
+                document.getElementById('content').innerHTML = contentHtml;
+
+                // Track slide progress when PPT is viewed
+                document.querySelectorAll('.class-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        // Progress tracking will be handled by the PPT viewer
+                        // when it calls WS.sendProgress()
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error loading content:', error);
+                document.getElementById('content').innerHTML = `
+                    <div class="empty-state">
+                        <p>Failed to load classes. Please refresh the page.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Fetch announcements
+        async function loadAnnouncements() {
+            try {
+                const res = await Auth.fetch('/api/announcements');
+                if (!res) return;
+
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    const latest = data[0];
+                    document.getElementById('announcementTitle').textContent = latest.title;
+                    document.getElementById('announcementText').textContent = latest.message;
+                    document.getElementById('announcementsBanner').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+            }
+        }
+
+        // Load on mount
+        loadContent();
+        loadAnnouncements();
+    </script>
+</body>
+</html>

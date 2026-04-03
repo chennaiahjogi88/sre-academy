@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sre-backend
+  namespace: sre-platform
+  labels:
+    app: sre-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sre-backend
+  template:
+    metadata:
+      labels:
+        app: sre-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: backend
+          image: sre-backend:latest
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: sre-platform-config
+            - secretRef:
+                name: sre-platform-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: sre-platform
+spec:
+  selector:
+    app: sre-backend
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+  namespace: sre-platform
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 20Gi

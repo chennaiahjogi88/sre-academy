@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: sre-platform
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        env: 'sre-platform'
+
+    rule_files:
+      - 'alert_rules.yml'
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: []
+
+    scrape_configs:
+      - job_name: 'sre_backend'
+        static_configs:
+          - targets: ['backend-service:3001']
+        metrics_path: '/metrics'
+        scrape_interval: 10s
+
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+  alert_rules.yml: |
+    groups:
+      - name: sre_platform
+        rules:
+          - alert: HighLoginFailureRate
+            expr: rate(login_attempts_total{result="failure"}[5m]) > 0.5
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High login failure rate detected"
+              description: "More than 0.5 failed logins/sec for 2+ minutes"
+
+          - alert: BackendDown
+            expr: up{job="sre_backend"} == 0
+            for: 30s
+            labels:
+              severity: critical
+            annotations:
+              summary: "SRE Platform backend is down"
+              description: "The backend service has been unreachable for 30 seconds"
+
+          - alert: HighAPILatency
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High API latency"
+              description: "95th percentile latency is above 1 second"
+
+          - alert: NoActiveUsers
+            expr: active_websocket_users == 0
+            for: 30m
+            labels:
+              severity: info
+            annotations:
+              summary: "No students currently active"
+              description: "No WebSocket connections for 30+ minutes"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: sre-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.47.0
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--web.enable-lifecycle'
+            - '--storage.tsdb.retention.time=30d'
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: data
+              mountPath: /prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: sre-platform
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090

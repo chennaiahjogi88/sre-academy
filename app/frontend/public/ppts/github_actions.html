@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #e5e7eb; overflow: hidden; }
+        .slideshow { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        .nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid #334155; gap: 12px; }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav button { background: none; border: 1px solid #475569; color: #cbd5e1; padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; transition: all 0.3s; }
+        .nav button:hover { background: #1e293b; border-color: #64748b; }
+        .nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nav-title { font-weight: 600; color: #e5e7eb; min-width: 200px; text-align: center; }
+        .progress-bar { flex: 1; height: 2px; background: #1e293b; margin: 0 16px; border-radius: 1px; overflow: hidden; max-width: 400px; }
+        .progress { height: 100%; background: linear-gradient(90deg, #58a6ff, #79c0ff); width: 0%; transition: width 0.3s; }
+        .slide-counter { color: #94a3b8; font-size: 14px; min-width: 40px; text-align: right; }
+        .nav a { color: #58a6ff; text-decoration: none; padding: 8px 12px; border: 1px solid #475569; border-radius: 6px; transition: all 0.3s; }
+        .nav a:hover { background: #1e293b; border-color: #58a6ff; }
+        .slides { flex: 1; overflow: hidden; position: relative; }
+        .slide { position: absolute; width: 100%; height: 100%; display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .slide.active { display: flex; opacity: 1; }
+        .s-title { background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d2148 100%); }
+        .s-dark { background: #0f172a; }
+        .s-blue { background: #0f1f3d; }
+        .s-green { background: #0b1f14; }
+        .s-amber { background: #1c1200; }
+        .s-purple { background: #130d2e; }
+        .slide { padding: 48px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .slide h1 { font-size: 3.5rem; margin-bottom: 16px; text-align: center; background: linear-gradient(135deg, #58a6ff, #79c0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .slide h2 { font-size: 2.5rem; margin-bottom: 32px; text-align: center; color: #58a6ff; }
+        .tag-gh { display: inline-block; background: #23272e; color: #58a6ff; border: 1px solid #388bfd44; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+        .slide-content { max-width: 1000px; width: 100%; }
+        .agenda { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 1000px; }
+        .ag-item { background: rgba(30, 41, 59, 0.6); border-left: 4px solid #58a6ff; padding: 16px; border-radius: 8px; line-height: 1.8; }
+        .ag-item strong { color: #58a6ff; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+        .card { background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 24px; }
+        .card h3 { color: #58a6ff; margin-bottom: 12px; font-size: 1.2rem; }
+        .card p { line-height: 1.6; color: #cbd5e1; margin-bottom: 8px; font-size: 14px; }
+        .code { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 16px 0; }
+        .code .kw { color: #6b8ff5; }
+        .code .prop { color: #c084fc; }
+        .code .str { color: #4ade80; }
+        .code .val { color: #fbbf24; }
+        .code .cmt { color: #475569; }
+        .svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px; }
+        .svc { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; padding: 16px; }
+        .svc strong { color: #58a6ff; display: block; margin-bottom: 8px; }
+        .svc p { font-size: 13px; line-height: 1.5; color: #cbd5e1; }
+        .quiz-box { background: rgba(30, 41, 59, 0.8); border: 2px solid #58a6ff; border-radius: 8px; padding: 24px; margin-top: 16px; }
+        .q-item { background: rgba(15, 23, 42, 0.6); border-left: 3px solid #58a6ff; padding: 16px; margin: 16px 0; border-radius: 4px; }
+        .q-item p { margin-bottom: 12px; color: #e5e7eb; }
+        .q-item button { background: #58a6ff; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s; font-weight: 600; }
+        .q-item button:hover { background: #79c0ff; }
+        .answer { display: none; background: rgba(88, 166, 255, 0.1); border-left: 3px solid #4ade80; padding: 12px; margin-top: 12px; border-radius: 4px; color: #4ade80; font-size: 13px; }
+        .list-item { margin: 12px 0; padding-left: 24px; position: relative; line-height: 1.6; }
+        .list-item::before { content: "›"; position: absolute; left: 0; color: #58a6ff; }
+        .portal-link { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #58a6ff; color: #000; text-decoration: none; border-radius: 6px; font-weight: 600; transition: all 0.3s; }
+        .portal-link:hover { background: #79c0ff; }
+        .end-slide-content { text-align: center; }
+        .end-slide-content h2 { font-size: 2rem; margin-bottom: 32px; }
+        .end-slide-content a { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #58a6ff; color: #000; text-decoration: none; border-radius: 6px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="slideshow">
+        <div class="nav">
+            <div class="nav-left">
+                <button id="prevBtn" onclick="changeSlide(-1)">← Prev</button>
+            </div>
+            <div class="nav-title" id="navTitle">GitHub Actions — CI/CD Pipelines</div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <div class="slide-counter">
+                <span id="slideNum">1</span>/<span id="totalSlides">11</span>
+            </div>
+            <div class="nav-right">
+                <button id="nextBtn" onclick="changeSlide(1)">Next →</button>
+                <a href="/portal.html">🏠 Portal</a>
+                <button onclick="closeSlideshow()">✕</button>
+            </div>
+        </div>
+        <div class="slides">
+            <!-- Slide 1: Title -->
+            <div class="slide s-title active">
+                <div class="tag-gh">GitHub Actions Module</div>
+                <h1>GitHub Actions</h1>
+                <p style="font-size: 1.5rem; color: #cbd5e1; margin-top: 16px;">CI/CD Pipelines</p>
+                <p style="color: #94a3b8; margin-top: 32px; font-size: 1.1rem;">class-33 | CI/CD & GitOps</p>
+            </div>
+
+            <!-- Slide 2: Agenda -->
+            <div class="slide s-dark">
+                <h2>Course Agenda</h2>
+                <div class="agenda">
+                    <div class="ag-item"><strong>Concepts</strong> Events, triggers, workflows, runners</div>
+                    <div class="ag-item"><strong>Workflow Syntax</strong> YAML structure, events</div>
+                    <div class="ag-item"><strong>Jobs & Steps</strong> Actions, shell commands</div>
+                    <div class="ag-item"><strong>Triggers & Events</strong> Push, PR, schedule, manual</div>
+                    <div class="ag-item"><strong>Secrets & Env</strong> Environment variables, protection</div>
+                    <div class="ag-item"><strong>Matrix & Docker</strong> Multi-version testing, image builds</div>
+                </div>
+                <a href="/portal.html" class="portal-link">🏠 Back to Portal</a>
+            </div>
+
+            <!-- Slide 3: GitHub Actions Concepts -->
+            <div class="slide s-blue">
+                <h2>GitHub Actions Concepts</h2>
+                <div class="slide-content">
+                    <div class="list-item"><strong>Event:</strong> Trigger (push, PR open, schedule)</div>
+                    <div class="list-item"><strong>Workflow:</strong> YAML file in .github/workflows/</div>
+                    <div class="list-item"><strong>Job:</strong> Set of steps running on a runner</div>
+                    <div class="list-item"><strong>Step:</strong> Single task (run command or use action)</div>
+                    <div class="list-item"><strong>Runner:</strong> Machine executing the workflow (GitHub-hosted or self-hosted)</div>
+                    <div class="list-item"><strong>Action:</strong> Reusable unit of code (actions/checkout@v4)</div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Workflow Syntax -->
+            <div class="slide s-purple">
+                <h2>Workflow Syntax</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">name:</span> <span class="str">CI</span>
+
+<span class="kw">on:</span>
+  <span class="prop">push:</span>
+    <span class="prop">branches:</span> [<span class="str">main</span>, <span class="str">develop</span>]
+  <span class="prop">pull_request:</span>
+    <span class="prop">branches:</span> [<span class="str">main</span>]
+  <span class="prop">schedule:</span>
+    - <span class="prop">cron:</span> <span class="str">'0 2 * * *'</span>  <span class="cmt"># Daily at 2am UTC</span>
+  <span class="prop">workflow_dispatch:</span>          <span class="cmt"># Manual trigger</span>
+
+<span class="kw">jobs:</span>
+  <span class="prop">test:</span>
+    <span class="prop">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="prop">steps:</span>
+      - <span class="prop">uses:</span> <span class="str">actions/checkout@v4</span>
+      - <span class="prop">run:</span> <span class="str">npm install</span>
+      - <span class="prop">run:</span> <span class="str">npm test</span></div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Jobs & Steps -->
+            <div class="slide s-green">
+                <h2>Jobs & Steps</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">jobs:</span>
+  <span class="prop">build:</span>
+    <span class="prop">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="prop">steps:</span>
+      - <span class="prop">uses:</span> <span class="str">actions/checkout@v4</span>
+      - <span class="prop">uses:</span> <span class="str">actions/setup-node@v4</span>
+        <span class="prop">with:</span>
+          <span class="prop">node-version:</span> <span class="str">18</span>
+      - <span class="prop">run:</span> <span class="str">npm run build</span>
+
+  <span class="prop">deploy:</span>
+    <span class="prop">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="prop">needs:</span> <span class="str">build</span>              <span class="cmt"># Wait for build job</span>
+    <span class="prop">steps:</span>
+      - <span class="prop">run:</span> <span class="str">echo "Deploying..."</span></div>
+                    <p style="margin-top: 16px; color: #cbd5e1;"><strong>Sequential execution:</strong> Use <span style="color: #c084fc;">needs</span> to create dependencies</p>
+                </div>
+            </div>
+
+            <!-- Slide 6: Triggers & Events -->
+            <div class="slide s-dark">
+                <h2>Triggers & Events</h2>
+                <div class="slide-content">
+                    <div class="svc-grid">
+                        <div class="svc">
+                            <strong>push (with filters)</strong>
+                            <p>Trigger on commit to branches/paths: branches: [main], paths: ['src/**']</p>
+                        </div>
+                        <div class="svc">
+                            <strong>pull_request</strong>
+                            <p>Trigger on PR open/update: types: [opened, synchronize]</p>
+                        </div>
+                        <div class="svc">
+                            <strong>schedule (Cron)</strong>
+                            <p>Periodic runs: cron: '0 2 * * *' (2am UTC daily)</p>
+                        </div>
+                        <div class="svc">
+                            <strong>workflow_dispatch</strong>
+                            <p>Manual trigger with optional input parameters</p>
+                        </div>
+                        <div class="svc">
+                            <strong>release</strong>
+                            <p>Trigger on GitHub release creation</p>
+                        </div>
+                        <div class="svc">
+                            <strong>repository_dispatch</strong>
+                            <p>External API trigger via webhook</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: Secrets & Environment Variables -->
+            <div class="slide s-amber">
+                <h2>Secrets & Environment Variables</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">jobs:</span>
+  <span class="prop">deploy:</span>
+    <span class="prop">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="prop">environment:</span> <span class="str">production</span>  <span class="cmt"># Protection rule</span>
+    <span class="prop">env:</span>
+      <span class="prop">LOG_LEVEL:</span> <span class="str">debug</span>
+    <span class="prop">steps:</span>
+      - <span class="prop">run:</span> <span class="str">echo $LOG_LEVEL</span>
+      - <span class="prop">run:</span> <span class="str">curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"</span>
+
+      - <span class="prop">run:</span> <span class="str">echo "VERSION=1.0" >> $GITHUB_ENV</span>
+      - <span class="prop">run:</span> <span class="str">echo "${{ env.VERSION }}"</span></div>
+                    <p style="margin-top: 16px; color: #cbd5e1;"><strong>Environment protection rules:</strong> Require approvals for prod deployments</p>
+                </div>
+            </div>
+
+            <!-- Slide 8: Matrix Builds -->
+            <div class="slide s-blue">
+                <h2>Matrix Builds</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="kw">jobs:</span>
+  <span class="prop">test:</span>
+    <span class="prop">runs-on:</span> <span class="str">${{ matrix.os }}</span>
+    <span class="prop">strategy:</span>
+      <span class="prop">matrix:</span>
+        <span class="prop">node-version:</span> [<span class="str">16</span>, <span class="str">18</span>, <span class="str">20</span>]
+        <span class="prop">os:</span> [<span class="str">ubuntu-latest</span>, <span class="str">windows-latest</span>]
+      <span class="prop">fail-fast:</span> <span class="val">false</span>  <span class="cmt"># Continue other versions</span>
+    <span class="prop">steps:</span>
+      - <span class="prop">uses:</span> <span class="str">actions/setup-node@v4</span>
+        <span class="prop">with:</span>
+          <span class="prop">node-version:</span> <span class="str">${{ matrix.node-version }}</span>
+      - <span class="prop">run:</span> <span class="str">npm test</span></div>
+                    <p style="margin-top: 16px; color: #cbd5e1;">Tests all combinations: 3 Node versions × 2 OSes = 6 parallel jobs</p>
+                </div>
+            </div>
+
+            <!-- Slide 9: Docker Build & Push -->
+            <div class="slide s-purple">
+                <h2>Docker Build & Push</h2>
+                <div class="slide-content">
+                    <div class="code"><span class="prop">- uses:</span> <span class="str">docker/build-push-action@v5</span>
+  <span class="prop">with:</span>
+    <span class="prop">context:</span> <span class="str">.</span>
+    <span class="prop">push:</span> <span class="val">true</span>
+    <span class="prop">registry:</span> <span class="str">public.ecr.aws</span>
+    <span class="prop">username:</span> <span class="str">${{ secrets.AWS_ACCESS_KEY_ID }}</span>
+    <span class="prop">password:</span> <span class="str">${{ secrets.AWS_SECRET_ACCESS_KEY }}</span>
+    <span class="prop">tags:</span> <span class="str">${{ env.REGISTRY }}/${{ github.repository }}:latest</span>
+    <span class="prop">cache-from:</span> <span class="str">type=gha</span>
+    <span class="prop">cache-to:</span> <span class="str">type=gha,mode=max</span></div>
+                    <p style="margin-top: 16px; color: #cbd5e1;"><strong>Also:</strong> Use reusable workflows with <span style="color: #c084fc;">uses: ./path/workflow.yml</span></p>
+                </div>
+            </div>
+
+            <!-- Slide 10: Quiz -->
+            <div class="slide s-green">
+                <h2>Knowledge Check</h2>
+                <div class="slide-content" style="max-width: 900px;">
+                    <div class="quiz-box">
+                        <div class="q-item">
+                            <p><strong>Q1:</strong> What is the purpose of the "needs" keyword in jobs?</p>
+                            <button onclick="toggleAnswer(0)">Show Answer</button>
+                            <div class="answer" id="answer0">It creates job dependencies — the specified job must complete successfully before the current job runs.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q2:</strong> How do you trigger a workflow manually?</p>
+                            <button onclick="toggleAnswer(1)">Show Answer</button>
+                            <div class="answer" id="answer1">Use <span class="code" style="margin: 0; display: inline;">workflow_dispatch:</span> in the <span class="code" style="margin: 0; display: inline;">on:</span> section to enable manual trigger.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q3:</strong> What is matrix in GitHub Actions?</p>
+                            <button onclick="toggleAnswer(2)">Show Answer</button>
+                            <div class="answer" id="answer2">Matrix allows testing across multiple versions/environments simultaneously, creating parallel job combinations (e.g., 3 Node versions × 2 OS = 6 jobs).</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q4:</strong> How are secrets accessed in workflow steps?</p>
+                            <button onclick="toggleAnswer(3)">Show Answer</button>
+                            <div class="answer" id="answer3">Via <span class="code" style="margin: 0; display: inline;">${{ secrets.SECRET_NAME }}</span> syntax. Secrets are masked in logs for safety.</div>
+                        </div>
+                        <div class="q-item">
+                            <p><strong>Q5:</strong> What environment feature adds protection to production deployments?</p>
+                            <button onclick="toggleAnswer(4)">Show Answer</button>
+                            <div class="answer" id="answer4">Environment protection rules allow requiring approvals, restricting to specific branches, or using deployment gates before prod workflows run.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 11: End -->
+            <div class="slide s-title">
+                <div class="end-slide-content">
+                    <h2 style="color: #58a6ff; margin-bottom: 32px;">Thank You!</h2>
+                    <p style="font-size: 1.2rem; color: #cbd5e1; margin-bottom: 32px;">You're ready to build powerful CI/CD pipelines with GitHub Actions</p>
+                    <a href="/portal.html" style="display: inline-block; padding: 12px 24px; background: #58a6ff; color: #000; text-decoration: none; border-radius: 6px; font-weight: 600;">← Back to Ktech SRE Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        const titles = [
+            'GitHub Actions — CI/CD Pipelines',
+            'Course Agenda',
+            'GitHub Actions Concepts',
+            'Workflow Syntax',
+            'Jobs & Steps',
+            'Triggers & Events',
+            'Secrets & Environment Variables',
+            'Matrix Builds',
+            'Docker Build & Push',
+            'Knowledge Check',
+            'Thank You!'
+        ];
+
+        function updateSlide() {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+            document.getElementById('navTitle').textContent = titles[currentSlide];
+            document.getElementById('slideNum').textContent = currentSlide + 1;
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(n) {
+            const newSlide = currentSlide + n;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                updateSlide();
+            }
+        }
+
+        function toggleAnswer(id) {
+            const answer = document.getElementById('answer' + id);
+            answer.style.display = answer.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function closeSlideshow() {
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'Escape') closeSlideshow();
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

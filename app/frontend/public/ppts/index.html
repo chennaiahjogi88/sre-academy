@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redirecting — Ktech SRE</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #060d1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #0a1628;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 48px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .logo { font-size: 24px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; }
+    .sub { font-size: 13px; color: #64748b; margin-bottom: 32px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      margin-bottom: 12px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #38bdf8; color: #060d1a; }
+    .btn-outline { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Ktech SRE</div>
+    <div class="sub">Training Platform</div>
+    <div id="content">
+      <p style="color:#64748b; font-size:14px;">Checking session…</p>
+    </div>
+  </div>
+  <script>
+    const token = localStorage.getItem('sre_token');
+    const content = document.getElementById('content');
+
+    if (token) {
+      // Logged in — show portal link + logout
+      content.innerHTML = `
+        <a href="/portal.html" class="btn btn-primary">📚 Go to Portal</a>
+        <button class="btn btn-outline" onclick="logout()">🚪 Logout</button>
+      `;
+    } else {
+      // Not logged in — redirect home immediately
+      window.location.replace('/index.html');
+    }
+
+    function logout() {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('sre_token'),
+          'Content-Type': 'application/json'
+        }
+      }).catch(() => {}).finally(() => {
+        localStorage.removeItem('sre_token');
+        localStorage.removeItem('sre_user');
+        window.location.href = '/index.html';
+      });
+    }
+  </script>
+</body>
+</html>
