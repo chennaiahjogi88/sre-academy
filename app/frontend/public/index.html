@@ -112,20 +112,17 @@
         .hero {
             padding: 100px 40px;
             text-align: center;
-            background: linear-gradient(135deg, #060d1a 0%, #0f172a 100%);
+            background: #060d1a;
             position: relative;
             overflow: hidden;
         }
 
-        .hero::before {
-            content: '';
+        #heroCanvas {
             position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
-            border-radius: 50%;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.6;
             pointer-events: none;
         }
 
@@ -439,18 +436,57 @@
             grid-template-columns: 1fr 1.2fr;
             gap: 60px;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
 
         .hero-inner .hero-content {
             text-align: left;
         }
 
-        .hero-illustration svg {
+        .hero-illustration {
+            position: relative;
+        }
+
+        .dashboard-slide {
             width: 100%;
             max-width: 580px;
+            position: relative;
+        }
+
+        .dashboard-slide svg {
+            width: 100%;
             height: auto;
             border-radius: 10px;
             filter: drop-shadow(0 20px 60px rgba(56, 189, 248, 0.18));
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            animation: dashFade 7s infinite;
+        }
+
+        .dashboard-slide svg:first-child {
+            animation-delay: 0s;
+        }
+
+        .dashboard-slide svg:last-child {
+            animation-delay: 3.5s;
+        }
+
+        /* reserve space equal to viewBox aspect ratio 480x300 = 62.5% */
+        .dashboard-slide::before {
+            content: '';
+            display: block;
+            padding-top: 62.5%;
+        }
+
+        @keyframes dashFade {
+            0%   { opacity: 0; }
+            14%  { opacity: 1; }
+            50%  { opacity: 1; }
+            64%  { opacity: 0; }
+            100% { opacity: 0; }
         }
 
         /* Tool SVG icons */
@@ -553,6 +589,7 @@
 
     <!-- Hero Section -->
     <section class="hero">
+        <canvas id="heroCanvas"></canvas>
         <div class="hero-inner">
             <div class="hero-content">
                 <h1>Master Site Reliability Engineering</h1>
@@ -562,6 +599,7 @@
                 <a href="/login.html" class="btn-cta">Get Started — Login →</a>
             </div>
             <div class="hero-illustration">
+            <div class="dashboard-slide">
                 <!-- SRE Observability Dashboard Illustration -->
                 <svg viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <!-- Dashboard background -->
@@ -643,6 +681,90 @@
                     <text x="18" y="280" font-family="monospace" font-size="8" fill="#22c55e">prometheus-0  Running  2d6h   grafana-6f4c  Running  2d6h   loki-0  Running  2d6h</text>
                     <rect x="18" y="283" width="6" height="8" rx="1" fill="#38bdf8" opacity="0.8"/>
                 </svg>
+
+                <!-- SRE Incident Response Dashboard Illustration -->
+                <svg viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Dashboard background -->
+                    <rect width="480" height="300" rx="10" fill="#0a1628" stroke="#1e293b" stroke-width="1.5"/>
+                    <!-- Title bar -->
+                    <rect width="480" height="34" rx="10" fill="#0f172a"/>
+                    <rect y="22" width="480" height="12" fill="#0f172a"/>
+                    <!-- Window control dots -->
+                    <circle cx="16" cy="17" r="5" fill="#ef4444" opacity="0.85"/>
+                    <circle cx="30" cy="17" r="5" fill="#f59e0b" opacity="0.85"/>
+                    <circle cx="44" cy="17" r="5" fill="#22c55e" opacity="0.85"/>
+                    <!-- Dashboard title -->
+                    <text x="62" y="22" font-family="monospace" font-size="10" fill="#64748b">Ktech SRE — Incident Response Center</text>
+                    <!-- Alert indicator -->
+                    <circle cx="438" cy="17" r="4" fill="#ef4444"/>
+                    <text x="447" y="22" font-family="monospace" font-size="9" fill="#ef4444">P1</text>
+
+                    <!-- Active incident banner -->
+                    <rect x="10" y="44" width="460" height="28" rx="5" fill="#1a0a0a" stroke="#ef4444" stroke-width="1"/>
+                    <circle cx="24" cy="58" r="5" fill="#ef4444"/>
+                    <text x="34" y="62" font-family="monospace" font-size="9" fill="#ef4444">INCIDENT-0042  |  payment-service latency spike  |  Started: 14m ago  |  SEV-1</text>
+
+                    <!-- Stat card: MTTR -->
+                    <rect x="10" y="82" width="100" height="60" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="18" y="98" font-family="monospace" font-size="8" fill="#64748b">MTTR</text>
+                    <text x="18" y="118" font-family="monospace" font-size="20" font-weight="bold" fill="#38bdf8">18m</text>
+                    <text x="18" y="134" font-family="monospace" font-size="7" fill="#38bdf8">▼ 6m vs last wk</text>
+
+                    <!-- Stat card: Open Alerts -->
+                    <rect x="120" y="82" width="100" height="60" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="128" y="98" font-family="monospace" font-size="8" fill="#64748b">OPEN ALERTS</text>
+                    <text x="128" y="118" font-family="monospace" font-size="20" font-weight="bold" fill="#ef4444">3</text>
+                    <text x="128" y="134" font-family="monospace" font-size="7" fill="#f59e0b">1 critical · 2 warn</text>
+
+                    <!-- Stat card: On-Call -->
+                    <rect x="230" y="82" width="100" height="60" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="238" y="98" font-family="monospace" font-size="8" fill="#64748b">ON-CALL</text>
+                    <text x="238" y="116" font-family="monospace" font-size="11" font-weight="bold" fill="#22c55e">@srebot</text>
+                    <text x="238" y="130" font-family="monospace" font-size="7" fill="#64748b">notified 14m ago</text>
+                    <circle cx="238" cy="136" r="3" fill="#22c55e"/>
+
+                    <!-- Stat card: Runbooks -->
+                    <rect x="340" y="82" width="130" height="60" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="348" y="98" font-family="monospace" font-size="8" fill="#64748b">RUNBOOK STATUS</text>
+                    <text x="348" y="116" font-family="monospace" font-size="11" font-weight="bold" fill="#f59e0b">In Progress</text>
+                    <text x="348" y="130" font-family="monospace" font-size="7" fill="#64748b">Step 3 / 7 — isolate pod</text>
+                    <rect x="348" y="134" width="112" height="4" rx="2" fill="#1e293b"/>
+                    <rect x="348" y="134" width="48" height="4" rx="2" fill="#f59e0b" opacity="0.8"/>
+
+                    <!-- Timeline panel -->
+                    <rect x="10" y="152" width="295" height="105" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="18" y="168" font-family="monospace" font-size="8" fill="#64748b">INCIDENT TIMELINE</text>
+                    <!-- timeline line -->
+                    <line x1="26" y1="178" x2="26" y2="248" stroke="#1e293b" stroke-width="1.5"/>
+                    <circle cx="26" cy="182" r="4" fill="#ef4444"/>
+                    <text x="36" y="186" font-family="monospace" font-size="8" fill="#e2e8f0">14:32  Alert fired — p99 &gt; 800ms</text>
+                    <circle cx="26" cy="200" r="4" fill="#f59e0b"/>
+                    <text x="36" y="204" font-family="monospace" font-size="8" fill="#e2e8f0">14:33  PagerDuty notified on-call</text>
+                    <circle cx="26" cy="218" r="4" fill="#38bdf8"/>
+                    <text x="36" y="222" font-family="monospace" font-size="8" fill="#e2e8f0">14:36  Runbook started — rollback?</text>
+                    <circle cx="26" cy="236" r="4" fill="#64748b" stroke="#38bdf8" stroke-width="1"/>
+                    <text x="36" y="240" font-family="monospace" font-size="8" fill="#475569">14:46  Investigating pod restarts...</text>
+                    <rect x="18" y="245" width="6" height="8" rx="1" fill="#38bdf8" opacity="0.8"/>
+
+                    <!-- Alert log panel -->
+                    <rect x="315" y="152" width="155" height="105" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="323" y="168" font-family="monospace" font-size="8" fill="#64748b">ALERT LOG</text>
+                    <circle cx="331" cy="182" r="4" fill="#ef4444"/>
+                    <text x="341" y="186" font-family="monospace" font-size="8" fill="#e2e8f0">payment-svc P99</text>
+                    <circle cx="331" cy="199" r="4" fill="#ef4444"/>
+                    <text x="341" y="203" font-family="monospace" font-size="8" fill="#e2e8f0">error-rate &gt; 5%</text>
+                    <circle cx="331" cy="216" r="4" fill="#f59e0b"/>
+                    <text x="341" y="220" font-family="monospace" font-size="8" fill="#e2e8f0">cpu throttle warn</text>
+                    <circle cx="331" cy="233" r="4" fill="#22c55e"/>
+                    <text x="341" y="237" font-family="monospace" font-size="8" fill="#475569">api-gw  resolved</text>
+
+                    <!-- Terminal bar -->
+                    <rect x="10" y="265" width="460" height="27" rx="5" fill="#060d1a" stroke="#1e293b" stroke-width="1"/>
+                    <text x="18" y="280" font-family="monospace" font-size="8" fill="#64748b">~/sre-lab $</text>
+                    <text x="84" y="280" font-family="monospace" font-size="8" fill="#e2e8f0">kubectl rollout undo deploy/payment-service -n prod</text>
+                </svg>
+
+            </div><!-- end dashboard-slide -->
             </div>
         </div>
     </section>
@@ -876,6 +998,116 @@
     <script>
         // Redirect if already logged in
         Auth.redirectIfLoggedIn();
+    </script>
+
+    <!-- HERO CANVAS — animated SRE node-graph background -->
+    <script>
+    (function() {
+        const canvas = document.getElementById('heroCanvas');
+        const ctx    = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width  = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const NODE_COUNT = 26;
+        const nodes = [];
+
+        function mkNode() {
+            return {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 2 + Math.random() * 2.5,
+                pulse: Math.random() * Math.PI * 2,
+                type: Math.random() < 0.3 ? 'db' : Math.random() < 0.4 ? 'svc' : 'node'
+            };
+        }
+
+        for (let i = 0; i < NODE_COUNT; i++) nodes.push(mkNode());
+
+        const COLORS = { node: '#38bdf8', svc: '#818cf8', db: '#4ade80' };
+        const MAX_DIST = 160;
+
+        const packets = [];
+        function spawnPacket() {
+            const a = nodes[Math.floor(Math.random() * nodes.length)];
+            const b = nodes[Math.floor(Math.random() * nodes.length)];
+            if (a === b) return;
+            packets.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, t: 0, speed: 0.008 + Math.random() * 0.012 });
+        }
+        setInterval(spawnPacket, 400);
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            nodes.forEach(n => {
+                n.x  += n.vx;
+                n.y  += n.vy;
+                n.pulse += 0.04;
+                if (n.x < 0 || n.x > canvas.width)  n.vx *= -1;
+                if (n.y < 0 || n.y > canvas.height)  n.vy *= -1;
+            });
+
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const d  = Math.sqrt(dx*dx + dy*dy);
+                    if (d < MAX_DIST) {
+                        const alpha = (1 - d / MAX_DIST) * 0.22;
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i].x, nodes[i].y);
+                        ctx.lineTo(nodes[j].x, nodes[j].y);
+                        ctx.strokeStyle = `rgba(56,189,248,${alpha})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            for (let p = packets.length - 1; p >= 0; p--) {
+                const pk = packets[p];
+                pk.t += pk.speed;
+                if (pk.t >= 1) { packets.splice(p, 1); continue; }
+                const x = pk.ax + (pk.bx - pk.ax) * pk.t;
+                const y = pk.ay + (pk.by - pk.ay) * pk.t;
+                ctx.beginPath();
+                ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56,189,248,0.85)';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            nodes.forEach(n => {
+                const col = COLORS[n.type];
+                ctx.globalAlpha = 0.15 + Math.sin(n.pulse) * 0.08;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r + 1.5 + Math.sin(n.pulse) * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = col;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+                ctx.fillStyle = col;
+                ctx.shadowColor = col;
+                ctx.shadowBlur = 6;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    })();
     </script>
 </body>
 </html>
