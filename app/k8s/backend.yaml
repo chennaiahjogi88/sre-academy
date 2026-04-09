@@ -22,6 +22,7 @@ spec:
       containers:
         - name: backend
           image: sre-backend:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 3001
           envFrom:
@@ -68,7 +69,7 @@ metadata:
   name: uploads-pvc
   namespace: sre-platform
 spec:
-  accessModes: [ReadWriteMany]
+  accessModes: [ReadWriteOnce]
   resources:
     requests:
       storage: 20Gi

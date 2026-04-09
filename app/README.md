@@ -1,3 +1,4 @@
+exit
 # Ktech SRE Training Platform
 
 A full-stack web application for the SRE Batch Jan 2026.

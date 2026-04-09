@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: sre-frontend:latest
+          image: kotidevops/kt-frontend:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
           resources:
