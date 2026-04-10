@@ -16,7 +16,7 @@ spec:
       containers:
         - name: frontend
           image: kotidevops/kt-frontend:v1
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           resources:
@@ -48,8 +48,9 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "512m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
 spec:
+  ingressClassName: nginx
   rules:
-    - host: sre.ktech.local
+    - host: sre.ktech.local  # Update this to your real domain or EKS NLB hostname
       http:
         paths:
           - path: /
