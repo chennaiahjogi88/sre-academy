@@ -1,0 +1,71 @@
+# ============================================================
+# HORIZONTAL POD AUTOSCALER (HPA)
+# ============================================================
+# HPA automatically scales the number of pod replicas based on
+# observed CPU/memory utilization (or custom metrics).
+#
+# How it works:
+#   1. HPA controller polls the metrics-server every 15s
+#   2. If avg CPU > targetCPUUtilizationPercentage → scale UP
+#   3. If avg CPU < target for 5min stabilization window → scale DOWN
+#
+# REQUIRES: metrics-server addon
+# Enable: minikube addons enable metrics-server
+#
+# Test it:
+#   kubectl run load-gen --image=busybox --rm -it -n ktech-demo \
+#     -- /bin/sh -c "while true; do wget -q -O- http://demo-app-service/; done"
+#
+# Watch scaling:
+#   kubectl get hpa -n ktech-demo -w
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-app-hpa
+  namespace: ktech-demo
+  labels:
+    app: demo-app
+spec:
+  # ---- Target workload to scale ----
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: demo-app
+
+  # ---- Replica bounds ----
+  minReplicas: 2        # never go below 2 (HA minimum)
+  maxReplicas: 6        # never go above 6
+
+  # ---- Scaling metrics ----
+  metrics:
+    # Scale based on CPU utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50    # scale up when avg CPU > 50% of request
+
+    # Scale based on Memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70    # scale up when avg memory > 70% of request
+
+  # ---- Scaling behavior (stabilization windows) ----
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30    # wait 30s of sustained high load before scaling up
+      policies:
+        - type: Pods
+          value: 2                      # add max 2 pods at a time
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 120   # wait 2min of low load before scaling down
+      policies:
+        - type: Pods
+          value: 1                      # remove max 1 pod at a time
+          periodSeconds: 60

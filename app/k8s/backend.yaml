@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: kotidevops/kt-backend:v1
-          imagePullPolicy: IfNotPresent
+          image: kotidevops/kt-backend:v2
+          imagePullPolicy: Always
           ports:
             - containerPort: 3001
           envFrom:
@@ -30,6 +30,14 @@ spec:
                 name: sre-platform-config
             - secretRef:
                 name: sre-platform-secrets
+          env:
+            # OpenTelemetry → Jaeger (monitoring namespace)
+            - name: OTEL_SERVICE_NAME
+              value: "sre-platform-backend"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://jaeger-service.monitoring.svc.cluster.local:4318"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.version=2.0.0,deployment.environment=production"
           volumeMounts:
             - name: uploads
               mountPath: /app/uploads

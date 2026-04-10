@@ -1,0 +1,259 @@
+# ============================================================
+# DEPLOYMENT — Main demo application (nginx serving HTML)
+# ============================================================
+# This deployment demonstrates:
+#   - InitContainers (dependency checks before app starts)
+#   - Multiple env injection methods (ConfigMap, Secret, fieldRef)
+#   - Liveness + Readiness + Startup probes
+#   - Volume mounts (ConfigMap as file, PVC)
+#   - ServiceAccount binding (RBAC)
+#   - Resource requests and limits
+#   - Pod Affinity / Topology labels
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: ktech-demo
+  labels:
+    app: demo-app
+    version: "1.0"
+    tier: frontend
+  annotations:
+    deployment.kubernetes.io/description: "KTech SRE Academy demo web application"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        version: "1.0"
+        tier: frontend
+      annotations:
+        prometheus.io/scrape: "false"   # would be "true" for real metrics
+    spec:
+      # ---- Pod-level ServiceAccount ----
+      # Links this pod to the RBAC permissions defined in 01-rbac.yaml
+      serviceAccountName: demo-app-sa
+
+      # ========================================================
+      # INIT CONTAINERS — Run to completion BEFORE main containers
+      # ========================================================
+      # Use cases:
+      #   - Wait for a dependency (DB, cache) to be ready
+      #   - Clone a git repo, download config
+      #   - Run DB migrations
+      #   - Set file permissions on shared volumes
+      initContainers:
+        # Init 1: Wait for postgres to accept connections
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Postgres at $(DB_HOST):$(DB_PORT)..."
+              until nc -z $DB_HOST $DB_PORT; do
+                echo "Postgres not ready yet — sleeping 2s"
+                sleep 2
+              done
+              echo "Postgres is up!"
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_PORT
+
+        # Init 2: Wait for redis
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Redis at $(REDIS_HOST):$(REDIS_PORT)..."
+              until nc -z $REDIS_HOST $REDIS_PORT; do
+                echo "Redis not ready yet — sleeping 2s"
+                sleep 2
+              done
+              echo "Redis is up!"
+          env:
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_PORT
+
+      # ========================================================
+      # MAIN CONTAINERS
+      # ========================================================
+      containers:
+        - name: demo-app
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+              name: http
+
+          # ---- ENV from ConfigMap (all keys injected at once) ----
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+
+          # ---- ENV from other sources ----
+          env:
+            # Downward API: inject pod metadata as env vars
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          # ========================================================
+          # PROBES — Health checking
+          # ========================================================
+          # startupProbe:   Gives slow-starting apps time before liveness kicks in.
+          #                 Once it succeeds, liveness takes over.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 10     # 10 × 3s = 30s max startup time
+
+          # livenessProbe:  Should the container be RESTARTED?
+          #                 If it fails → kubelet kills and restarts the container.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+
+          # readinessProbe: Should the container RECEIVE TRAFFIC?
+          #                 If it fails → pod removed from Service endpoints.
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 2
+
+          # ========================================================
+          # RESOURCES — CPU and Memory requests/limits
+          # ========================================================
+          # requests: what K8s RESERVES for scheduling decisions
+          # limits:   hard ceiling — container is killed if it exceeds memory
+          resources:
+            requests:
+              cpu: "10m"       # 10 millicores = 1% of 1 CPU
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+
+          # ========================================================
+          # VOLUME MOUNTS
+          # ========================================================
+          volumeMounts:
+            # Mount nginx config from ConfigMap
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: nginx.conf           # mount ONLY this key as a file
+              readOnly: true
+
+            # Mount HTML page from ConfigMap
+            - name: html-content
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+              readOnly: true
+
+            # Mount PVC for app uploads
+            - name: uploads
+              mountPath: /usr/share/nginx/html/uploads
+
+      # ========================================================
+      # VOLUMES — Defines what gets mounted above
+      # ========================================================
+      volumes:
+        # ConfigMap volume — whole ConfigMap as a directory of files
+        - name: nginx-config
+          configMap:
+            name: app-config
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+
+        - name: html-content
+          configMap:
+            name: app-config
+            items:
+              - key: index.html
+                path: index.html
+
+        # PVC volume — persistent storage
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: app-uploads-pvc
+
+---
+# ============================================================
+# SERVICE — NodePort (accessible from minikube host)
+# ============================================================
+# Service types:
+#   ClusterIP    — internal only (default)
+#   NodePort     — exposed on every node's IP at a static port (30000-32767)
+#   LoadBalancer — provisions a cloud LB (or use minikube tunnel)
+#   ExternalName — maps to an external DNS name
+#
+# Access: minikube service demo-app-service -n ktech-demo
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app-service
+  namespace: ktech-demo
+  labels:
+    app: demo-app
+spec:
+  type: NodePort
+  selector:
+    app: demo-app           # routes to pods with this label
+  ports:
+    - name: http
+      port: 80              # Service port (cluster-internal)
+      targetPort: 80        # Container port
+      nodePort: 30080       # External port on node IP (optional: K8s assigns if omitted)

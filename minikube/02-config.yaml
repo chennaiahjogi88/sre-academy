@@ -1,0 +1,130 @@
+# ============================================================
+# CONFIG MAP — Non-sensitive configuration
+# ============================================================
+# ConfigMaps decouple configuration from container images.
+# They can be consumed as environment variables OR mounted as files.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: ktech-demo
+data:
+  # --- Key-value pairs (injected as env vars) ---
+  APP_ENV: "lab"
+  APP_PORT: "80"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "demodb"
+  DB_USER: "demouser"
+  LOG_LEVEL: "info"
+
+  # --- Nginx config (mounted as a file) ---
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+
+        location /health {
+            return 200 'OK';
+            add_header Content-Type text/plain;
+        }
+
+        location /ready {
+            return 200 'READY';
+            add_header Content-Type text/plain;
+        }
+    }
+
+  # --- HTML page (mounted as a file, served by nginx) ---
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>KTech SRE Academy — Kubernetes Lab</title>
+      <style>
+        body { font-family: Arial, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+        h1 { color: #58a6ff; }
+        h2 { color: #79c0ff; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 10px 0; }
+        .tag { display: inline-block; background: #1f6feb; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 12px; margin: 2px; }
+        .green { background: #238636; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 8px 12px; text-align: left; border: 1px solid #30363d; }
+        th { background: #21262d; color: #58a6ff; }
+      </style>
+    </head>
+    <body>
+      <h1>KTech SRE Academy — Kubernetes Demo Stack</h1>
+      <p>This page is served by nginx inside a <strong>Pod</strong>, configured via a <strong>ConfigMap</strong>.</p>
+
+      <h2>K8s Components Deployed in this Lab</h2>
+      <div class="card">
+        <table>
+          <tr><th>Component</th><th>Kind</th><th>Purpose</th></tr>
+          <tr><td>ktech-demo</td><td><span class="tag">Namespace</span></td><td>Isolates all lab resources</td></tr>
+          <tr><td>demo-quota</td><td><span class="tag">ResourceQuota</span></td><td>Hard limits on namespace resources</td></tr>
+          <tr><td>demo-limitrange</td><td><span class="tag">LimitRange</span></td><td>Default CPU/Memory per container</td></tr>
+          <tr><td>demo-app-sa</td><td><span class="tag">ServiceAccount</span></td><td>Pod identity</td></tr>
+          <tr><td>demo-app-role</td><td><span class="tag">Role</span> + <span class="tag">RoleBinding</span></td><td>RBAC permissions</td></tr>
+          <tr><td>app-config</td><td><span class="tag">ConfigMap</span></td><td>App config + nginx config + this HTML</td></tr>
+          <tr><td>app-secrets</td><td><span class="tag">Secret</span></td><td>DB password, JWT key</td></tr>
+          <tr><td>postgres-pvc</td><td><span class="tag">PVC</span></td><td>Persistent storage for Postgres</td></tr>
+          <tr><td>postgres</td><td><span class="tag">StatefulSet</span></td><td>Database with stable identity</td></tr>
+          <tr><td>redis</td><td><span class="tag">Deployment</span></td><td>Cache layer (stateless)</td></tr>
+          <tr><td>demo-app</td><td><span class="tag green">Deployment</span></td><td>This web app (YOU ARE HERE)</td></tr>
+          <tr><td>node-exporter</td><td><span class="tag">DaemonSet</span></td><td>Runs on every node for metrics</td></tr>
+          <tr><td>*-service</td><td><span class="tag">Service</span></td><td>ClusterIP, NodePort, Headless</td></tr>
+          <tr><td>demo-ingress</td><td><span class="tag">Ingress</span></td><td>HTTP routing to services</td></tr>
+          <tr><td>demo-app-hpa</td><td><span class="tag">HPA</span></td><td>Autoscale based on CPU</td></tr>
+          <tr><td>db-seed-job</td><td><span class="tag">Job</span></td><td>One-time DB initialization</td></tr>
+          <tr><td>cleanup-cronjob</td><td><span class="tag">CronJob</span></td><td>Scheduled cleanup task</td></tr>
+          <tr><td>demo-app-pdb</td><td><span class="tag">PDB</span></td><td>Minimum availability during disruptions</td></tr>
+          <tr><td>NetworkPolicy</td><td><span class="tag">NetworkPolicy</span></td><td>Controls pod-to-pod traffic</td></tr>
+        </table>
+      </div>
+
+      <h2>App Stack Architecture</h2>
+      <div class="card">
+        <pre>
+    [Browser] → [Ingress] → [demo-app Service:NodePort]
+                                    ↓
+                          [demo-app Deployment]
+                          (nginx + initContainer)
+                          /                    \
+              [redis-service:6379]    [postgres-service:5432]
+                      ↓                         ↓
+              [Redis Deployment]      [Postgres StatefulSet]
+                                              ↓
+                                       [PVC → hostPath PV]
+
+    [Every Node] → [node-exporter DaemonSet]
+        </pre>
+      </div>
+    </body>
+    </html>
+
+---
+# ============================================================
+# SECRET — Sensitive data (base64-encoded at rest)
+# ============================================================
+# Secrets are like ConfigMaps but for sensitive values.
+# NOTE: In real clusters use Vault or Sealed Secrets — plain
+# Kubernetes Secrets are only base64, NOT encrypted by default.
+# Use stringData for human-readable input (K8s encodes it).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: ktech-demo
+type: Opaque
+stringData:
+  DB_PASSWORD: "demo-pass-2024"      # postgres password
+  JWT_SECRET: "ktech-jwt-super-secret-key"
+  REDIS_PASSWORD: ""                 # empty = no redis auth in lab

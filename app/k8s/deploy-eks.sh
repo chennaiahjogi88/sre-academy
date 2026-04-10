@@ -3,13 +3,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(dirname "$SCRIPT_DIR")"
-NAMESPACE="sre-platform"
+APP_NS="sre-platform"
+MON_NS="monitoring"
 
 # ---------------------------------------------------------------------------
 # CONFIG — set these before running
 # ---------------------------------------------------------------------------
 DOCKERHUB_USER="${DOCKERHUB_USER:-kotidevops}"
-BACKEND_IMAGE="${BACKEND_IMAGE:-${DOCKERHUB_USER}/sre-backend:latest}"
+BACKEND_IMAGE="${BACKEND_IMAGE:-${DOCKERHUB_USER}/kt-backend:v2}"
 # ---------------------------------------------------------------------------
 
 usage() {
@@ -17,8 +18,8 @@ usage() {
 Usage: $0 <command> [--yes]
 
 Commands:
-  deploy     Deploy the full stack (namespace, storageclass, db, metrics, app)
-  teardown   Tear down the stack (delete manifests)
+  deploy     Deploy the full stack (app + monitoring)
+  teardown   Tear down everything
 
 Options:
   --yes      Skip interactive confirmations
@@ -53,10 +54,9 @@ check_context() {
 check_ebs_csi() {
   echo "==> Checking EBS CSI driver..."
   if ! kubectl get daemonset ebs-csi-node -n kube-system &>/dev/null; then
-    echo "    EBS CSI driver not found. Installing via EKS add-on is recommended:"
+    echo "    EBS CSI driver not found. Install it before deploying persistent services:"
     echo "      aws eks create-addon --cluster-name <cluster-name> --addon-name aws-ebs-csi-driver"
-    echo "    Or continue if you already have it installed another way."
-    confirm_or_exit "Continue?"
+    confirm_or_exit "Continue anyway?"
   fi
 }
 
@@ -65,98 +65,126 @@ deploy_all() {
   check_context
   check_ebs_csi
 
-  # Optional: build & push backend image if desired
-  # echo "==> Building & pushing backend image..."
-  # docker build -t "$BACKEND_IMAGE" "$APP_DIR/backend"
-  # docker push "$BACKEND_IMAGE"
-
-  echo "==> Applying manifests..."
+  # ── Application namespace ──────────────────────────────────────────────────
+  echo ""
+  echo "==> Applying application stack (namespace: $APP_NS)..."
   kubectl apply -f "$SCRIPT_DIR/namespace.yaml"
   kubectl apply -f "$SCRIPT_DIR/storageclass.yaml"
   kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
   kubectl apply -f "$SCRIPT_DIR/postgres.yaml"
-  kubectl apply -f "$SCRIPT_DIR/prometheus.yaml"
-  kubectl apply -f "$SCRIPT_DIR/grafana.yaml"
   kubectl apply -f "$SCRIPT_DIR/backend.yaml"
   kubectl apply -f "$SCRIPT_DIR/frontend.yaml"
+  kubectl apply -f "$SCRIPT_DIR/locust/locust.yaml"
 
-  echo "==> Waiting for Postgres to be ready..."
-  kubectl rollout status statefulset/postgres -n "$NAMESPACE" --timeout=180s
+  # ── Monitoring namespace ───────────────────────────────────────────────────
+  echo ""
+  echo "==> Applying monitoring stack (namespace: $MON_NS)..."
+  kubectl apply -f "$SCRIPT_DIR/monitoring/namespace.yaml"
+  kubectl apply -f "$SCRIPT_DIR/monitoring/rbac.yaml"
+  kubectl apply -f "$SCRIPT_DIR/monitoring/loki.yaml"
+  kubectl apply -f "$SCRIPT_DIR/monitoring/promtail.yaml"
+  kubectl apply -f "$SCRIPT_DIR/monitoring/jaeger.yaml"
+  kubectl apply -f "$SCRIPT_DIR/monitoring/prometheus.yaml"
 
-  echo "==> Waiting for backend to be ready..."
-  kubectl rollout status deployment/sre-backend -n "$NAMESPACE" --timeout=120s
+  # Inject dashboard JSON files as a ConfigMap so Grafana auto-provisions them
+  echo "==> Loading Grafana dashboard JSON files..."
+  kubectl create configmap grafana-dashboards \
+    --from-file="$APP_DIR/grafana/dashboards/" \
+    -n "$MON_NS" \
+    --dry-run=client -o yaml | kubectl apply -f -
 
-  echo "==> Waiting for frontend to be ready..."
-  kubectl rollout status deployment/sre-frontend -n "$NAMESPACE" --timeout=120s
+  kubectl apply -f "$SCRIPT_DIR/monitoring/grafana.yaml"
+
+  # ── Wait for rollouts ──────────────────────────────────────────────────────
+  echo ""
+  echo "==> Waiting for Postgres..."
+  kubectl rollout status statefulset/postgres -n "$APP_NS" --timeout=180s
+
+  echo "==> Waiting for backend..."
+  kubectl rollout status deployment/sre-backend -n "$APP_NS" --timeout=120s
+
+  echo "==> Waiting for frontend..."
+  kubectl rollout status deployment/sre-frontend -n "$APP_NS" --timeout=120s
+
+  echo "==> Waiting for Loki..."
+  kubectl rollout status statefulset/loki -n "$MON_NS" --timeout=120s
+
+  echo "==> Waiting for Prometheus..."
+  kubectl rollout status deployment/prometheus -n "$MON_NS" --timeout=120s
+
+  echo "==> Waiting for Grafana..."
+  kubectl rollout status deployment/grafana -n "$MON_NS" --timeout=120s
+
+  echo "==> Waiting for Jaeger..."
+  kubectl rollout status deployment/jaeger -n "$MON_NS" --timeout=120s
 
   echo ""
-  echo "==> Stack is up!"
-  echo ""
-  echo "    Get the nginx ingress LoadBalancer hostname:"
-  echo "      kubectl get svc -n ingress-nginx ingress-nginx-controller"
-  echo ""
-  echo "    Port-forwards (for quick access without ingress):"
-  echo "      kubectl port-forward svc/frontend-service   8080:80    -n $NAMESPACE"
-  echo "      kubectl port-forward svc/backend-service    3001:3001  -n $NAMESPACE"
-  echo "      kubectl port-forward svc/grafana-service    3000:3000  -n $NAMESPACE"
-  echo "      kubectl port-forward svc/prometheus-service 9090:9090  -n $NAMESPACE"
-  echo ""
-  echo "    Grafana: admin / Grafana@123"
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║              Stack is up — access guide                     ║"
+  echo "╠══════════════════════════════════════════════════════════════╣"
+  echo "║  Get the nginx ingress LoadBalancer hostname:               ║"
+  echo "║    kubectl get svc -n ingress-nginx ingress-nginx-controller║"
+  echo "╠══════════════════════════════════════════════════════════════╣"
+  echo "║  Port-forwards (quick local access):                        ║"
+  echo "║    kubectl port-forward svc/frontend-service   8080:80     -n $APP_NS"
+  echo "║    kubectl port-forward svc/backend-service    3001:3001   -n $APP_NS"
+  echo "║    kubectl port-forward svc/locust-master-service 8089:8089 -n $APP_NS"
+  echo "║    kubectl port-forward svc/prometheus-service 9090:9090   -n $MON_NS"
+  echo "║    kubectl port-forward svc/grafana-service    3000:3000   -n $MON_NS"
+  echo "║    kubectl port-forward svc/loki-service       3100:3100   -n $MON_NS"
+  echo "║    kubectl port-forward svc/jaeger-service     16686:16686 -n $MON_NS"
+  echo "╠══════════════════════════════════════════════════════════════╣"
+  echo "║  Credentials:                                               ║"
+  echo "║    Grafana:  admin / Grafana@123                            ║"
+  echo "║    App:      student@ktech.sre / Student@123                ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
 }
 
 teardown_all() {
   local auto_confirm=${1:-false}
   check_context
-  confirm_or_exit "This will delete the stack resources in namespace '$NAMESPACE'. Continue?" "$auto_confirm"
+  confirm_or_exit "This will delete BOTH the app ($APP_NS) and monitoring ($MON_NS) namespaces. Continue?" "$auto_confirm"
 
-  echo "==> Deleting manifests (ignore not-found errors)..."
-  kubectl delete -f "$SCRIPT_DIR/frontend.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/backend.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/grafana.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/prometheus.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/postgres.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/configmap.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/storageclass.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/namespace.yaml" --ignore-not-found
+  echo "==> Tearing down application stack..."
+  kubectl delete -f "$SCRIPT_DIR/locust/locust.yaml"         --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/frontend.yaml"              --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/backend.yaml"               --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/postgres.yaml"              --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/configmap.yaml"             --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/storageclass.yaml"          --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/namespace.yaml"             --ignore-not-found
 
-  echo "==> Waiting for namespace to terminate (if applicable)..."
-  kubectl wait --for=delete namespace/$NAMESPACE --timeout=120s || true
+  echo "==> Tearing down monitoring stack..."
+  kubectl delete -f "$SCRIPT_DIR/monitoring/grafana.yaml"    --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/monitoring/prometheus.yaml" --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/monitoring/jaeger.yaml"     --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/monitoring/promtail.yaml"   --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/monitoring/loki.yaml"       --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/monitoring/rbac.yaml"       --ignore-not-found
+  kubectl delete -f "$SCRIPT_DIR/monitoring/namespace.yaml"  --ignore-not-found
+
+  echo "==> Waiting for namespaces to terminate..."
+  kubectl wait --for=delete namespace/$APP_NS --timeout=120s || true
+  kubectl wait --for=delete namespace/$MON_NS --timeout=120s || true
 
   echo "==> Teardown complete."
 }
 
 ## ----- main -----
-if [ $# -lt 1 ]; then
-  usage
-  exit 2
-fi
+if [ $# -lt 1 ]; then usage; exit 2; fi
 
-CMD="$1"
-shift || true
+CMD="$1"; shift || true
 AUTO_CONFIRM=false
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --yes|-y)
-      AUTO_CONFIRM=true
-      shift
-      ;;
-    -h|--help)
-      usage; exit 0
-      ;;
-    *)
-      echo "Unknown arg: $1"; usage; exit 2
-      ;;
+    --yes|-y) AUTO_CONFIRM=true; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown arg: $1"; usage; exit 2 ;;
   esac
 done
 
 case "$CMD" in
-  deploy)
-    deploy_all "$AUTO_CONFIRM"
-    ;;
-  teardown)
-    teardown_all "$AUTO_CONFIRM"
-    ;;
-  *)
-    echo "Unknown command: $CMD"; usage; exit 2
-    ;;
+  deploy)   deploy_all "$AUTO_CONFIRM" ;;
+  teardown) teardown_all "$AUTO_CONFIRM" ;;
+  *) echo "Unknown command: $CMD"; usage; exit 2 ;;
 esac

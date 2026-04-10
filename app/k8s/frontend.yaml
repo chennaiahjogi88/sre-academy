@@ -16,7 +16,7 @@ spec:
       containers:
         - name: frontend
           image: kotidevops/kt-frontend:v1
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:

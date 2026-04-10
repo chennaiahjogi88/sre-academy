@@ -1,0 +1,53 @@
+# ============================================================
+# SERVICE ACCOUNT — Pod identity
+# ============================================================
+# Every pod runs as a ServiceAccount. Instead of using "default",
+# we create a dedicated one — principle of least privilege.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-app-sa
+  namespace: ktech-demo
+  labels:
+    app: demo-app
+
+---
+# ============================================================
+# ROLE — Namespaced permissions (what actions are allowed)
+# ============================================================
+# A Role defines WHAT can be done on WHICH resources.
+# This role allows the app to read ConfigMaps and Secrets (e.g., for dynamic config reload).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: demo-app-role
+  namespace: ktech-demo
+rules:
+  - apiGroups: [""]                # "" = core API group
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]                  # only "get" — not list/watch (security: no enumeration)
+
+---
+# ============================================================
+# ROLE BINDING — Connects ServiceAccount to Role
+# ============================================================
+# A RoleBinding is the glue: WHO (subject) can do WHAT (role).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: demo-app-rolebinding
+  namespace: ktech-demo
+subjects:
+  - kind: ServiceAccount
+    name: demo-app-sa           # the ServiceAccount above
+    namespace: ktech-demo
+roleRef:
+  kind: Role
+  name: demo-app-role           # the Role above
+  apiGroup: rbac.authorization.k8s.io

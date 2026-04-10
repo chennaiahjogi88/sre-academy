@@ -1,0 +1,86 @@
+# ============================================================
+# DEPLOYMENT — For stateless workloads (web apps, APIs, caches)
+# ============================================================
+# Deployment vs StatefulSet:
+#   - Pods are interchangeable (any redis pod = any other)
+#   - Pods are named randomly: redis-6d7b8c-xyz
+#   - All pods share the same PVC (or none)
+#   - Pods can be killed and recreated in any order
+#
+# Use Deployment for: web servers, APIs, cache, proxies
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: ktech-demo
+  labels:
+    app: redis
+    tier: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  # ---- Update Strategy ----
+  # RollingUpdate: replace pods one-by-one (zero downtime)
+  # Recreate: kill all, then start new (causes downtime, useful when
+  #           you can't run two versions simultaneously)
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # allow 1 extra pod during update
+      maxUnavailable: 0     # never go below desired replicas
+  template:
+    metadata:
+      labels:
+        app: redis
+        tier: cache
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+          ports:
+            - containerPort: 6379
+              name: redis
+          # ---- Liveness Probe — uses TCP socket check ----
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # ---- Readiness Probe — uses exec (redis-cli PING) ----
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+
+---
+# ============================================================
+# SERVICE — ClusterIP (internal only)
+# ============================================================
+# DNS name: redis-service.ktech-demo.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: ktech-demo
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis

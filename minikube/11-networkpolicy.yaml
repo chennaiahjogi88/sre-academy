@@ -1,0 +1,108 @@
+# ============================================================
+# NETWORK POLICY — Pod-level firewall rules
+# ============================================================
+# By default, ALL pods can talk to ALL pods (no restrictions).
+# NetworkPolicy lets you restrict traffic using label selectors.
+#
+# REQUIRES: A CNI plugin that enforces NetworkPolicy.
+# minikube uses "kindnet" which does NOT enforce NetworkPolicy by default.
+# To test, start minikube with Calico:
+#   minikube start --cni=calico
+#
+# Types:
+#   Ingress: controls INCOMING traffic to selected pods
+#   Egress:  controls OUTGOING traffic from selected pods
+#
+# IMPORTANT: If no NetworkPolicy selects a pod → all traffic allowed.
+#            Once ANY NetworkPolicy selects a pod → only allowed traffic passes.
+
+# ---- Policy 1: Default deny all ingress in namespace ----
+# Best practice: start with deny-all, then explicitly allow what's needed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: ktech-demo
+spec:
+  podSelector: {}          # {} = selects ALL pods in namespace
+  policyTypes:
+    - Ingress              # only restrict ingress (not egress)
+  # No ingress rules = deny all ingress
+
+---
+# ---- Policy 2: Allow traffic TO demo-app only from ingress controller ----
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-app
+  namespace: ktech-demo
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app          # applies to demo-app pods
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from ingress-nginx namespace (ingress controller)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+    # Allow from within ktech-demo namespace (e.g. health checks, other services)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ktech-demo
+      ports:
+        - protocol: TCP
+          port: 80
+
+---
+# ---- Policy 3: Allow traffic TO postgres only from demo-app and jobs ----
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-postgres
+  namespace: ktech-demo
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres           # applies to postgres pods
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        # Only demo-app and db-seed job can reach postgres
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: ["demo-app", "db-seed"]
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# ---- Policy 4: Allow traffic TO redis only from demo-app ----
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-redis
+  namespace: ktech-demo
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: demo-app
+      ports:
+        - protocol: TCP
+          port: 6379

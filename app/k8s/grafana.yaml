@@ -1,8 +1,16 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-  namespace: sre-platform
+# ── MOVED ────────────────────────────────────────────────────────────────────
+# Grafana has been moved to the dedicated monitoring namespace.
+# See: k8s/monitoring/grafana.yaml
+#
+# This file is intentionally left as a placeholder so existing references
+# to it do not cause errors. The deploy scripts no longer apply it.
+# ─────────────────────────────────────────────────────────────────────────────
+# --- placeholder ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: grafana
+#   namespace: sre-platform
 spec:
   replicas: 1
   selector:

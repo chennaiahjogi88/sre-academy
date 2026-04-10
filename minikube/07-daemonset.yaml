@@ -1,0 +1,124 @@
+# ============================================================
+# DAEMON SET — Run exactly ONE pod on EVERY node
+# ============================================================
+# DaemonSet guarantees one pod instance per node (or per selected nodes).
+# When a new node joins the cluster, a DaemonSet pod is auto-scheduled on it.
+# When a node is removed, the pod is garbage collected.
+#
+# Use cases:
+#   - Log collectors (fluentd, filebeat)
+#   - Metrics agents (node-exporter, datadog-agent)
+#   - Network plugins (calico, weave)
+#   - Storage daemons (glusterfs)
+#
+# In minikube (single node), you'll see exactly 1 node-exporter pod.
+# In a 3-node cluster, you'd see 3.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: ktech-demo
+  labels:
+    app: node-exporter
+    component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  # ---- Update Strategy for DaemonSet ----
+  # RollingUpdate: update one node at a time
+  # OnDelete: only update when you manually delete old pods
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1     # update 1 node at a time
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+        component: monitoring
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/metrics"
+    spec:
+      # ---- hostNetwork: true ----
+      # DaemonSets often need host-level access.
+      # node-exporter reads host /proc and /sys for metrics.
+      hostNetwork: true
+      hostPID: true
+      # ---- Tolerations — schedule on tainted nodes ----
+      # Master/control-plane nodes have taints that prevent scheduling.
+      # Adding tolerations lets this DaemonSet run there too.
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: node-exporter
+          image: prom/node-exporter:v1.7.0
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
+            - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+          ports:
+            - containerPort: 9100
+              name: metrics
+              hostPort: 9100     # binds to the actual node port
+          # ---- Security Context for container ----
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534      # nobody user
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+            - name: root
+              mountPath: /host/root
+              readOnly: true
+              mountPropagation: HostToContainer
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: root
+          hostPath:
+            path: /
+
+---
+# ============================================================
+# SERVICE — ClusterIP for Prometheus to scrape
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter-service
+  namespace: ktech-demo
+  labels:
+    app: node-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: node-exporter
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: 9100

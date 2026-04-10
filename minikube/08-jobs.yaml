@@ -1,0 +1,177 @@
+# ============================================================
+# JOB — Run a task to completion (one-time)
+# ============================================================
+# A Job creates one or more pods and ensures they complete successfully.
+# Unlike a Deployment, a Job is NOT meant to run forever.
+#
+# Use cases:
+#   - Database migrations (run once at deploy time)
+#   - Data imports / exports
+#   - Sending a one-time notification
+#   - Batch processing
+#
+# Key fields:
+#   completions:    how many pods must succeed (default 1)
+#   parallelism:    how many pods run simultaneously
+#   backoffLimit:   retry attempts before marking Job as failed
+#   ttlSecondsAfterFinished: auto-delete Job + pods after N seconds
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-seed-job
+  namespace: ktech-demo
+  labels:
+    app: db-seed
+    job-type: migration
+spec:
+  completions: 1          # must complete 1 time successfully
+  parallelism: 1          # run 1 pod at a time
+  backoffLimit: 3         # retry up to 3 times on failure
+  ttlSecondsAfterFinished: 300  # auto-delete 5 min after completion
+  template:
+    metadata:
+      labels:
+        app: db-seed
+        job-type: migration
+    spec:
+      # Jobs should NOT restart on completion/success
+      restartPolicy: OnFailure   # options: Never | OnFailure (NOT Always)
+      initContainers:
+        # Wait for postgres before running migration
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres-service 5432; do
+                echo "Waiting for postgres..."
+                sleep 3
+              done
+              echo "Postgres ready!"
+      containers:
+        - name: db-seed
+          image: postgres:15-alpine
+          command:
+            - sh
+            - -c
+            - |
+              echo "Running DB seed for demodb..."
+              PGPASSWORD=$DB_PASSWORD psql \
+                -h $DB_HOST \
+                -p $DB_PORT \
+                -U $DB_USER \
+                -d $DB_NAME \
+                -c "
+                  CREATE TABLE IF NOT EXISTS demo_events (
+                    id SERIAL PRIMARY KEY,
+                    event_name VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT NOW()
+                  );
+                  INSERT INTO demo_events (event_name) VALUES ('k8s-lab-started');
+                  SELECT 'Seed complete! Rows: ' || COUNT(*) FROM demo_events;
+                "
+              echo "DB seed job finished successfully."
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+
+---
+# ============================================================
+# CRON JOB — Scheduled recurring job
+# ============================================================
+# CronJob creates a Job on a cron schedule.
+# Uses standard unix cron syntax:
+#   ┌─── minute (0-59)
+#   │ ┌─── hour (0-23)
+#   │ │ ┌─── day of month (1-31)
+#   │ │ │ ┌─── month (1-12)
+#   │ │ │ │ ┌─── day of week (0-6, Sun=0)
+#   │ │ │ │ │
+#   * * * * *
+#
+# Use cases:
+#   - Cleanup old records nightly
+#   - Send daily reports
+#   - Rotate log files
+#   - Trigger backups
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-cronjob
+  namespace: ktech-demo
+  labels:
+    app: cleanup
+    job-type: maintenance
+spec:
+  schedule: "*/5 * * * *"        # every 5 minutes (for demo visibility)
+  # schedule: "0 2 * * *"        # daily at 2am (production example)
+
+  concurrencyPolicy: Forbid       # Forbid: skip if previous run still going
+                                  # Allow:  run concurrently (risky)
+                                  # Replace: cancel old, start new
+
+  successfulJobsHistoryLimit: 3   # keep last 3 successful job records
+  failedJobsHistoryLimit: 1       # keep last 1 failed job record
+  startingDeadlineSeconds: 60     # if missed schedule, start within 60s or skip
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 120
+      template:
+        metadata:
+          labels:
+            app: cleanup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: cleanup
+              image: busybox:1.36
+              command:
+                - sh
+                - -c
+                - |
+                  echo "=== Cleanup job started at $(date) ==="
+                  echo "Simulating cleanup: removing temp files older than 1 day..."
+                  # In real scenario: delete old DB records, remove temp files, etc.
+                  echo "Cleanup complete at $(date)"
+              resources:
+                requests:
+                  cpu: "10m"
+                  memory: "16Mi"
+                limits:
+                  cpu: "50m"
+                  memory: "32Mi"

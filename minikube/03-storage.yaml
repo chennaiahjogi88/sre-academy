@@ -1,0 +1,47 @@
+# ============================================================
+# PERSISTENT VOLUME CLAIM — Storage request
+# ============================================================
+# A PVC is a request for storage. Kubernetes binds it to a
+# PersistentVolume (PV). In minikube, the "standard" StorageClass
+# auto-provisions a hostPath PV — no manual PV creation needed.
+#
+# Key concepts:
+#   accessModes:
+#     ReadWriteOnce (RWO)  — mounted by ONE node at a time (most common)
+#     ReadWriteMany (RWX)  — mounted by MANY nodes simultaneously (NFS etc.)
+#     ReadOnlyMany  (ROX)  — read-only by many nodes
+#
+#   StorageClass "standard" — minikube default, uses host disk
+
+# --- PVC for PostgreSQL data ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: ktech-demo
+  labels:
+    app: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce       # postgres runs as single pod on one node
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi        # small size for lab
+
+---
+# --- PVC for app file uploads ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-uploads-pvc
+  namespace: ktech-demo
+  labels:
+    app: demo-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 500Mi

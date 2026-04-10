@@ -1,0 +1,62 @@
+# ============================================================
+# NAMESPACE — Logical isolation for all demo resources
+# ============================================================
+# A Namespace partitions the cluster into virtual sub-clusters.
+# Everything in this lab lives inside "ktech-demo".
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ktech-demo
+  labels:
+    env: lab
+    managed-by: ktech-sre-academy
+
+---
+# ============================================================
+# RESOURCE QUOTA — Hard limits at the namespace level
+# ============================================================
+# Prevents one team/app from consuming all cluster resources.
+# Enforces governance: if quota is exceeded, new pods are rejected.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: demo-quota
+  namespace: ktech-demo
+spec:
+  hard:
+    pods: "20"                    # max 20 pods in this namespace
+    requests.cpu: "2"             # total CPU requested <= 2 cores
+    requests.memory: "2Gi"        # total memory requested <= 2Gi
+    limits.cpu: "4"               # total CPU limit <= 4 cores
+    limits.memory: "4Gi"          # total memory limit <= 4Gi
+    persistentvolumeclaims: "5"   # max 5 PVCs
+    services: "10"                # max 10 Services
+    secrets: "10"                 # max 10 Secrets
+    configmaps: "10"              # max 10 ConfigMaps
+
+---
+# ============================================================
+# LIMIT RANGE — Default resource limits for individual pods
+# ============================================================
+# If a container does NOT specify CPU/memory, these defaults apply.
+# Prevents unbounded containers from starving others.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: demo-limitrange
+  namespace: ktech-demo
+spec:
+  limits:
+    - type: Container
+      default:               # applied if no "limits" are set
+        cpu: "200m"
+        memory: "256Mi"
+      defaultRequest:        # applied if no "requests" are set
+        cpu: "50m"
+        memory: "64Mi"
+      max:                   # hard ceiling per container
+        cpu: "1"
+        memory: "1Gi"
+      min:                   # hard floor per container
+        cpu: "10m"
+        memory: "16Mi"

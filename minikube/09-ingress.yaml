@@ -1,0 +1,82 @@
+# ============================================================
+# INGRESS — HTTP/HTTPS routing into the cluster
+# ============================================================
+# Ingress is an API object that manages external access to services.
+# It provides:
+#   - Host-based routing (api.example.com → api-service)
+#   - Path-based routing (/api → backend, / → frontend)
+#   - TLS termination
+#   - Rewrite rules, rate limiting (via annotations)
+#
+# REQUIRES: An Ingress Controller (e.g., nginx-ingress)
+# Enable in minikube: minikube addons enable ingress
+#
+# After enabling, get the IP: minikube ip
+# Then add to /etc/hosts: <minikube-ip>  demo.ktech.local
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-ingress
+  namespace: ktech-demo
+  labels:
+    app: demo-app
+  annotations:
+    # Nginx Ingress Controller annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    # Rate limiting (uncomment to demo):
+    # nginx.ingress.kubernetes.io/limit-rps: "10"
+spec:
+  # ---- IngressClassName ----
+  # Tells K8s which Ingress Controller should handle this Ingress.
+  # minikube uses "nginx" when you enable the ingress addon.
+  ingressClassName: nginx
+
+  rules:
+    # ---- Host-based routing ----
+    - host: demo.ktech.local         # set this in /etc/hosts
+      http:
+        paths:
+          # Path: / → demo-app-service (serves the HTML dashboard)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-app-service
+                port:
+                  number: 80
+
+    # ---- Second host (demonstrates multi-host routing) ----
+    - host: metrics.ktech.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: node-exporter-service
+                port:
+                  number: 9100
+
+# ============================================================
+# SETUP INSTRUCTIONS (run on your machine):
+# ============================================================
+# 1. Enable ingress addon:
+#    minikube addons enable ingress
+#
+# 2. Wait for ingress controller to be ready:
+#    kubectl wait --namespace ingress-nginx \
+#      --for=condition=ready pod \
+#      --selector=app.kubernetes.io/component=controller \
+#      --timeout=90s
+#
+# 3. Get minikube IP:
+#    minikube ip
+#
+# 4. Add to /etc/hosts (replace <IP> with output of minikube ip):
+#    echo "<IP>  demo.ktech.local metrics.ktech.local" | sudo tee -a /etc/hosts
+#
+# 5. Open browser: http://demo.ktech.local

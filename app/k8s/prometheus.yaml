@@ -1,8 +1,16 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-config
-  namespace: sre-platform
+# ── MOVED ────────────────────────────────────────────────────────────────────
+# Prometheus has been moved to the dedicated monitoring namespace.
+# See: k8s/monitoring/prometheus.yaml
+#
+# This file is intentionally left as a placeholder so existing references
+# to it do not cause errors. The deploy scripts no longer apply it.
+# ─────────────────────────────────────────────────────────────────────────────
+# --- placeholder ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: prometheus-config
+#   namespace: sre-platform
 data:
   prometheus.yml: |
     global:
