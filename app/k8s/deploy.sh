@@ -16,12 +16,12 @@ fi
 echo "==> Enabling ingress addon..."
 minikube addons enable ingress
 
-echo "==> Pointing Docker to minikube's daemon..."
-eval "$(minikube docker-env)"
+# echo "==> Pointing Docker to minikube's daemon..."
+# eval "$(minikube docker-env)"
 
-echo "==> Building Docker images..."
-docker build -t sre-backend:latest "$APP_DIR/backend"
-docker build -t sre-frontend:latest "$APP_DIR/frontend"
+# echo "==> Building Docker images..."
+# docker build -t sre-backend:latest "$APP_DIR/backend"
+# docker build -t sre-frontend:latest "$APP_DIR/frontend"
 
 echo "==> Applying manifests..."
 kubectl apply -f "$SCRIPT_DIR/namespace.yaml"
