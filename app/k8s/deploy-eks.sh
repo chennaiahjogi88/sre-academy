@@ -6,6 +6,9 @@ APP_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NS="sre-platform"
 MON_NS="monitoring"
 
+# Increase kubectl request timeout for EKS (network latency + large payloads)
+KUBECTL="kubectl --request-timeout=5m"
+
 # ---------------------------------------------------------------------------
 # CONFIG — set these before running
 # ---------------------------------------------------------------------------
@@ -53,7 +56,7 @@ check_context() {
 
 check_ebs_csi() {
   echo "==> Checking EBS CSI driver..."
-  if kubectl get daemonset ebs-csi-node -n kube-system &>/dev/null; then
+  if $KUBECTL get daemonset ebs-csi-node -n kube-system &>/dev/null; then
     echo "    EBS CSI driver already present."
     return 0
   fi
@@ -64,7 +67,7 @@ check_ebs_csi() {
   # Contexts created by 'aws eks update-kubeconfig' look like:
   #   arn:aws:eks:<region>:<account>:cluster/<name>   or   <name>
   local RAW_CONTEXT
-  RAW_CONTEXT=$(kubectl config current-context 2>/dev/null || true)
+  RAW_CONTEXT=$(kubectl config current-context 2>/dev/null || true)  # config ops don't need the timeout flag
   local CLUSTER_NAME
   CLUSTER_NAME=$(echo "$RAW_CONTEXT" | sed 's|.*/cluster/||; s|.*/||')
 
@@ -111,55 +114,55 @@ deploy_all() {
   # ── Application namespace ──────────────────────────────────────────────────
   echo ""
   echo "==> Applying application stack (namespace: $APP_NS)..."
-  kubectl apply -f "$SCRIPT_DIR/namespace.yaml"
-  kubectl apply -f "$SCRIPT_DIR/storageclass.yaml"
-  kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
-  kubectl apply -f "$SCRIPT_DIR/postgres.yaml"
-  kubectl apply -f "$SCRIPT_DIR/backend.yaml"
-  kubectl apply -f "$SCRIPT_DIR/frontend.yaml"
-  kubectl apply -f "$SCRIPT_DIR/locust/locust.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/namespace.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/storageclass.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/configmap.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/postgres.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/backend.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/frontend.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/locust/locust.yaml"
 
   # ── Monitoring namespace ───────────────────────────────────────────────────
   echo ""
   echo "==> Applying monitoring stack (namespace: $MON_NS)..."
-  kubectl apply -f "$SCRIPT_DIR/monitoring/namespace.yaml"
-  kubectl apply -f "$SCRIPT_DIR/monitoring/rbac.yaml"
-  kubectl apply -f "$SCRIPT_DIR/monitoring/loki.yaml"
-  kubectl apply -f "$SCRIPT_DIR/monitoring/promtail.yaml"
-  kubectl apply -f "$SCRIPT_DIR/monitoring/jaeger.yaml"
-  kubectl apply -f "$SCRIPT_DIR/monitoring/prometheus.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/namespace.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/rbac.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/loki.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/promtail.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/jaeger.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/prometheus.yaml"
 
   # Inject dashboard JSON files as a ConfigMap so Grafana auto-provisions them
   echo "==> Loading Grafana dashboard JSON files..."
   kubectl create configmap grafana-dashboards \
     --from-file="$APP_DIR/grafana/dashboards/" \
     -n "$MON_NS" \
-    --dry-run=client -o yaml | kubectl apply -f -
+    --dry-run=client -o yaml | $KUBECTL apply -f -
 
-  kubectl apply -f "$SCRIPT_DIR/monitoring/grafana.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/grafana.yaml"
 
   # ── Wait for rollouts ──────────────────────────────────────────────────────
   echo ""
   echo "==> Waiting for Postgres..."
-  kubectl rollout status statefulset/postgres -n "$APP_NS" --timeout=180s
+  $KUBECTL rollout status statefulset/postgres -n "$APP_NS" --timeout=180s
 
   echo "==> Waiting for backend..."
-  kubectl rollout status deployment/sre-backend -n "$APP_NS" --timeout=120s
+  $KUBECTL rollout status deployment/sre-backend -n "$APP_NS" --timeout=120s
 
   echo "==> Waiting for frontend..."
-  kubectl rollout status deployment/sre-frontend -n "$APP_NS" --timeout=120s
+  $KUBECTL rollout status deployment/sre-frontend -n "$APP_NS" --timeout=120s
 
   echo "==> Waiting for Loki..."
-  kubectl rollout status statefulset/loki -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status statefulset/loki -n "$MON_NS" --timeout=120s
 
   echo "==> Waiting for Prometheus..."
-  kubectl rollout status deployment/prometheus -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status deployment/prometheus -n "$MON_NS" --timeout=120s
 
   echo "==> Waiting for Grafana..."
-  kubectl rollout status deployment/grafana -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status deployment/grafana -n "$MON_NS" --timeout=120s
 
   echo "==> Waiting for Jaeger..."
-  kubectl rollout status deployment/jaeger -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status deployment/jaeger -n "$MON_NS" --timeout=120s
 
   echo ""
   echo "╔══════════════════════════════════════════════════════════════╗"
@@ -189,26 +192,26 @@ teardown_all() {
   confirm_or_exit "This will delete BOTH the app ($APP_NS) and monitoring ($MON_NS) namespaces. Continue?" "$auto_confirm"
 
   echo "==> Tearing down application stack..."
-  kubectl delete -f "$SCRIPT_DIR/locust/locust.yaml"         --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/frontend.yaml"              --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/backend.yaml"               --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/postgres.yaml"              --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/configmap.yaml"             --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/storageclass.yaml"          --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/namespace.yaml"             --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/locust/locust.yaml"         --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/frontend.yaml"              --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/backend.yaml"               --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/postgres.yaml"              --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/configmap.yaml"             --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/storageclass.yaml"          --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/namespace.yaml"             --ignore-not-found
 
   echo "==> Tearing down monitoring stack..."
-  kubectl delete -f "$SCRIPT_DIR/monitoring/grafana.yaml"    --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/monitoring/prometheus.yaml" --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/monitoring/jaeger.yaml"     --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/monitoring/promtail.yaml"   --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/monitoring/loki.yaml"       --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/monitoring/rbac.yaml"       --ignore-not-found
-  kubectl delete -f "$SCRIPT_DIR/monitoring/namespace.yaml"  --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/grafana.yaml"    --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/prometheus.yaml" --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/jaeger.yaml"     --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/promtail.yaml"   --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/loki.yaml"       --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/rbac.yaml"       --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/namespace.yaml"  --ignore-not-found
 
   echo "==> Waiting for namespaces to terminate..."
-  kubectl wait --for=delete namespace/$APP_NS --timeout=120s || true
-  kubectl wait --for=delete namespace/$MON_NS --timeout=120s || true
+  $KUBECTL wait --for=delete namespace/$APP_NS --timeout=120s || true
+  $KUBECTL wait --for=delete namespace/$MON_NS --timeout=120s || true
 
   echo "==> Teardown complete."
 }

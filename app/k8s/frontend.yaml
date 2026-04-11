@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: kotidevops/kt-frontend:v1
+          image: kotidevops/kt-frontend:v3
           imagePullPolicy: Always
           ports:
             - containerPort: 80
