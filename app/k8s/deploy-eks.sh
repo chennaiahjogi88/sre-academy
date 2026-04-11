@@ -53,11 +53,54 @@ check_context() {
 
 check_ebs_csi() {
   echo "==> Checking EBS CSI driver..."
-  if ! kubectl get daemonset ebs-csi-node -n kube-system &>/dev/null; then
-    echo "    EBS CSI driver not found. Install it before deploying persistent services:"
-    echo "      aws eks create-addon --cluster-name <cluster-name> --addon-name aws-ebs-csi-driver"
-    confirm_or_exit "Continue anyway?"
+  if kubectl get daemonset ebs-csi-node -n kube-system &>/dev/null; then
+    echo "    EBS CSI driver already present."
+    return 0
   fi
+
+  echo "    EBS CSI driver not found — attempting to install via EKS managed addon..."
+
+  # Derive cluster name from the current kubectl context.
+  # Contexts created by 'aws eks update-kubeconfig' look like:
+  #   arn:aws:eks:<region>:<account>:cluster/<name>   or   <name>
+  local RAW_CONTEXT
+  RAW_CONTEXT=$(kubectl config current-context 2>/dev/null || true)
+  local CLUSTER_NAME
+  CLUSTER_NAME=$(echo "$RAW_CONTEXT" | sed 's|.*/cluster/||; s|.*/||')
+
+  if [ -z "$CLUSTER_NAME" ]; then
+    echo "ERROR: Could not derive cluster name from context '$RAW_CONTEXT'."
+    echo "       Run manually: aws eks create-addon --cluster-name <name> --addon-name aws-ebs-csi-driver"
+    exit 1
+  fi
+
+  echo "    Detected cluster: $CLUSTER_NAME"
+
+  # Create addon (idempotent — succeeds even if already being created).
+  aws eks create-addon \
+    --cluster-name "$CLUSTER_NAME" \
+    --addon-name aws-ebs-csi-driver \
+    --resolve-conflicts OVERWRITE 2>&1 | grep -v "already exists" || true
+
+  echo "    Waiting for EBS CSI addon to become ACTIVE (up to 5 min)..."
+  local TIMEOUT=300 SLEEP=10 TRIES
+  TRIES=$((TIMEOUT / SLEEP))
+  for i in $(seq 1 "$TRIES"); do
+    local STATUS
+    STATUS=$(aws eks describe-addon \
+      --cluster-name "$CLUSTER_NAME" \
+      --addon-name aws-ebs-csi-driver \
+      --query 'addon.status' --output text 2>/dev/null || echo "UNKNOWN")
+    if [ "$STATUS" = "ACTIVE" ]; then
+      echo "    EBS CSI addon is ACTIVE."
+      return 0
+    fi
+    echo "    Status: $STATUS — attempt $i/$TRIES"
+    sleep "$SLEEP"
+  done
+
+  echo "ERROR: EBS CSI addon did not become ACTIVE within ${TIMEOUT}s."
+  exit 1
 }
 
 deploy_all() {
