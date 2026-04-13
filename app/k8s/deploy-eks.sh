@@ -54,6 +54,64 @@ check_context() {
   fi
 }
 
+install_nginx_ingress() {
+  echo "==> Checking NGINX Ingress Controller..."
+  if kubectl get deployment ingress-nginx-controller -n ingress-nginx &>/dev/null; then
+    echo "    NGINX Ingress Controller already installed."
+  else
+    echo "    Installing NGINX Ingress Controller (AWS NLB mode)..."
+    $KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/aws/deploy.yaml
+
+    echo "    Waiting for ingress-nginx controller to be ready (up to 3 min)..."
+    $KUBECTL rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
+    echo "    NGINX Ingress Controller is ready."
+  fi
+
+  # Enable snippet annotations — required for WebSocket proxy headers in ingress rules.
+  # Disabled by default in ingress-nginx v1.9+; without this the configuration-snippet
+  # annotation is silently ignored and WebSocket upgrades won't be injected.
+  echo "    Enabling snippet annotations in ingress-nginx ConfigMap..."
+  $KUBECTL patch configmap ingress-nginx-controller -n ingress-nginx \
+    --type merge -p '{"data":{"allow-snippet-annotations":"true"}}' 2>/dev/null || true
+}
+
+tag_node_sg_for_nlb() {
+  # The Kubernetes NLB controller discovers which VPC security groups to add NodePort
+  # rules into by looking for the tag kubernetes.io/cluster/<name>=owned.
+  # EKS auto-tags the cluster SG but NOT the Terraform-managed node SG.
+  # Tagging the node SG here ensures NLB rules land on the right SG on every fresh install.
+  echo "==> Tagging node security group for NLB auto-discovery..."
+
+  local RAW_CONTEXT
+  RAW_CONTEXT=$(kubectl config current-context 2>/dev/null || true)
+  local CLUSTER_NAME
+  CLUSTER_NAME=$(echo "$RAW_CONTEXT" | sed 's|.*/cluster/||; s|.*/||')
+
+  if [ -z "$CLUSTER_NAME" ]; then
+    echo "    WARNING: Could not derive cluster name — skipping node SG tagging."
+    return 0
+  fi
+
+  # Terraform names the node SG "<cluster-name>-node" via the Name tag.
+  local SG_IDS
+  SG_IDS=$(aws ec2 describe-security-groups \
+    --filters "Name=tag:Name,Values=${CLUSTER_NAME}-node" \
+    --query 'SecurityGroups[*].GroupId' --output text 2>/dev/null || echo "")
+
+  if [ -z "$SG_IDS" ]; then
+    echo "    No node SG found with Name=${CLUSTER_NAME}-node — skipping."
+    return 0
+  fi
+
+  for SG_ID in $SG_IDS; do
+    echo "    Tagging $SG_ID → kubernetes.io/cluster/${CLUSTER_NAME}=owned"
+    aws ec2 create-tags \
+      --resources "$SG_ID" \
+      --tags "Key=kubernetes.io/cluster/${CLUSTER_NAME},Value=owned" 2>/dev/null || true
+  done
+  echo "    Node SG tagged."
+}
+
 check_ebs_csi() {
   echo "==> Checking EBS CSI driver..."
   if $KUBECTL get daemonset ebs-csi-node -n kube-system &>/dev/null; then
@@ -109,6 +167,8 @@ check_ebs_csi() {
 deploy_all() {
   local auto_confirm=${1:-false}
   check_context
+  install_nginx_ingress
+  tag_node_sg_for_nlb
   check_ebs_csi
 
   # ── Application namespace ──────────────────────────────────────────────────
@@ -141,6 +201,12 @@ deploy_all() {
 
   $KUBECTL apply -f "$SCRIPT_DIR/monitoring/grafana.yaml"
 
+  # ── Ingress resources ──────────────────────────────────────────────────────
+  echo ""
+  echo "==> Applying Ingress resources..."
+  $KUBECTL apply -f "$SCRIPT_DIR/ingress.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/monitoring/ingress.yaml"
+
   # ── Wait for rollouts ──────────────────────────────────────────────────────
   echo ""
   echo "==> Waiting for Postgres..."
@@ -164,32 +230,65 @@ deploy_all() {
   echo "==> Waiting for Jaeger..."
   $KUBECTL rollout status deployment/jaeger -n "$MON_NS" --timeout=120s
 
+  # Fetch the NLB hostname assigned by AWS
+  NLB_HOST=$(kubectl get svc ingress-nginx-controller -n ingress-nginx \
+    -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "<pending>")
+
   echo ""
-  echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║              Stack is up — access guide                     ║"
-  echo "╠══════════════════════════════════════════════════════════════╣"
-  echo "║  Get the nginx ingress LoadBalancer hostname:               ║"
-  echo "║    kubectl get svc -n ingress-nginx ingress-nginx-controller║"
-  echo "╠══════════════════════════════════════════════════════════════╣"
-  echo "║  Port-forwards (quick local access):                        ║"
-  echo "║    kubectl port-forward svc/frontend-service   8080:80     -n $APP_NS"
-  echo "║    kubectl port-forward svc/backend-service    3001:3001   -n $APP_NS"
-  echo "║    kubectl port-forward svc/locust-master-service 8089:8089 -n $APP_NS"
-  echo "║    kubectl port-forward svc/prometheus-service 9090:9090   -n $MON_NS"
-  echo "║    kubectl port-forward svc/grafana-service    3000:3000   -n $MON_NS"
-  echo "║    kubectl port-forward svc/loki-service       3100:3100   -n $MON_NS"
-  echo "║    kubectl port-forward svc/jaeger-service     16686:16686 -n $MON_NS"
-  echo "╠══════════════════════════════════════════════════════════════╣"
-  echo "║  Credentials:                                               ║"
-  echo "║    Grafana:  admin / Grafana@123                            ║"
-  echo "║    App:      student@ktech.sre / Student@123                ║"
-  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo "╔══════════════════════════════════════════════════════════════════════╗"
+  echo "║                  Stack is up — access guide                        ║"
+  echo "╠══════════════════════════════════════════════════════════════════════╣"
+  echo "║  NLB hostname (AWS LoadBalancer):                                  ║"
+  echo "║    $NLB_HOST"
+  echo "║                                                                    ║"
+  echo "║  Add these to /etc/hosts (or Route53 CNAME → NLB hostname):       ║"
+  echo "║    <NLB-IP>  app.ktech.io api.ktech.io locust.ktech.io            ║"
+  echo "║    <NLB-IP>  grafana.ktech.io prometheus.ktech.io jaeger.ktech.io ║"
+  echo "╠══════════════════════════════════════════════════════════════════════╣"
+  echo "║  Ingress URLs (after DNS is set):                                  ║"
+  echo "║    http://app.ktech.io          → SRE Platform frontend           ║"
+  echo "║    http://api.ktech.io          → Backend API                     ║"
+  echo "║    http://locust.ktech.io       → Locust load-test UI             ║"
+  echo "║    http://grafana.ktech.io      → Grafana  (admin / Grafana@123)  ║"
+  echo "║    http://prometheus.ktech.io   → Prometheus                      ║"
+  echo "║    http://jaeger.ktech.io       → Jaeger trace UI                 ║"
+  echo "╠══════════════════════════════════════════════════════════════════════╣"
+  echo "║  Port-forwards (quick local access without DNS):                   ║"
+  echo "║    kubectl port-forward svc/frontend-service      8080:80   -n $APP_NS ║"
+  echo "║    kubectl port-forward svc/backend-service       3001:3001 -n $APP_NS ║"
+  echo "║    kubectl port-forward svc/locust-master-service 8089:8089 -n $APP_NS ║"
+  echo "║    kubectl port-forward svc/prometheus-service    9090:9090 -n $MON_NS ║"
+  echo "║    kubectl port-forward svc/grafana-service       3000:3000 -n $MON_NS ║"
+  echo "║    kubectl port-forward svc/loki-service          3100:3100 -n $MON_NS ║"
+  echo "║    kubectl port-forward svc/jaeger-service     16686:16686  -n $MON_NS ║"
+  echo "╠══════════════════════════════════════════════════════════════════════╣"
+  echo "║  Credentials:                                                      ║"
+  echo "║    Grafana:  admin / Grafana@123                                   ║"
+  echo "║    App:      student@ktech.sre / Student@123                       ║"
+  echo "╚══════════════════════════════════════════════════════════════════════╝"
+}
+
+delete_nginx_ingress() {
+  echo "==> Removing NGINX Ingress Controller..."
+  if kubectl get namespace ingress-nginx &>/dev/null; then
+    $KUBECTL delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/aws/deploy.yaml \
+      --ignore-not-found
+    echo "    Waiting for ingress-nginx namespace to terminate..."
+    $KUBECTL wait --for=delete namespace/ingress-nginx --timeout=120s || true
+    echo "    NGINX Ingress Controller removed."
+  else
+    echo "    ingress-nginx namespace not found — skipping."
+  fi
 }
 
 teardown_all() {
   local auto_confirm=${1:-false}
   check_context
   confirm_or_exit "This will delete BOTH the app ($APP_NS) and monitoring ($MON_NS) namespaces. Continue?" "$auto_confirm"
+
+  echo "==> Removing Ingress resources..."
+  $KUBECTL delete -f "$SCRIPT_DIR/ingress.yaml"             --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/monitoring/ingress.yaml"  --ignore-not-found
 
   echo "==> Tearing down application stack..."
   $KUBECTL delete -f "$SCRIPT_DIR/locust/locust.yaml"         --ignore-not-found
@@ -212,6 +311,8 @@ teardown_all() {
   echo "==> Waiting for namespaces to terminate..."
   $KUBECTL wait --for=delete namespace/$APP_NS --timeout=120s || true
   $KUBECTL wait --for=delete namespace/$MON_NS --timeout=120s || true
+
+  delete_nginx_ingress
 
   echo "==> Teardown complete."
 }

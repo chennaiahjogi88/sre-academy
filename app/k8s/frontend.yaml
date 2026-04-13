@@ -4,7 +4,7 @@ metadata:
   name: sre-frontend
   namespace: sre-platform
 spec:
-  replicas: 2
+  replicas: 5
   selector:
     matchLabels:
       app: sre-frontend
@@ -21,11 +21,11 @@ spec:
             - containerPort: 80
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: "512Mi"
+              cpu: "1000m"
             limits:
-              memory: "128Mi"
-              cpu: "200m"
+              memory: "1Gi"
+              cpu: "2000m"
 ---
 apiVersion: v1
 kind: Service
@@ -38,25 +38,4 @@ spec:
   ports:
     - port: 80
       targetPort: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sre-platform-ingress
-  namespace: sre-platform
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: sre.ktech.local  # Update this to your real domain or EKS NLB hostname
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend-service
-                port:
-                  number: 80
+# Ingress rules have moved to k8s/ingress.yaml
