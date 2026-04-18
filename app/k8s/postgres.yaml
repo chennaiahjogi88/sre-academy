@@ -25,6 +25,10 @@ spec:
     metadata:
       labels:
         app: postgres
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: postgres
@@ -53,6 +57,30 @@ spec:
               command: ["pg_isready", "-U", "sre_user", "-d", "sre_platform"]
             initialDelaySeconds: 10
             periodSeconds: 5
+        - name: postgres-exporter
+          image: prometheuscommunity/postgres-exporter:v0.15.0
+          env:
+            - name: DATA_SOURCE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: sre-platform-secrets
+                  key: POSTGRES_EXPORTER_DSN
+          ports:
+            - containerPort: 9187
+              name: metrics
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9187
+            initialDelaySeconds: 15
+            periodSeconds: 10
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
