@@ -21,11 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-<<<<<<< HEAD
-          image: kotidevops/kt-backend:latest
-=======
           image: kotidevops/kt-backend:v2
->>>>>>> 5209a068c83684ec4253c2c299aab61972f8e478
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -82,7 +78,7 @@ metadata:
   namespace: sre-platform
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: gp3
+  storageClassName: standard
   resources:
     requests:
       storage: 20Gi

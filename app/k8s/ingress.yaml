@@ -1,10 +1,10 @@
 # ── NGINX Ingress — sre-platform namespace ────────────────────────────────────
 #
 # Prerequisites (one-time, run before deploying this file):
-#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/aws/deploy.yaml
+#   minikube addons enable ingress
 #
-# After the controller is up, get the NLB hostname and update DNS (or /etc/hosts):
-#   kubectl get svc -n ingress-nginx ingress-nginx-controller
+# After the controller is up, get the minikube IP and update /etc/hosts:
+#   minikube ip
 #
 # Hostnames used (update these to your real domain or EKS NLB hostname):
 #   app.ktech.io      → SRE Platform frontend

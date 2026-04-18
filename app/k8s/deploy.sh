@@ -20,15 +20,9 @@ minikube addons enable ingress
 # echo "==> Pointing Docker to minikube's daemon..."
 # eval "$(minikube docker-env)"
 
-<<<<<<< HEAD
-# echo "==> Building Docker images..."
-# docker build -t sre-backend:latest "$APP_DIR/backend"
-# docker build -t sre-frontend:latest "$APP_DIR/frontend"
-=======
 echo "==> Building Docker images..."
 docker build -t kotidevops/kt-backend:v2 "$APP_DIR/backend"
 docker build -t kotidevops/kt-frontend:v1 "$APP_DIR/frontend"
->>>>>>> 5209a068c83684ec4253c2c299aab61972f8e478
 
 # ── Application namespace ────────────────────────────────────────────────────
 echo ""

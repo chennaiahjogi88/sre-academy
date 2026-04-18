@@ -5,7 +5,7 @@ metadata:
   namespace: sre-platform
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: gp3
+  storageClassName: standard
   resources:
     requests:
       storage: 5Gi
