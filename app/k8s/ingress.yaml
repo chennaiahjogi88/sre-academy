@@ -1,3 +1,25 @@
+# ── ingress-nginx-controller Service (LoadBalancer) ──────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+---
 # ── NGINX Ingress — sre-platform namespace ────────────────────────────────────
 #
 # Prerequisites (one-time, run before deploying this file):
@@ -22,9 +44,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
     # WebSocket support (required for the live student dashboard)
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
+    nginx.ingress.kubernetes.io/websocket-services: "frontend-service"
 spec:
   ingressClassName: nginx
   rules:

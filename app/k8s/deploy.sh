@@ -17,6 +17,14 @@ fi
 echo "==> Enabling ingress addon..."
 minikube addons enable ingress
 
+echo "==> Patching ingress-nginx-controller service to LoadBalancer..."
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
+kubectl patch svc ingress-nginx-controller -n ingress-nginx --type='json' \
+  -p='[{"op": "replace", "path": "/spec/type", "value": "LoadBalancer"}]'
+
 # echo "==> Pointing Docker to minikube's daemon..."
 # eval "$(minikube docker-env)"
 
