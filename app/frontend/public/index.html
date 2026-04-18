@@ -556,6 +556,263 @@
                 padding: 0 16px;
             }
         }
+
+        /* ── Courses Section ── */
+        .courses-section {
+            background: #060d1a;
+            padding: 80px 40px;
+            border-top: 1px solid #1e293b;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .course-card {
+            background: #0a1628;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 32px 28px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .course-card.cloud::before  { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
+        .course-card.devops::before { background: linear-gradient(90deg, #a78bfa, #7c3aed); }
+        .course-card.sre::before    { background: linear-gradient(90deg, #4ade80, #16a34a); }
+
+        .course-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(56,189,248,0.12);
+            border-color: #334155;
+        }
+
+        .course-icon {
+            font-size: 44px;
+            margin-bottom: 16px;
+        }
+
+        .course-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-bottom: 14px;
+        }
+
+        .cloud  .course-badge { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .devops .course-badge { background: rgba(167,139,250,0.15); color: #a78bfa; }
+        .sre    .course-badge { background: rgba(74,222,128,0.15);  color: #4ade80; }
+
+        .course-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 10px;
+        }
+
+        .course-desc {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .course-topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .course-topic-tag {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: #64748b;
+        }
+
+        .course-cta {
+            display: inline-block;
+            padding: 10px 22px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .cloud  .course-cta { background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+        .devops .course-cta { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+        .sre    .course-cta { background: rgba(74,222,128,0.12);  color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+
+        .course-cta:hover { opacity: 0.8; transform: translateX(3px); }
+
+        /* ── Chatbot Widget ── */
+        #chatbot-toggle {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 24px rgba(56,189,248,0.45);
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+
+        #chatbot-toggle:hover { transform: scale(1.1); }
+
+        #chatbot-toggle svg { width: 26px; height: 26px; }
+
+        #chatbot-window {
+            position: fixed;
+            bottom: 96px;
+            right: 28px;
+            width: 360px;
+            max-height: 480px;
+            background: #0a1628;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            z-index: 1000;
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        #chatbot-window.open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .chat-header-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .chat-header-info .chat-name { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+        .chat-header-info .chat-status { font-size: 11px; color: #22c55e; display: flex; align-items: center; gap: 4px; }
+        .chat-header-info .chat-status::before { content: ''; width: 7px; height: 7px; background: #22c55e; border-radius: 50%; display: inline-block; }
+
+        .chat-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+            padding: 4px;
+        }
+        .chat-close:hover { color: #94a3b8; }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            scrollbar-width: thin;
+            scrollbar-color: #1e293b transparent;
+        }
+
+        .chat-bubble {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .chat-bubble.bot {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: #cbd5e1;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble.user {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-quick-replies {
+            padding: 10px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-top: 1px solid #1e293b;
+            background: #060d1a;
+        }
+
+        .quick-reply-btn {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: #38bdf8;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .quick-reply-btn:hover { background: #1e293b; border-color: #38bdf8; }
+
+        @media (max-width: 640px) {
+            #chatbot-window { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+            #chatbot-toggle { bottom: 16px; right: 16px; }
+        }
     </style>
 </head>
 <body>
@@ -789,6 +1046,73 @@
         </div>
     </div>
 
+    <!-- Courses Section -->
+    <section class="courses-section">
+        <div style="max-width:1200px;margin:0 auto;">
+            <h2 class="section-title" style="margin-bottom:12px;">Our <span class="accent">Courses</span></h2>
+            <p style="color:#94a3b8;font-size:16px;text-align:center;margin-bottom:50px;">
+                Choose your learning path — from foundational cloud skills to advanced SRE practices.
+            </p>
+            <div class="courses-grid">
+
+                <!-- Cloud -->
+                <div class="course-card cloud">
+                    <div class="course-icon">☁️</div>
+                    <span class="course-badge">Cloud Computing</span>
+                    <div class="course-title">Cloud Fundamentals</div>
+                    <div class="course-desc">
+                        Master AWS core services, cloud architecture patterns, IAM, networking, and cost management. Build and deploy real workloads on the cloud.
+                    </div>
+                    <div class="course-topics">
+                        <span class="course-topic-tag">AWS EC2 &amp; S3</span>
+                        <span class="course-topic-tag">VPC &amp; IAM</span>
+                        <span class="course-topic-tag">RDS &amp; Lambda</span>
+                        <span class="course-topic-tag">CloudWatch</span>
+                        <span class="course-topic-tag">Cost Optimization</span>
+                    </div>
+                    <a href="/register.html" class="course-cta">Enroll Now →</a>
+                </div>
+
+                <!-- DevOps -->
+                <div class="course-card devops">
+                    <div class="course-icon">⚙️</div>
+                    <span class="course-badge">DevOps</span>
+                    <div class="course-title">DevOps Engineering</div>
+                    <div class="course-desc">
+                        Learn CI/CD pipelines, infrastructure as code, containerisation with Docker, and orchestration with Kubernetes. Ship faster and safer.
+                    </div>
+                    <div class="course-topics">
+                        <span class="course-topic-tag">CI/CD</span>
+                        <span class="course-topic-tag">Docker</span>
+                        <span class="course-topic-tag">Kubernetes</span>
+                        <span class="course-topic-tag">Terraform</span>
+                        <span class="course-topic-tag">GitHub Actions</span>
+                    </div>
+                    <a href="/register.html" class="course-cta">Enroll Now →</a>
+                </div>
+
+                <!-- SRE -->
+                <div class="course-card sre">
+                    <div class="course-icon">🛡️</div>
+                    <span class="course-badge">SRE</span>
+                    <div class="course-title">Site Reliability Engineering</div>
+                    <div class="course-desc">
+                        Deep-dive into SLOs, error budgets, observability stacks, incident management, and production-grade reliability engineering.
+                    </div>
+                    <div class="course-topics">
+                        <span class="course-topic-tag">SLOs &amp; SLIs</span>
+                        <span class="course-topic-tag">Prometheus</span>
+                        <span class="course-topic-tag">Grafana</span>
+                        <span class="course-topic-tag">Incident Response</span>
+                        <span class="course-topic-tag">Chaos Engineering</span>
+                    </div>
+                    <a href="/register.html" class="course-cta">Enroll Now →</a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
     <!-- Free Classes -->
     <section class="section">
         <h2 class="section-title">Preview — <span class="accent">Free Classes</span></h2>
@@ -994,10 +1318,175 @@
         </div>
     </footer>
 
+    <!-- Chatbot Widget -->
+    <button id="chatbot-toggle" aria-label="Chat with us">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0a1628" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+    </button>
+
+    <div id="chatbot-window" role="dialog" aria-label="Ktech Assistant">
+        <div class="chat-header">
+            <div class="chat-header-avatar">🤖</div>
+            <div class="chat-header-info">
+                <div class="chat-name">Ktech Assistant</div>
+                <div class="chat-status">Online</div>
+            </div>
+            <button class="chat-close" id="chatbot-close" aria-label="Close chat">&times;</button>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-quick-replies" id="quick-replies"></div>
+    </div>
+
     <script src="/js/auth.js"></script>
     <script>
         // Redirect if already logged in
         Auth.redirectIfLoggedIn();
+    </script>
+
+    <!-- CHATBOT SCRIPT -->
+    <script>
+    (function() {
+        const toggle   = document.getElementById('chatbot-toggle');
+        const window_  = document.getElementById('chatbot-window');
+        const closeBtn = document.getElementById('chatbot-close');
+        const msgBox   = document.getElementById('chat-messages');
+        const qrBox    = document.getElementById('quick-replies');
+
+        // ── Conversation tree ──────────────────────────────────────────
+        const BOT_DELAY = 650; // ms typing delay
+
+        const FLOWS = {
+            start: {
+                msg: "Hi! I'm the Ktech Academy assistant. How can I help you today?",
+                replies: [
+                    { label: "What courses do you offer?", next: "courses" },
+                    { label: "How do I enroll?",           next: "enroll"  },
+                    { label: "Is there a free trial?",     next: "free"    },
+                    { label: "Batch & schedule info",      next: "batch"   },
+                ]
+            },
+            courses: {
+                msg: "We offer three learning paths:\n\n☁️ Cloud Fundamentals — AWS core services, VPC, IAM, Lambda\n⚙️ DevOps Engineering — CI/CD, Docker, Kubernetes, Terraform\n🛡️ SRE — SLOs, observability, incident response, chaos engineering\n\nAll paths include live classes, recordings, and hands-on labs.",
+                replies: [
+                    { label: "Tell me about SRE",       next: "sre_detail"  },
+                    { label: "Tell me about DevOps",    next: "devops_detail"},
+                    { label: "Tell me about Cloud",     next: "cloud_detail" },
+                    { label: "How do I enroll?",        next: "enroll"       },
+                ]
+            },
+            sre_detail: {
+                msg: "The SRE course covers:\n• SLOs, SLIs & Error Budgets\n• Prometheus & Grafana observability stack\n• Incident management & runbooks\n• Kubernetes reliability patterns\n• Chaos engineering basics\n\nDuration: ~10 weeks | Live weekend classes + recordings",
+                replies: [
+                    { label: "How do I enroll?",     next: "enroll"  },
+                    { label: "Is there a free trial?", next: "free"  },
+                    { label: "Back to courses",        next: "courses"},
+                ]
+            },
+            devops_detail: {
+                msg: "The DevOps course covers:\n• CI/CD with GitHub Actions & Jenkins\n• Docker & container best practices\n• Kubernetes deployments & Helm\n• Terraform & Infrastructure as Code\n• Release strategies (blue/green, canary)\n\nDuration: ~8 weeks | Live weekend classes + recordings",
+                replies: [
+                    { label: "How do I enroll?",     next: "enroll"  },
+                    { label: "Is there a free trial?", next: "free"  },
+                    { label: "Back to courses",        next: "courses"},
+                ]
+            },
+            cloud_detail: {
+                msg: "The Cloud Fundamentals course covers:\n• AWS EC2, S3, VPC & IAM\n• RDS, Lambda & API Gateway\n• CloudWatch monitoring\n• Cost optimisation strategies\n• Real-world architecture projects\n\nDuration: ~6 weeks | Live weekend classes + recordings",
+                replies: [
+                    { label: "How do I enroll?",     next: "enroll"  },
+                    { label: "Is there a free trial?", next: "free"  },
+                    { label: "Back to courses",        next: "courses"},
+                ]
+            },
+            enroll: {
+                msg: "Enrolling is easy!\n1️⃣ Click 'Register' in the top nav\n2️⃣ Create your account\n3️⃣ Choose your course\n4️⃣ Join the live batch\n\nCurrent batch starts January 2026. Seats are limited — grab yours early!",
+                replies: [
+                    { label: "Register now",         next: "register_link" },
+                    { label: "Is there a free trial?", next: "free"        },
+                    { label: "Any other questions?",   next: "start"       },
+                ]
+            },
+            register_link: {
+                msg: "Head over to the registration page — it only takes 2 minutes. See you inside! 🎉",
+                replies: [
+                    { label: "Take me there", next: "_register" },
+                    { label: "Ask something else", next: "start" },
+                ]
+            },
+            free: {
+                msg: "Yes! We offer 2 free preview classes:\n\n📖 C1 — SRE Foundations: What is SRE?\n📖 C2 — SRE Foundations: Error Budgets\n\nNo login required for previews. Just scroll up and click the free cards!",
+                replies: [
+                    { label: "How do I enroll for full access?", next: "enroll"  },
+                    { label: "What other courses are there?",    next: "courses" },
+                    { label: "Ask something else",               next: "start"   },
+                ]
+            },
+            batch: {
+                msg: "📅 Current Batch: January 2026\n\n• Classes run on weekends (Sat & Sun)\n• 2–3 hours per session\n• All sessions are recorded\n• Access recordings anytime from the portal\n\nYou'll also get access to hands-on labs and a private community.",
+                replies: [
+                    { label: "How do I enroll?",     next: "enroll"  },
+                    { label: "What courses are there?", next: "courses"},
+                    { label: "Any other questions?",   next: "start"  },
+                ]
+            },
+        };
+
+        function addBubble(text, role) {
+            const div = document.createElement('div');
+            div.className = 'chat-bubble ' + role;
+            div.textContent = text;
+            msgBox.appendChild(div);
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }
+
+        function setQuickReplies(replies) {
+            qrBox.innerHTML = '';
+            replies.forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-reply-btn';
+                btn.textContent = r.label;
+                btn.addEventListener('click', () => handleReply(r));
+                qrBox.appendChild(btn);
+            });
+        }
+
+        function handleReply(reply) {
+            if (reply.next === '_register') {
+                addBubble(reply.label, 'user');
+                setQuickReplies([]);
+                setTimeout(() => window.location.href = '/register.html', 400);
+                return;
+            }
+            addBubble(reply.label, 'user');
+            setQuickReplies([]);
+            const flow = FLOWS[reply.next] || FLOWS.start;
+            setTimeout(() => {
+                addBubble(flow.msg, 'bot');
+                setQuickReplies(flow.replies);
+            }, BOT_DELAY);
+        }
+
+        function openChat() {
+            window_.classList.add('open');
+            if (msgBox.childElementCount === 0) {
+                const flow = FLOWS.start;
+                setTimeout(() => {
+                    addBubble(flow.msg, 'bot');
+                    setQuickReplies(flow.replies);
+                }, 300);
+            }
+        }
+
+        toggle.addEventListener('click', () => {
+            if (window_.classList.contains('open')) {
+                window_.classList.remove('open');
+            } else {
+                openChat();
+            }
+        });
+        closeBtn.addEventListener('click', () => window_.classList.remove('open'));
+    })();
     </script>
 
     <!-- HERO CANVAS — animated SRE node-graph background -->

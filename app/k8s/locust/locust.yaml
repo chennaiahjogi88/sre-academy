@@ -1,0 +1,221 @@
+# ── Locust load testing for SRE Platform ──────────────────────────────────────
+# Deploys a master + 2 workers in sre-platform namespace
+# Access the Locust UI to start/stop tests and watch live metrics
+#
+# Usage:
+#   kubectl port-forward svc/locust-service 8089:8089 -n sre-platform
+#   Then open http://localhost:8089
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-scripts
+  namespace: sre-platform
+data:
+  locustfile.py: |
+    from locust import HttpUser, task, between, events
+    import random
+
+    CLASS_IDS = [
+        "sre_foundations_1", "sre_foundations_2", "docker_fundamentals",
+        "k8s_basics", "k8s_architecture", "prometheus", "grafana", "loki",
+        "jaeger", "alertmanager", "load_testing"
+    ]
+
+    class SREPlatformStudent(HttpUser):
+        """Simulates a student browsing the SRE Academy platform."""
+        wait_time = between(1, 4)
+        token = None
+
+        def on_start(self):
+            resp = self.client.post(
+                "/api/auth/login",
+                json={"email": "student@ktech.sre", "password": "Student@123"},
+                name="POST /api/auth/login"
+            )
+            if resp.status_code == 200:
+                self.token = resp.json().get("token")
+
+        def _headers(self):
+            return {"Authorization": f"Bearer {self.token}"} if self.token else {}
+
+        @task(8)
+        def browse_classes(self):
+            self.client.get("/api/classes", headers=self._headers(), name="GET /api/classes")
+
+        @task(5)
+        def view_announcements(self):
+            self.client.get(
+                "/api/announcements", headers=self._headers(), name="GET /api/announcements"
+            )
+
+        @task(4)
+        def list_recordings(self):
+            self.client.get(
+                "/api/recordings", headers=self._headers(), name="GET /api/recordings"
+            )
+
+        @task(6)
+        def health_check(self):
+            self.client.get("/health", name="GET /health")
+
+        @task(2)
+        def auth_me(self):
+            self.client.get("/api/auth/me", headers=self._headers(), name="GET /api/auth/me")
+
+        @task(1)
+        def failed_login(self):
+            """Generates login_attempts_total{result="failure"} — triggers the alert."""
+            self.client.post(
+                "/api/auth/login",
+                json={"email": "attacker@evil.com", "password": "wrongpassword"},
+                name="POST /api/auth/login [fail]"
+            )
+
+    class SREPlatformAdmin(HttpUser):
+        """Simulates admin operations — lower frequency."""
+        wait_time = between(5, 15)
+        token = None
+        weight = 1  # 1 admin per 10 students (see below)
+
+        def on_start(self):
+            resp = self.client.post(
+                "/api/auth/login",
+                json={"email": "admin@ktech.sre", "password": "Admin@123"},
+                name="POST /api/auth/login [admin]"
+            )
+            if resp.status_code == 200:
+                self.token = resp.json().get("token")
+
+        def _headers(self):
+            return {"Authorization": f"Bearer {self.token}"} if self.token else {}
+
+        @task(3)
+        def list_users(self):
+            self.client.get("/api/admin/users", headers=self._headers(), name="GET /api/admin/users")
+
+        @task(1)
+        def check_health(self):
+            self.client.get("/health", name="GET /health [admin]")
+
+    # Ratio: mostly students
+    SREPlatformStudent.weight = 10
+    SREPlatformAdmin.weight = 1
+---
+# ── Locust Master ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-master
+  namespace: sre-platform
+  labels:
+    app: locust
+    role: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+      role: master
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: master
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:2.24.0
+          command:
+            - locust
+            - -f
+            - /locust/locustfile.py
+            - --master
+            - --host=http://backend-service:3001
+            - --web-port=8089
+          ports:
+            - name: web
+              containerPort: 8089
+            - name: worker-p1
+              containerPort: 5557
+            - name: worker-p2
+              containerPort: 5558
+          volumeMounts:
+            - name: locust-scripts
+              mountPath: /locust
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: locust-scripts
+          configMap:
+            name: locust-scripts
+---
+# ── Locust Workers ────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-worker
+  namespace: sre-platform
+  labels:
+    app: locust
+    role: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: locust
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: worker
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:2.24.0
+          command:
+            - locust
+            - -f
+            - /locust/locustfile.py
+            - --worker
+            - --master-host=locust-master-service
+          volumeMounts:
+            - name: locust-scripts
+              mountPath: /locust
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: locust-scripts
+          configMap:
+            name: locust-scripts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust-master-service
+  namespace: sre-platform
+spec:
+  selector:
+    app: locust
+    role: master
+  ports:
+    - name: web
+      port: 8089
+      targetPort: 8089
+    - name: worker-p1
+      port: 5557
+      targetPort: 5557
+    - name: worker-p2
+      port: 5558
+      targetPort: 5558

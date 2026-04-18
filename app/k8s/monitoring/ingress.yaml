@@ -1,0 +1,56 @@
+# ── NGINX Ingress — monitoring namespace ─────────────────────────────────────
+#
+# Exposes the full observability stack via the same NLB created by the
+# NGINX Ingress Controller (see k8s/ingress.yaml for install instructions).
+#
+# Hostnames used (update these to your real domain or EKS NLB hostname):
+#   grafana.ktech.io    → Grafana dashboards  (admin / Grafana@123)
+#   prometheus.ktech.io → Prometheus UI
+#   jaeger.ktech.io     → Jaeger trace UI
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+    # ── Grafana ───────────────────────────────────────────────────────────────
+    - host: grafana.ktech.io      # Replace with your domain / NLB hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana-service
+                port:
+                  number: 3000
+
+    # ── Prometheus ────────────────────────────────────────────────────────────
+    - host: prometheus.ktech.io   # Replace with your domain / NLB hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-service
+                port:
+                  number: 9090
+
+    # ── Jaeger ────────────────────────────────────────────────────────────────
+    - host: jaeger.ktech.io       # Replace with your domain / NLB hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jaeger-service
+                port:
+                  number: 16686

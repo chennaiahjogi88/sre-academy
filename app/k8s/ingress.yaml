@@ -1,0 +1,65 @@
+# ── NGINX Ingress — sre-platform namespace ────────────────────────────────────
+#
+# Prerequisites (one-time, run before deploying this file):
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/aws/deploy.yaml
+#
+# After the controller is up, get the NLB hostname and update DNS (or /etc/hosts):
+#   kubectl get svc -n ingress-nginx ingress-nginx-controller
+#
+# Hostnames used (update these to your real domain or EKS NLB hostname):
+#   app.ktech.io      → SRE Platform frontend
+#   api.ktech.io      → SRE Platform backend API
+#   locust.ktech.io   → Locust load-test UI
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sre-app-ingress
+  namespace: sre-platform
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    # WebSocket support (required for the live student dashboard)
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+spec:
+  ingressClassName: nginx
+  rules:
+    # ── Frontend ──────────────────────────────────────────────────────────────
+    - host: app.ktech.io      # Replace with your domain / NLB hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
+    # ── Backend API ───────────────────────────────────────────────────────────
+    - host: api.ktech.io      # Replace with your domain / NLB hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3001
+
+    # ── Locust load-test UI ───────────────────────────────────────────────────
+    - host: locust.ktech.io   # Replace with your domain / NLB hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: locust-master-service
+                port:
+                  number: 8089

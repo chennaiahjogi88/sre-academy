@@ -15,17 +15,21 @@ spec:
     spec:
       containers:
         - name: frontend
+<<<<<<< HEAD
           image: kotidevops/kt-frontend:latest
+=======
+          image: kotidevops/kt-frontend:v3
+>>>>>>> 5209a068c83684ec4253c2c299aab61972f8e478
           imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: "200Mi"
+              cpu: "100m"
             limits:
-              memory: "128Mi"
-              cpu: "200m"
+              memory: "512Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
@@ -38,24 +42,4 @@ spec:
   ports:
     - port: 80
       targetPort: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sre-platform-ingress
-  namespace: sre-platform
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-spec:
-  rules:
-    - host: sre.ktech.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend-service
-                port:
-                  number: 80
+# Ingress rules have moved to k8s/ingress.yaml

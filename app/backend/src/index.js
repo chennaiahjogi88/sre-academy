@@ -1,3 +1,6 @@
+// Tracing must be initialized before any other require
+require('./tracing');
+
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
