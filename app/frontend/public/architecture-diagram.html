@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ktech SRE Academy - Architecture Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 30px;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #58a6ff;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #8b949e;
+    font-size: 0.85rem;
+    margin-bottom: 40px;
+  }
+
+  /* ─── Layout ─── */
+  .diagram {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ─── Row helper ─── */
+  .row {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  /* ─── Section labels ─── */
+  .layer-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8b949e;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    min-width: 22px;
+  }
+
+  /* ─── Box ─── */
+  .box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+  }
+  .box-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .box-subtitle {
+    font-size: 0.68rem;
+    color: #8b949e;
+    margin-top: 2px;
+  }
+  .tag {
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── Color themes ─── */
+  .theme-blue   { background: #0d2137; border-color: #1f6feb; }
+  .theme-green  { background: #0d1f12; border-color: #238636; }
+  .theme-purple { background: #1a0d2e; border-color: #8957e5; }
+  .theme-orange { background: #1f1100; border-color: #d29922; }
+  .theme-red    { background: #1f0d0d; border-color: #da3633; }
+  .theme-teal   { background: #0d1f1f; border-color: #2ea043; }
+  .theme-gray   { background: #161b22; border-color: #30363d; }
+  .theme-pink   { background: #1f0d1f; border-color: #bc8cff; }
+
+  .tag-blue   { background: #1f6feb33; color: #58a6ff; border: 1px solid #1f6feb; }
+  .tag-green  { background: #23863633; color: #3fb950; border: 1px solid #238636; }
+  .tag-orange { background: #d2992233; color: #e3b341; border: 1px solid #d29922; }
+  .tag-purple { background: #8957e533; color: #bc8cff; border: 1px solid #8957e5; }
+  .tag-red    { background: #da363333; color: #ff7b72; border: 1px solid #da3633; }
+  .tag-teal   { background: #2ea04333; color: #56d364; border: 1px solid #2ea043; }
+  .tag-gray   { background: #30363d33; color: #8b949e; border: 1px solid #30363d; }
+  .tag-pink   { background: #bc8cff33; color: #d2a8ff; border: 1px solid #bc8cff; }
+
+  /* ─── Arrow row ─── */
+  .arrow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.65rem;
+    color: #484f58;
+  }
+  .arrow-row span { color: #30363d; font-size: 1.2rem; }
+  .arrow-label { color: #58a6ff; font-size: 0.65rem; background: #0d2137; border: 1px solid #1f6feb; border-radius: 8px; padding: 2px 8px; }
+
+  /* ─── Wide box ─── */
+  .wide  { flex: 1; min-width: 180px; }
+  .wider { flex: 2; min-width: 280px; }
+  .full  { width: 100%; }
+
+  /* ─── Grid inside box ─── */
+  .inner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .inner-box {
+    background: #00000033;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.68rem;
+  }
+  .inner-box .label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .inner-box ul {
+    padding-left: 12px;
+    color: #8b949e;
+    line-height: 1.6;
+  }
+
+  /* ─── Section divider ─── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0 2px;
+  }
+  .section-header hr {
+    flex: 1;
+    border: none;
+    border-top: 1px dashed #21262d;
+  }
+  .section-header span {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #484f58;
+    white-space: nowrap;
+  }
+
+  /* ─── Legend ─── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 16px;
+    padding: 14px 20px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    color: #8b949e;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── Flow arrows between sections ─── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: #30363d;
+    font-size: 0.9rem;
+  }
+  .flow-text {
+    font-size: 0.6rem;
+    color: #484f58;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── Port badge ─── */
+  .port {
+    font-size: 0.58rem;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: #8b949e;
+    font-family: monospace;
+  }
+
+  /* icon */
+  .icon { font-size: 1rem; line-height: 1; }
+
+  .endpoint {
+    font-family: monospace;
+    font-size: 0.6rem;
+    color: #e3b341;
+    background: #1f1100;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 1px 5px;
+    display: inline-block;
+    margin: 1px 2px;
+  }
+  .method-get  { color: #3fb950; }
+  .method-post { color: #58a6ff; }
+  .method-put  { color: #e3b341; }
+  .method-del  { color: #ff7b72; }
+  .method-patch{ color: #bc8cff; }
+
+  .ws-badge {
+    font-size: 0.58rem;
+    background: #1a0d2e;
+    border: 1px solid #8957e5;
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: #bc8cff;
+    font-weight: 700;
+  }
+
+  .db-field {
+    font-family: monospace;
+    font-size: 0.6rem;
+    color: #8b949e;
+  }
+  .db-pk { color: #e3b341; }
+  .db-fk { color: #58a6ff; }
+</style>
+</head>
+<body>
+
+<h1>Ktech SRE Academy — Architecture Diagram</h1>
+<p class="subtitle">Full-stack SRE Training Platform · Node.js · PostgreSQL · Docker / Kubernetes · Prometheus · Grafana</p>
+
+<div class="diagram">
+
+  <!-- ═══════════════════════════════════════════════════════
+       LAYER 1 — CLIENTS
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section-header"><hr><span>Clients</span><hr></div>
+  <div class="row">
+    <div class="box theme-gray wide">
+      <div class="box-title"><span class="icon">🌐</span> Browser — Public Visitor</div>
+      <div class="box-subtitle">Unauthenticated user, landing page + free classes</div>
+      <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="tag tag-gray">index.html</span>
+        <span class="tag tag-gray">2 Free Classes</span>
+      </div>
+    </div>
+    <div class="box theme-blue wide">
+      <div class="box-title"><span class="icon">🎓</span> Browser — Student</div>
+      <div class="box-subtitle">Authenticated, accesses 48 classes + recordings</div>
+      <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="tag tag-blue">portal.html</span>
+        <span class="tag tag-blue">recordings.html</span>
+        <span class="tag tag-blue">ppts/*.html</span>
+      </div>
+    </div>
+    <div class="box theme-red wide">
+      <div class="box-title"><span class="icon">🔐</span> Browser — Admin</div>
+      <div class="box-subtitle">Full access: users, announcements, uploads</div>
+      <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="tag tag-red">admin.html</span>
+        <span class="tag tag-red">recordings.html</span>
+        <span class="tag tag-red">portal.html</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- arrow -->
+  <div class="arrow-row">
+    <span>↓</span>
+    <div class="arrow-label">HTTPS / HTTP · WebSocket (Socket.io)</div>
+    <span>↓</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LAYER 2 — FRONTEND (Nginx)
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section-header"><hr><span>Frontend — Nginx Container</span><hr></div>
+  <div class="row">
+    <div class="box theme-teal full">
+      <div class="box-title"><span class="icon">🟩</span> Nginx Reverse Proxy &amp; Static Server <span class="port">:8080 (Docker) / :80 (K8s)</span></div>
+      <div class="box-subtitle">Multi-stage Docker build · node builder → nginx alpine</div>
+      <div class="inner-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">Static Pages</div>
+          <ul>
+            <li>index.html — Landing</li>
+            <li>login.html — Auth form</li>
+            <li>register.html — Sign-up</li>
+            <li>portal.html — Dashboard</li>
+            <li>recordings.html — Videos</li>
+            <li>admin.html — Admin panel</li>
+            <li>ppts/*.html — 48 class slides</li>
+          </ul>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">JS Utilities</div>
+          <ul>
+            <li>auth.js — JWT storage, fetch wrapper, role checks</li>
+            <li>ws.js — Socket.io client, toast notifications, progress events</li>
+          </ul>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">Proxy Rules (nginx.conf)</div>
+          <ul>
+            <li><code>/api/*</code> → backend:3001</li>
+            <li><code>/socket.io/*</code> → backend:3001 (WS upgrade)</li>
+            <li><code>/metrics</code> → backend:3001</li>
+            <li>Static files served directly</li>
+          </ul>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">Client-side Auth</div>
+          <ul>
+            <li>JWT stored in localStorage</li>
+            <li>Authorization: Bearer &lt;token&gt; on all API calls</li>
+            <li>Role-based page guards</li>
+            <li>Auto-redirect on 401</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- arrow -->
+  <div class="arrow-row">
+    <span>↓</span>
+    <div class="arrow-label">Proxy: /api/* + /socket.io/* + /metrics</div>
+    <span>↓</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LAYER 3 — BACKEND (Node.js / Express)
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section-header"><hr><span>Backend — Node.js Express Container</span><hr></div>
+  <div class="row">
+    <div class="box theme-blue full">
+      <div class="box-title">
+        <span class="icon">⚙️</span> Express.js API Server
+        <span class="port">:3001</span>
+        <span class="tag tag-blue">Node.js 20 Alpine</span>
+        <span class="ws-badge">Socket.io</span>
+      </div>
+      <div class="box-subtitle">Helmet security headers · Express Rate Limit · CORS · prom-client metrics · JWT auth</div>
+
+      <!-- Middleware row -->
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <span style="font-size:0.65rem; color:#8b949e; text-transform:uppercase; letter-spacing:1px;">Middleware chain:</span>
+        <span class="tag tag-gray">Helmet</span>
+        <span style="color:#30363d">→</span>
+        <span class="tag tag-gray">Rate Limiter</span>
+        <span style="color:#30363d">→</span>
+        <span class="tag tag-gray">CORS</span>
+        <span style="color:#30363d">→</span>
+        <span class="tag tag-gray">JSON Parser</span>
+        <span style="color:#30363d">→</span>
+        <span class="tag tag-blue">authenticate()</span>
+        <span style="color:#30363d">→</span>
+        <span class="tag tag-red">requireAdmin()</span>
+        <span style="color:#30363d">→</span>
+        <span class="tag tag-green">Route Handler</span>
+      </div>
+
+      <div class="inner-grid" style="margin-top:12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+
+        <!-- Auth Routes -->
+        <div class="inner-box" style="border-color:#1f6feb">
+          <div class="label" style="color:#58a6ff">🔑 /api/auth</div>
+          <div class="db-field"><span class="method-post">POST</span> /login — bcrypt verify + JWT sign</div>
+          <div class="db-field"><span class="method-post">POST</span> /logout — revoke session jti</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/me — current user info</div>
+          <div style="margin-top:6px; font-size:0.6rem; color:#484f58">JWT payload: userId, email, role, jti</div>
+        </div>
+
+        <!-- Classes Routes -->
+        <div class="inner-box" style="border-color:#238636">
+          <div class="label" style="color:#3fb950">📚 /api/classes</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/ — list 48 classes (public subset if unauth)</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/:id/progress — user slide progress</div>
+          <div class="db-field"><span class="method-put">PUT</span> &nbsp;/:id/progress — update slide position</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/progress/all — all user progress</div>
+        </div>
+
+        <!-- Recordings Routes -->
+        <div class="inner-box" style="border-color:#d29922">
+          <div class="label" style="color:#e3b341">🎬 /api/recordings</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/ — list published recordings</div>
+          <div class="db-field"><span class="method-post">POST</span> /upload — Multer → disk storage</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/stream/:file — HTTP 206 range stream</div>
+          <div class="db-field"><span class="method-del">DEL</span> &nbsp;/:id — admin only delete</div>
+        </div>
+
+        <!-- Announcements Routes -->
+        <div class="inner-box" style="border-color:#8957e5">
+          <div class="label" style="color:#bc8cff">📢 /api/announcements</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/ — active non-expired list</div>
+          <div class="db-field"><span class="method-post">POST</span> / — create + io.emit() broadcast</div>
+          <div class="db-field"><span class="method-del">DEL</span> &nbsp;/:id — soft delete (is_active=false)</div>
+        </div>
+
+        <!-- Admin Routes -->
+        <div class="inner-box" style="border-color:#da3633">
+          <div class="label" style="color:#ff7b72">🛡️ /api/admin</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/users — list all users</div>
+          <div class="db-field"><span class="method-post">POST</span> /users — create user</div>
+          <div class="db-field"><span class="method-patch">PATCH</span> /users/:id — role / is_active</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/stats — platform stats</div>
+        </div>
+
+        <!-- Observability -->
+        <div class="inner-box" style="border-color:#2ea043">
+          <div class="label" style="color:#56d364">📊 Observability</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/metrics — prom-client format</div>
+          <div class="db-field"><span class="method-get">GET</span> &nbsp;/health — uptime, status, ts</div>
+          <div style="margin-top:6px; font-size:0.6rem; color:#484f58">
+            http_requests_total · http_request_duration_seconds<br>
+            active_websocket_users · login_attempts_total<br>
+            class_views_total · announcements_sent_total<br>
+            recording_uploads_total
+          </div>
+        </div>
+
+        <!-- WebSocket -->
+        <div class="inner-box" style="border-color:#8957e5; grid-column: span 2;">
+          <div class="label" style="color:#bc8cff"><span class="ws-badge">WS</span> Socket.io Events</div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:4px;">
+            <div>
+              <div class="db-field" style="color:#bc8cff">→ slide_progress</div>
+              <div class="db-field" style="padding-left:8px">Student sends {class_id, slide, total} → INSERT/UPDATE class_progress</div>
+            </div>
+            <div>
+              <div class="db-field" style="color:#bc8cff">→ send_announcement</div>
+              <div class="db-field" style="padding-left:8px">Admin sends {title, msg, type} → global io.emit('announcement')</div>
+            </div>
+            <div>
+              <div class="db-field" style="color:#bc8cff">← announcement</div>
+              <div class="db-field" style="padding-left:8px">All clients receive push → toast notification</div>
+            </div>
+            <div>
+              <div class="db-field" style="color:#bc8cff">← active_users</div>
+              <div class="db-field" style="padding-left:8px">Gauge: count of connected WS clients</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /inner-grid -->
+    </div><!-- /backend box -->
+  </div>
+
+  <!-- Auth detail flow -->
+  <div class="row" style="gap:8px; justify-content:flex-start; padding-left:20px;">
+    <div class="box theme-gray" style="flex:1; max-width:600px;">
+      <div class="box-title" style="font-size:0.72rem;"><span class="icon">🔐</span> JWT Auth Flow (middleware/auth.js)</div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; font-size:0.65rem; color:#8b949e;">
+        <span class="tag tag-blue">Extract Bearer token</span>
+        <span>→</span>
+        <span class="tag tag-blue">jwt.verify(secret)</span>
+        <span>→</span>
+        <span class="tag tag-blue">SELECT sessions WHERE jti + NOT revoked</span>
+        <span>→</span>
+        <span class="tag tag-blue">Check is_active</span>
+        <span>→</span>
+        <span class="tag tag-green">req.user = {id, email, role}</span>
+      </div>
+      <div style="margin-top:6px; font-size:0.6rem; color:#484f58;">
+        Revocation: logout sets sessions.revoked=true using token jti · 24h expiry by default
+      </div>
+    </div>
+  </div>
+
+  <!-- arrow -->
+  <div class="arrow-row">
+    <span>↓</span>
+    <div class="arrow-label">pg driver · Connection Pool (max 20)</div>
+    <span>↓</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LAYER 4 — DATABASE
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section-header"><hr><span>Database — PostgreSQL Container</span><hr></div>
+  <div class="row">
+    <div class="box theme-orange full">
+      <div class="box-title"><span class="icon">🗄️</span> PostgreSQL 15 Alpine <span class="port">:5432</span> <span class="tag tag-orange">sre_platform</span></div>
+      <div class="box-subtitle">pgcrypto extension · Connection pool max 20 · Persistent volume</div>
+      <div class="inner-grid" style="margin-top:10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+
+        <div class="inner-box" style="border-color:#d29922">
+          <div class="label" style="color:#e3b341">users</div>
+          <div class="db-field"><span class="db-pk">id</span> SERIAL PK</div>
+          <div class="db-field">email VARCHAR UNIQUE</div>
+          <div class="db-field">password_hash VARCHAR</div>
+          <div class="db-field">name VARCHAR</div>
+          <div class="db-field">role ENUM(admin, student)</div>
+          <div class="db-field">is_active BOOLEAN</div>
+          <div class="db-field">created_at · last_login</div>
+          <div style="margin-top:4px; font-size:0.58rem; color:#484f58;">
+            Seed: admin@ktech.sre / student@ktech.sre
+          </div>
+        </div>
+
+        <div class="inner-box" style="border-color:#d29922">
+          <div class="label" style="color:#e3b341">sessions</div>
+          <div class="db-field"><span class="db-pk">id</span> SERIAL PK</div>
+          <div class="db-field"><span class="db-fk">user_id</span> FK → users</div>
+          <div class="db-field">token_jti UNIQUE</div>
+          <div class="db-field">ip_address · user_agent</div>
+          <div class="db-field">created_at · expires_at</div>
+          <div class="db-field">revoked BOOLEAN</div>
+          <div style="margin-top:4px; font-size:0.58rem; color:#484f58;">
+            Idx: token_jti, user_id
+          </div>
+        </div>
+
+        <div class="inner-box" style="border-color:#d29922">
+          <div class="label" style="color:#e3b341">class_progress</div>
+          <div class="db-field"><span class="db-pk">id</span> SERIAL PK</div>
+          <div class="db-field"><span class="db-fk">user_id</span> FK → users</div>
+          <div class="db-field">class_id INTEGER</div>
+          <div class="db-field">current_slide · total_slides</div>
+          <div class="db-field">completed BOOLEAN</div>
+          <div class="db-field">first_viewed · last_viewed</div>
+          <div style="margin-top:4px; font-size:0.58rem; color:#484f58;">
+            UNIQUE(user_id, class_id)
+          </div>
+        </div>
+
+        <div class="inner-box" style="border-color:#d29922">
+          <div class="label" style="color:#e3b341">recordings</div>
+          <div class="db-field"><span class="db-pk">id</span> SERIAL PK</div>
+          <div class="db-field">class_id · title · description</div>
+          <div class="db-field">filename · original_filename</div>
+          <div class="db-field">file_size · duration_seconds</div>
+          <div class="db-field"><span class="db-fk">uploaded_by</span> FK → users</div>
+          <div class="db-field">is_published BOOLEAN</div>
+        </div>
+
+        <div class="inner-box" style="border-color:#d29922">
+          <div class="label" style="color:#e3b341">announcements</div>
+          <div class="db-field"><span class="db-pk">id</span> SERIAL PK</div>
+          <div class="db-field">title · message</div>
+          <div class="db-field">type ENUM(info/warning/success/error)</div>
+          <div class="db-field"><span class="db-fk">created_by</span> FK → users</div>
+          <div class="db-field">expires_at · is_active</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LAYER 5 — OBSERVABILITY
+  ═══════════════════════════════════════════════════════ -->
+  <div class="arrow-row" style="margin-top:4px;">
+    <span>↓</span>
+    <div class="arrow-label">Scrape /metrics every 10s</div>
+    <span>↓</span>
+  </div>
+
+  <div class="section-header"><hr><span>Observability Stack</span><hr></div>
+  <div class="row">
+
+    <div class="box theme-orange wide">
+      <div class="box-title"><span class="icon">🔥</span> Prometheus v2.47 <span class="port">:9090</span></div>
+      <div class="box-subtitle">Scrapes backend every 10s · 30-day retention</div>
+      <div style="margin-top:8px; font-size:0.65rem; color:#8b949e; line-height:1.8;">
+        <div style="color:#e3b341;">Alert Rules:</div>
+        ⚠️ HighLoginFailureRate — &gt;0.5/sec for 2min<br>
+        🔴 BackendDown — no response for 30s<br>
+        ⚠️ HighAPILatency — P95 &gt; 1s for 5min<br>
+        ℹ️ NoActiveUsers — 0 WS connections for 30min
+      </div>
+    </div>
+
+    <div class="box theme-orange wide">
+      <div class="box-title"><span class="icon">📈</span> Grafana 10.2 <span class="port">:3000</span></div>
+      <div class="box-subtitle">Auto-provisioned datasource + dashboard</div>
+      <div style="margin-top:8px; font-size:0.65rem; color:#8b949e; line-height:1.8;">
+        Dashboard: sre-platform.json<br>
+        Panels: request rate, latency, login stats,<br>
+        active users, class views, error rates<br>
+        <span style="color:#e3b341;">Public dashboards: enabled</span>
+      </div>
+    </div>
+
+    <div class="box theme-purple wide">
+      <div class="box-title"><span class="icon">📦</span> File Storage (Volume)</div>
+      <div class="box-subtitle">Uploaded recordings persisted to disk</div>
+      <div style="margin-top:8px; font-size:0.65rem; color:#8b949e; line-height:1.8;">
+        Mount: /app/uploads<br>
+        Docker: recordings_data volume<br>
+        K8s: uploads-pvc (20Gi RWX)<br>
+        Max upload size: 500MB per file<br>
+        Streamed via HTTP 206 range requests
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LAYER 6 — DEPLOYMENT
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section-header" style="margin-top:8px;"><hr><span>Deployment</span><hr></div>
+  <div class="row">
+
+    <div class="box theme-teal wider">
+      <div class="box-title"><span class="icon">🐳</span> Docker Compose (Local Dev)</div>
+      <div class="inner-grid" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">frontend</div>
+          <div class="db-field">nginx alpine</div>
+          <div class="db-field">Port: 8080:80</div>
+          <div class="db-field">depends: backend</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">backend</div>
+          <div class="db-field">node:20-alpine</div>
+          <div class="db-field">Internal :3001</div>
+          <div class="db-field">Health: /health</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">postgres</div>
+          <div class="db-field">postgres:15-alpine</div>
+          <div class="db-field">Internal :5432</div>
+          <div class="db-field">Vol: postgres_data</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">prometheus</div>
+          <div class="db-field">prom/prometheus</div>
+          <div class="db-field">Port: 9090:9090</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">grafana</div>
+          <div class="db-field">grafana:10.2.0</div>
+          <div class="db-field">Port: 3000:3000</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#56d364">network</div>
+          <div class="db-field">sre_net (bridge)</div>
+          <div class="db-field">All services</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box theme-blue wider">
+      <div class="box-title"><span class="icon">☸️</span> Kubernetes (Production) <span class="tag tag-blue">ns: sre-platform</span></div>
+      <div class="inner-grid" style="margin-top:8px; grid-template-columns: repeat(3, 1fr);">
+        <div class="inner-box">
+          <div class="label" style="color:#58a6ff">frontend Deployment</div>
+          <div class="db-field">Replicas: 2</div>
+          <div class="db-field">Service: ClusterIP :80</div>
+          <div class="db-field">Ingress: sre.ktech.local</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#58a6ff">backend Deployment</div>
+          <div class="db-field">Replicas: 2</div>
+          <div class="db-field">Service: ClusterIP :3001</div>
+          <div class="db-field">PVC: 20Gi RWX</div>
+          <div class="db-field">Probe: /health</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#58a6ff">postgres StatefulSet</div>
+          <div class="db-field">Replicas: 1</div>
+          <div class="db-field">Service: Headless</div>
+          <div class="db-field">PVC: 5Gi RWO</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#58a6ff">prometheus Deployment</div>
+          <div class="db-field">Replicas: 1</div>
+          <div class="db-field">ConfigMap: config</div>
+          <div class="db-field">Scrapes backend svc</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#58a6ff">grafana Deployment</div>
+          <div class="db-field">Replicas: 1</div>
+          <div class="db-field">Auto-provisioned</div>
+        </div>
+        <div class="inner-box">
+          <div class="label" style="color:#58a6ff">Resources</div>
+          <div class="db-field">backend: 256Mi/100m → 512Mi/500m</div>
+          <div class="db-field">frontend: 64Mi/50m → 128Mi/200m</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DATA FLOWS
+  ═══════════════════════════════════════════════════════ -->
+  <div class="section-header" style="margin-top:8px;"><hr><span>Key Data Flows</span><hr></div>
+  <div class="row" style="flex-wrap:wrap;">
+
+    <div class="box theme-blue wide" style="min-width:260px;">
+      <div class="box-title" style="font-size:0.75rem;">🔑 Login Flow</div>
+      <div style="font-size:0.63rem; color:#8b949e; line-height:2; margin-top:6px;">
+        <span class="tag tag-blue">1</span> POST /api/auth/login {email, pw}<br>
+        <span class="tag tag-blue">2</span> bcrypt.compare(pw, hash)<br>
+        <span class="tag tag-blue">3</span> jwt.sign(userId, email, role, jti)<br>
+        <span class="tag tag-blue">4</span> INSERT sessions (jti, ip, ua, expires)<br>
+        <span class="tag tag-blue">5</span> Return {token, user}<br>
+        <span class="tag tag-blue">6</span> localStorage.setItem(token, user)<br>
+        <span class="tag tag-blue">7</span> Redirect → portal.html
+      </div>
+    </div>
+
+    <div class="box theme-green wide" style="min-width:260px;">
+      <div class="box-title" style="font-size:0.75rem;">📊 Progress Tracking Flow</div>
+      <div style="font-size:0.63rem; color:#8b949e; line-height:2; margin-top:6px;">
+        <span class="tag tag-green">1</span> Student views ppts/class-X.html<br>
+        <span class="tag tag-green">2</span> ws.sendProgress(class_id, slide, total)<br>
+        <span class="tag tag-green">3</span> WS event: 'slide_progress'<br>
+        <span class="tag tag-green">4</span> UPSERT class_progress table<br>
+        <span class="tag tag-green">5</span> PUT /api/classes/:id/progress (REST backup)<br>
+        <span class="tag tag-green">6</span> portal.html fetches /progress/all on load<br>
+        <span class="tag tag-green">7</span> Progress bars rendered per class card
+      </div>
+    </div>
+
+    <div class="box theme-purple wide" style="min-width:260px;">
+      <div class="box-title" style="font-size:0.75rem;">📢 Announcement Flow</div>
+      <div style="font-size:0.63rem; color:#8b949e; line-height:2; margin-top:6px;">
+        <span class="tag tag-purple">1</span> Admin fills form in admin.html<br>
+        <span class="tag tag-purple">2</span> POST /api/announcements<br>
+        <span class="tag tag-purple">3</span> INSERT into announcements table<br>
+        <span class="tag tag-purple">4</span> global.io.emit('announcement', data)<br>
+        <span class="tag tag-purple">5</span> All WS clients receive push event<br>
+        <span class="tag tag-purple">6</span> ws.js: showToast(title, msg, type)<br>
+        <span class="tag tag-purple">7</span> Add to announcement list in portal
+      </div>
+    </div>
+
+    <div class="box theme-orange wide" style="min-width:260px;">
+      <div class="box-title" style="font-size:0.75rem;">🎬 Video Upload &amp; Stream</div>
+      <div style="font-size:0.63rem; color:#8b949e; line-height:2; margin-top:6px;">
+        <span class="tag tag-orange">1</span> Admin: POST /api/recordings/upload<br>
+        <span class="tag tag-orange">2</span> Multer saves → /app/uploads/<br>
+        <span class="tag tag-orange">3</span> INSERT into recordings table<br>
+        <span class="tag tag-orange">4</span> Students: GET /api/recordings<br>
+        <span class="tag tag-orange">5</span> Click play → /stream/:filename<br>
+        <span class="tag tag-orange">6</span> HTTP 206 range-request streaming<br>
+        <span class="tag tag-orange">7</span> Browser plays video progressively
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#1f6feb"></div> Frontend / Auth (Blue)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#238636"></div> Classes / Progress (Green)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d29922"></div> Database / Recordings (Orange)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8957e5"></div> WebSocket / Announcements (Purple)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#da3633"></div> Admin / Security (Red)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2ea043"></div> Observability / Infra (Teal/Green)</div>
+    <div class="legend-item"><span class="db-pk" style="font-size:0.7rem;">PK</span> Primary Key</div>
+    <div class="legend-item"><span class="db-fk" style="font-size:0.7rem;">FK</span> Foreign Key</div>
+    <div class="legend-item"><span class="ws-badge">WS</span> WebSocket</div>
+    <div class="legend-item"><span class="port">:3001</span> Service Port</div>
+  </div>
+
+  <div style="text-align:center; color:#484f58; font-size:0.62rem; margin-top:12px; padding-bottom:10px;">
+    Ktech SRE Academy · Architecture Diagram · Generated 2026-04-03
+  </div>
+
+</div><!-- /diagram -->
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources — Ktech SRE Training</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #060d1a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(6,13,26,0.98) 0%, rgba(6,13,26,0.95) 100%);
+            border-bottom: 1px solid #1e293b;
+            backdrop-filter: blur(10px);
+            padding: 0 40px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: #38bdf8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-logo-icon { width: 36px; height: 36px; flex-shrink: 0; }
+
+        .nav-logo-text { display: flex; flex-direction: column; line-height: 1; }
+        .nav-logo-text .brand-main { font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
+        .nav-logo-text .brand-sub { font-size: 9px; font-weight: 600; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+
+        .nav-center { display: flex; align-items: center; gap: 30px; flex: 1; margin-left: 60px; }
+
+        .active-users { font-size: 13px; color: #cbd5e1; display: flex; align-items: center; gap: 8px; }
+        .online-badge { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+
+        .user-info {
+            display: flex; align-items: center; gap: 12px;
+            padding: 6px 12px; background: #0a1628;
+            border-radius: 6px; border: 1px solid #1e293b; font-size: 13px;
+        }
+
+        .role-badge {
+            background: #38bdf8; color: #0a1628;
+            padding: 2px 8px; border-radius: 4px;
+            font-weight: 600; text-transform: uppercase; font-size: 11px;
+        }
+        .admin-badge { background: #f97316; }
+
+        .nav-links { display: flex; gap: 16px; align-items: center; }
+        .nav-links a {
+            padding: 8px 14px; border-radius: 6px; text-decoration: none;
+            font-size: 13px; font-weight: 500; color: #cbd5e1; transition: all 0.2s;
+        }
+        .nav-links a:hover { background: #0f2040; color: #38bdf8; }
+        .nav-links a.active { background: #0f2040; color: #38bdf8; }
+
+        .logout-btn {
+            padding: 7px 16px; background: transparent;
+            border: 1px solid #334155; border-radius: 6px;
+            color: #94a3b8; font-size: 13px; cursor: pointer; transition: all 0.2s;
+        }
+        .logout-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+        /* ── Page Layout ── */
+        .page-container { max-width: 1200px; margin: 0 auto; padding: 40px 40px 80px; }
+
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 28px; font-weight: 700; color: #f1f5f9; }
+        .page-subtitle { font-size: 14px; color: #64748b; margin-top: 6px; }
+
+        /* ── Section ── */
+        .section { margin-bottom: 52px; }
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; padding-bottom: 14px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .section-title { font-size: 16px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ── Featured Cards ── */
+        .featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+
+        .featured-card {
+            background: #0a1628;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 24px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .featured-card:hover { border-color: #38bdf8; box-shadow: 0 0 0 1px #38bdf820; }
+
+        .featured-badge {
+            position: absolute; top: 16px; right: 16px;
+            background: #0d3347; color: #38bdf8;
+            font-size: 10px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+            border: 1px solid #38bdf840;
+        }
+
+        .card-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; margin-bottom: 14px;
+        }
+        .icon-blue { background: #0d3347; }
+        .icon-purple { background: #1a0d3d; }
+
+        .card-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+        .card-meta { font-size: 12px; color: #64748b; margin-bottom: 18px; }
+
+        .card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 6px; font-size: 13px;
+            font-weight: 600; text-decoration: none; cursor: pointer;
+            border: none; transition: all 0.2s;
+        }
+        .btn-primary { background: #38bdf8; color: #0a1628; }
+        .btn-primary:hover { background: #7dd3fc; }
+        .btn-outline { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+        .btn-outline:hover { border-color: #38bdf8; color: #38bdf8; }
+        .btn-danger { background: transparent; color: #ef4444; border: 1px solid #ef444440; font-size: 12px; padding: 5px 10px; }
+        .btn-danger:hover { background: #ef444410; border-color: #ef4444; }
+
+        /* ── Upload Zone ── */
+        .upload-zone {
+            border: 2px dashed #1e293b;
+            border-radius: 10px;
+            padding: 48px 24px;
+            text-align: center;
+            transition: border-color 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #38bdf8;
+            background: #0a1628;
+        }
+        .upload-zone-icon { font-size: 40px; margin-bottom: 14px; opacity: 0.6; }
+        .upload-zone-title { font-size: 16px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; }
+        .upload-zone-sub { font-size: 13px; color: #475569; }
+        .upload-zone-sub span { color: #38bdf8; }
+
+        #fileInput { display: none; }
+
+        /* ── Progress Bar ── */
+        .upload-progress {
+            display: none;
+            margin-top: 16px;
+            background: #0f1f3d;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .upload-progress-bar {
+            height: 4px;
+            background: #38bdf8;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .upload-status { font-size: 13px; color: #64748b; margin-top: 8px; text-align: center; }
+
+        /* ── Files List ── */
+        .files-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .file-item {
+            display: flex; align-items: center; gap: 14px;
+            background: #0a1628; border: 1px solid #1e293b;
+            border-radius: 8px; padding: 14px 18px;
+            transition: border-color 0.2s;
+        }
+        .file-item:hover { border-color: #334155; }
+
+        .file-type-badge {
+            min-width: 44px; height: 44px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .ext-pdf { background: #2d1515; color: #ef4444; }
+        .ext-pptx, .ext-ppt { background: #2d1a0f; color: #f97316; }
+        .ext-html { background: #0d2d1a; color: #4ade80; }
+        .ext-doc, .ext-docx { background: #0d1f3d; color: #60a5fa; }
+        .ext-default { background: #1e1e2e; color: #94a3b8; }
+
+        .file-info { flex: 1; min-width: 0; }
+        .file-name { font-size: 14px; font-weight: 600; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-meta { font-size: 12px; color: #475569; margin-top: 2px; }
+
+        .file-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        .empty-state {
+            text-align: center; padding: 48px 24px;
+            background: #0a1628; border: 1px dashed #1e293b;
+            border-radius: 10px;
+        }
+        .empty-icon { font-size: 40px; opacity: 0.3; margin-bottom: 12px; }
+        .empty-title { font-size: 15px; font-weight: 600; color: #475569; }
+        .empty-sub { font-size: 13px; color: #334155; margin-top: 4px; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            padding: 12px 20px; border-radius: 8px;
+            font-size: 14px; font-weight: 500; z-index: 9999;
+            transform: translateY(80px); opacity: 0;
+            transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #0d3d1a; border: 1px solid #4ade8040; color: #4ade80; }
+        .toast.error { background: #3d0d0d; border: 1px solid #ef444440; color: #ef4444; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            nav { padding: 0 16px; }
+            .nav-center { display: none; }
+            .page-container { padding: 24px 16px 60px; }
+            .featured-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/portal.html" class="nav-brand">
+            <svg class="nav-logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="8" fill="#0f2040"/>
+                <path d="M8 18 L18 8 L28 18 L18 28 Z" stroke="#38bdf8" stroke-width="2" fill="none"/>
+                <circle cx="18" cy="18" r="3" fill="#38bdf8"/>
+            </svg>
+            <span class="nav-logo-text">
+                <span class="brand-main">KTECH</span>
+                <span class="brand-sub">SRE Academy</span>
+            </span>
+        </a>
+        <div class="nav-center">
+            <div class="active-users">
+                <div class="online-badge"></div>
+                <span id="activeCount">— online</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="user-info">
+                <span id="userName">—</span>
+                <span id="userRole" class="role-badge">—</span>
+            </div>
+            <div class="nav-links">
+                <a href="/portal.html">Classes</a>
+                <a href="/recordings.html">Recordings</a>
+                <a href="/resources.html" class="active">Resources</a>
+                <a id="adminLink" href="/admin.html" style="display:none;">Admin</a>
+            </div>
+            <button class="logout-btn" onclick="Auth.logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h1 class="page-title">Resources</h1>
+            <p class="page-subtitle">Class materials, masterclass slides, and uploaded notes</p>
+        </div>
+
+        <!-- Featured Resources -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Featured Materials</span>
+            </div>
+            <div class="featured-grid">
+                <div class="featured-card">
+                    <span class="featured-badge">Masterclass</span>
+                    <div class="card-icon icon-blue">📊</div>
+                    <div class="card-title">SRE Observability Masterclass</div>
+                    <div class="card-meta">Full slide deck — Observability concepts, tooling & real-world patterns</div>
+                    <div class="card-actions">
+                        <a href="/ppts/observability_class.html" class="btn btn-primary" target="_blank">View Slides</a>
+                        <a href="/files/observability-class.pptx" class="btn btn-outline" download>Download PPTX</a>
+                    </div>
+                </div>
+
+                <div class="featured-card">
+                    <span class="featured-badge">Architecture</span>
+                    <div class="card-icon icon-purple">🏗️</div>
+                    <div class="card-title">Platform Architecture &amp; Workflow</div>
+                    <div class="card-meta">End-to-end diagram of the SRE training platform — services, data flow &amp; infra</div>
+                    <div class="card-actions">
+                        <a href="/architecture-diagram.html" class="btn btn-primary" target="_blank">View Diagram</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Notes -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Class Notes &amp; Uploads</span>
+                <div id="uploadTrigger" style="display:none;">
+                    <label for="fileInput" class="btn btn-outline" style="cursor:pointer;">+ Upload File</label>
+                    <input type="file" id="fileInput" accept=".pdf,.ppt,.pptx,.html,.doc,.docx,.txt,.md">
+                </div>
+            </div>
+
+            <!-- Admin drag-and-drop upload zone -->
+            <div id="uploadZoneWrap" style="display:none; margin-bottom:24px;">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-zone-icon">📂</div>
+                    <div class="upload-zone-title">Drop files here or click to browse</div>
+                    <div class="upload-zone-sub">Accepted: <span>PDF, PPT, PPTX, HTML, DOC, DOCX, TXT, MD</span> · Max 100 MB</div>
+                </div>
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="upload-progress-bar" id="progressBar"></div>
+                </div>
+                <div class="upload-status" id="uploadStatus"></div>
+            </div>
+
+            <!-- Files list -->
+            <div id="filesList" class="files-list">
+                <div class="empty-state">
+                    <div class="empty-icon">📄</div>
+                    <div class="empty-title">Loading resources…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        const socket = io({ auth: { token: Auth.getToken() } });
+        socket.on('active_users', ({ count }) => {
+            document.getElementById('activeCount').textContent = count + ' online';
+        });
+
+        const token = Auth.getToken();
+        const payload = token ? JSON.parse(atob(token.split('.')[1])) : null;
+        if (payload) {
+            document.getElementById('userName').textContent = payload.name || payload.email || '—';
+            const roleEl = document.getElementById('userRole');
+            roleEl.textContent = payload.role || 'student';
+            if (payload.role === 'admin') {
+                roleEl.classList.add('admin-badge');
+                document.getElementById('adminLink').style.display = '';
+                document.getElementById('uploadTrigger').style.display = '';
+                document.getElementById('uploadZoneWrap').style.display = '';
+                setupUploadZone();
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function extBadge(ext) {
+            const map = { '.pdf': 'ext-pdf', '.ppt': 'ext-pptx', '.pptx': 'ext-pptx', '.html': 'ext-html', '.doc': 'ext-doc', '.docx': 'ext-doc' };
+            return map[ext] || 'ext-default';
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + type + ' show';
+            setTimeout(() => t.className = 'toast', 3000);
+        }
+
+        async function loadFiles() {
+            try {
+                const res = await fetch('/api/resources', { headers: { Authorization: 'Bearer ' + Auth.getToken() } });
+                const files = await res.json();
+                const list = document.getElementById('filesList');
+                if (!files.length) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📄</div>
+                            <div class="empty-title">No class notes uploaded yet</div>
+                            <div class="empty-sub">${payload?.role === 'admin' ? 'Use the upload zone above to add files' : 'Check back later'}</div>
+                        </div>`;
+                    return;
+                }
+                list.innerHTML = files.map(f => `
+                    <div class="file-item" id="fi-${f.filename}">
+                        <div class="file-type-badge ${extBadge(f.ext)}">${f.ext.replace('.','').toUpperCase() || 'FILE'}</div>
+                        <div class="file-info">
+                            <div class="file-name" title="${f.original_name}">${f.original_name}</div>
+                            <div class="file-meta">${formatBytes(f.size)} &middot; Uploaded ${formatDate(f.created_at)}</div>
+                        </div>
+                        <div class="file-actions">
+                            <a href="/api/resources/download/${encodeURIComponent(f.filename)}"
+                               class="btn btn-outline" download="${f.original_name}">Download</a>
+                            ${payload?.role === 'admin' ? `<button class="btn btn-danger" onclick="deleteFile('${f.filename}')">Delete</button>` : ''}
+                        </div>
+                    </div>`).join('');
+            } catch (e) {
+                document.getElementById('filesList').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Failed to load resources</div></div>`;
+            }
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm('Delete this file?')) return;
+            try {
+                const res = await fetch('/api/resources/' + encodeURIComponent(filename), {
+                    method: 'DELETE',
+                    headers: { Authorization: 'Bearer ' + Auth.getToken() }
+                });
+                if (!res.ok) throw new Error('Delete failed');
+                document.getElementById('fi-' + filename)?.remove();
+                showToast('File deleted');
+                loadFiles();
+            } catch {
+                showToast('Failed to delete file', 'error');
+            }
+        }
+
+        async function uploadFile(file) {
+            const progress = document.getElementById('uploadProgress');
+            const bar = document.getElementById('progressBar');
+            const status = document.getElementById('uploadStatus');
+            progress.style.display = 'block';
+            status.textContent = 'Uploading ' + file.name + '…';
+            bar.style.width = '10%';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                bar.style.width = '40%';
+                const res = await fetch('/api/resources/upload', {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + Auth.getToken() },
+                    body: formData,
+                });
+                bar.style.width = '90%';
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Upload failed');
+                }
+                bar.style.width = '100%';
+                status.textContent = 'Upload complete!';
+                showToast(file.name + ' uploaded successfully');
+                setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; status.textContent = ''; }, 2000);
+                loadFiles();
+            } catch (e) {
+                bar.style.width = '0%';
+                status.textContent = 'Error: ' + e.message;
+                showToast(e.message, 'error');
+            }
+        }
+
+        function setupUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            zone.addEventListener('click', () => input.click());
+
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file) uploadFile(file);
+            });
+
+            input.addEventListener('change', () => {
+                if (input.files[0]) uploadFile(input.files[0]);
+                input.value = '';
+            });
+        }
+
+        loadFiles();
+    </script>
+</body>
+</html>

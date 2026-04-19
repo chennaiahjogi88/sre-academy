@@ -57,6 +57,7 @@ const ALL_CLASSES = [
   { id: 'class-46', module: 'Advanced', title: 'Cost Optimization', file: 'cost_optimization.html', public: false },
   { id: 'class-47', module: 'Advanced', title: 'Observability Cost Control', file: 'observability_cost.html', public: false },
   { id: 'class-48', module: 'Advanced', title: 'K8s Security', file: 'k8s_security.html', public: false },
+  { id: 'class-49', module: 'Observability', title: 'Observability Masterclass', file: 'observability_class.html', public: false },
 ];
 
 // GET /api/classes — returns public classes always, private only if authenticated

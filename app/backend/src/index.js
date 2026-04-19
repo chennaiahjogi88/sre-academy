@@ -19,6 +19,7 @@ const classRoutes = require('./routes/classes');
 const recordingRoutes = require('./routes/recordings');
 const announcementRoutes = require('./routes/announcements');
 const adminRoutes = require('./routes/admin');
+const resourceRoutes = require('./routes/resources');
 
 const app = express();
 const server = http.createServer(app);
@@ -60,6 +61,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/recordings', recordingRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/resources', resourceRoutes);
 
 // Prometheus metrics endpoint
 app.get('/metrics', async (req, res) => {
