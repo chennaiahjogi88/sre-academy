@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NS="sre-platform"
 MON_NS="monitoring"
+ROLLOUT_TIMEOUT="300s"
 
 # Increase kubectl request timeout for EKS (network latency + large payloads)
 KUBECTL="kubectl --request-timeout=5m"
@@ -13,22 +14,29 @@ KUBECTL="kubectl --request-timeout=5m"
 # CONFIG — set these before running
 # ---------------------------------------------------------------------------
 DOCKERHUB_USER="${DOCKERHUB_USER:-kotidevops}"
-BACKEND_IMAGE="${BACKEND_IMAGE:-${DOCKERHUB_USER}/kt-backend:v4}"
+BACKEND_IMAGE="${BACKEND_IMAGE:-${DOCKERHUB_USER}/kt-backend:v6}"
+FRONTEND_IMAGE="${FRONTEND_IMAGE:-${DOCKERHUB_USER}/kt-frontend:v6}"
 # ---------------------------------------------------------------------------
 
 usage() {
   cat <<EOF
-Usage: $0 <command> [--yes]
+Usage: $0 <command> [options]
 
 Commands:
   deploy     Deploy the full stack (app + monitoring)
   teardown   Tear down everything
 
-Options:
-  --yes      Skip interactive confirmations
+Deploy options:
+  --build       Build multi-arch images and push to Docker Hub (use when code changed)
+  --push        Alias for --build
+  --multi-arch  Build linux/amd64 + linux/arm64 locally (no push)
+
+Teardown options:
+  --yes, -y   Skip all confirmation prompts
 
 Examples:
-  $0 deploy
+  $0 deploy                # deploy only (no image build)
+  $0 deploy --build        # build + push images, then deploy
   $0 teardown --yes
 EOF
 }
@@ -41,6 +49,17 @@ confirm_or_exit() {
   fi
   read -rp "$msg [y/N] " yn
   [[ "$yn" =~ ^[Yy]$ ]] || exit 1
+}
+
+ensure_buildx_builder() {
+  local builder_name="multi-builder"
+  if ! docker buildx inspect "$builder_name" >/dev/null 2>&1; then
+    echo "==> Creating docker buildx builder '$builder_name'..."
+    docker buildx create --name "$builder_name" --driver docker-container --use >/dev/null
+  else
+    docker buildx use "$builder_name"
+  fi
+  docker buildx inspect --bootstrap "$builder_name" >/dev/null
 }
 
 check_context() {
@@ -63,7 +82,7 @@ install_nginx_ingress() {
     $KUBECTL apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/aws/deploy.yaml
 
     echo "    Waiting for ingress-nginx controller to be ready (up to 3 min)..."
-    $KUBECTL rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
+    $KUBECTL rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout="$ROLLOUT_TIMEOUT"
     echo "    NGINX Ingress Controller is ready."
   fi
 
@@ -166,6 +185,57 @@ check_ebs_csi() {
 
 deploy_all() {
   local auto_confirm=${1:-false}
+  local PUSH_IMAGES=false
+  local MULTI_ARCH=false
+  shift || true
+
+  while [[ "$#" -gt 0 ]]; do
+    case $1 in
+      --build|--push) PUSH_IMAGES=true; MULTI_ARCH=true ;;
+      --multi-arch)   MULTI_ARCH=true ;;
+      *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+  done
+
+  HOST_OS=$(uname -s)
+  HOST_ARCH=$(uname -m)
+  case "$HOST_ARCH" in
+    x86_64)        NATIVE_PLATFORM="linux/amd64" ;;
+    arm64|aarch64) NATIVE_PLATFORM="linux/arm64" ;;
+    *)             echo "    Unknown arch '$HOST_ARCH', defaulting to linux/amd64"
+                   NATIVE_PLATFORM="linux/amd64" ;;
+  esac
+  echo "==> Host: $HOST_OS / $HOST_ARCH  (native platform: $NATIVE_PLATFORM)"
+
+  if [[ "$PUSH_IMAGES" == "true" ]]; then
+    ensure_buildx_builder
+    echo "==> Building & pushing multi-arch images (linux/amd64 + linux/arm64)..."
+    docker buildx build \
+      --builder multi-builder \
+      --platform linux/amd64,linux/arm64 \
+      --push \
+      -t "$BACKEND_IMAGE" "$APP_DIR/backend"
+    docker buildx build \
+      --builder multi-builder \
+      --platform linux/amd64,linux/arm64 \
+      --push \
+      -t "$FRONTEND_IMAGE" "$APP_DIR/frontend"
+    echo "    Images pushed to Docker Hub."
+  elif [[ "$MULTI_ARCH" == "true" ]]; then
+    ensure_buildx_builder
+    echo "==> Building multi-arch images locally (linux/amd64 + linux/arm64)..."
+    docker buildx build --load \
+      --platform linux/amd64,linux/arm64 \
+      -t "$BACKEND_IMAGE" "$APP_DIR/backend"
+    docker buildx build --load \
+      --platform linux/amd64,linux/arm64 \
+      -t "$FRONTEND_IMAGE" "$APP_DIR/frontend"
+  else
+    echo "==> Skipping image build — using existing images ($BACKEND_IMAGE, $FRONTEND_IMAGE)"
+    echo "    Pass --build to rebuild and push when code has changed."
+  fi
+
   check_context
   install_nginx_ingress
   tag_node_sg_for_nlb
@@ -210,25 +280,25 @@ deploy_all() {
   # ── Wait for rollouts ──────────────────────────────────────────────────────
   echo ""
   echo "==> Waiting for Postgres..."
-  $KUBECTL rollout status statefulset/postgres -n "$APP_NS" --timeout=180s
+  $KUBECTL rollout status statefulset/postgres -n "$APP_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   echo "==> Waiting for backend..."
-  $KUBECTL rollout status deployment/sre-backend -n "$APP_NS" --timeout=120s
+  $KUBECTL rollout status deployment/sre-backend -n "$APP_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   echo "==> Waiting for frontend..."
-  $KUBECTL rollout status deployment/sre-frontend -n "$APP_NS" --timeout=120s
+  $KUBECTL rollout status deployment/sre-frontend -n "$APP_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   echo "==> Waiting for Loki..."
-  $KUBECTL rollout status statefulset/loki -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status statefulset/loki -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   echo "==> Waiting for Prometheus..."
-  $KUBECTL rollout status deployment/prometheus -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status deployment/prometheus -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   echo "==> Waiting for Grafana..."
-  $KUBECTL rollout status deployment/grafana -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status deployment/grafana -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   echo "==> Waiting for Jaeger..."
-  $KUBECTL rollout status deployment/jaeger -n "$MON_NS" --timeout=120s
+  $KUBECTL rollout status deployment/jaeger -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
   # Fetch the NLB hostname assigned by AWS
   NLB_HOST=$(kubectl get svc ingress-nginx-controller -n ingress-nginx \
@@ -274,7 +344,7 @@ delete_nginx_ingress() {
     $KUBECTL delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/aws/deploy.yaml \
       --ignore-not-found
     echo "    Waiting for ingress-nginx namespace to terminate..."
-    $KUBECTL wait --for=delete namespace/ingress-nginx --timeout=120s || true
+    $KUBECTL wait --for=delete namespace/ingress-nginx --timeout="$ROLLOUT_TIMEOUT" || true
     echo "    NGINX Ingress Controller removed."
   else
     echo "    ingress-nginx namespace not found — skipping."
@@ -309,8 +379,8 @@ teardown_all() {
   $KUBECTL delete -f "$SCRIPT_DIR/monitoring/namespace.yaml"  --ignore-not-found
 
   echo "==> Waiting for namespaces to terminate..."
-  $KUBECTL wait --for=delete namespace/$APP_NS --timeout=120s || true
-  $KUBECTL wait --for=delete namespace/$MON_NS --timeout=120s || true
+  $KUBECTL wait --for=delete namespace/$APP_NS --timeout="$ROLLOUT_TIMEOUT" || true
+  $KUBECTL wait --for=delete namespace/$MON_NS --timeout="$ROLLOUT_TIMEOUT" || true
 
   delete_nginx_ingress
 
@@ -322,16 +392,19 @@ if [ $# -lt 1 ]; then usage; exit 2; fi
 
 CMD="$1"; shift || true
 AUTO_CONFIRM=false
+EXTRA_ARGS=()
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --yes|-y) AUTO_CONFIRM=true; shift ;;
-    -h|--help) usage; exit 0 ;;
+    --yes|-y)     AUTO_CONFIRM=true; shift ;;
+    -h|--help)    usage; exit 0 ;;
+    --build|--push|--multi-arch) EXTRA_ARGS+=("$1"); shift ;;
     *) echo "Unknown arg: $1"; usage; exit 2 ;;
   esac
 done
 
 case "$CMD" in
-  deploy)   deploy_all "$AUTO_CONFIRM" ;;
+  deploy)   deploy_all "$AUTO_CONFIRM" "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}" ;;
   teardown) teardown_all "$AUTO_CONFIRM" ;;
   *) echo "Unknown command: $CMD"; usage; exit 2 ;;
 esac

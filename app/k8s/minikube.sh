@@ -15,8 +15,9 @@ usage() {
   echo "  teardown   Tear down the SRE platform stack"
   echo ""
   echo "Deploy options:"
+  echo "  --build       Build image for native platform into minikube's daemon (skip if no code changes)"
   echo "  --push        Build multi-arch images and push to Docker Hub"
-  echo "  --multi-arch  Build linux/amd64 + linux/arm64 locally"
+  echo "  --multi-arch  Build linux/amd64 + linux/arm64 into minikube's daemon"
   echo ""
   echo "Teardown options:"
   echo "  --yes, -y   Skip all confirmation prompts"
@@ -39,14 +40,16 @@ ensure_buildx_builder() {
 # ── Deploy ────────────────────────────────────────────────────────────────────
 
 deploy() {
+  local BUILD_IMAGES=false
   local PUSH_IMAGES=false
   local MULTI_ARCH=false
 
   while [[ "$#" -gt 0 ]]; do
     case $1 in
       -g|--global)  ;;
+      --build)      BUILD_IMAGES=true ;;
       --push)       PUSH_IMAGES=true; MULTI_ARCH=true ;;
-      --multi-arch) MULTI_ARCH=true ;;
+      --multi-arch) BUILD_IMAGES=true; MULTI_ARCH=true ;;
       *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
@@ -99,8 +102,8 @@ deploy() {
       --platform linux/amd64,linux/arm64 \
       --push \
       -t kotidevops/kt-frontend:v6 "$APP_DIR/frontend"
-    echo "    Images pushed. Skipping minikube docker-env (using registry images)."
-  else
+    echo "    Images pushed. Using registry images in minikube."
+  elif [[ "$BUILD_IMAGES" == "true" ]]; then
     echo "==> Pointing Docker to minikube's daemon..."
     eval "$(minikube docker-env --shell bash)"
 
@@ -120,6 +123,9 @@ deploy() {
       docker build --platform "$NATIVE_PLATFORM" \
         -t kotidevops/kt-frontend:v6 "$APP_DIR/frontend"
     fi
+  else
+    echo "==> Skipping image build — using existing images (kotidevops/kt-backend:v6, kotidevops/kt-frontend:v6)"
+    echo "    Pass --build to rebuild locally, or --push to build multi-arch and push."
   fi
 
   echo ""
