@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: kotidevops/kt-backend:v4
-          imagePullPolicy: Always
+          image: kotidevops/kt-backend:v6
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
           envFrom:

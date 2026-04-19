@@ -15,6 +15,8 @@ data:
   locustfile.py: |
     from locust import HttpUser, task, between, events
     import random
+    import string
+    import io
 
     CLASS_IDS = [
         "sre_foundations_1", "sre_foundations_2", "docker_fundamentals",
@@ -22,10 +24,15 @@ data:
         "jaeger", "alertmanager", "load_testing"
     ]
 
+    def _random_email():
+        suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        return f"loadtest_{suffix}@ktech.sre"
+
     class SREPlatformStudent(HttpUser):
         """Simulates a student browsing the SRE Academy platform."""
         wait_time = between(1, 4)
         token = None
+        recording_filenames = []
 
         def on_start(self):
             resp = self.client.post(
@@ -35,6 +42,10 @@ data:
             )
             if resp.status_code == 200:
                 self.token = resp.json().get("token")
+            # cache filenames for stream tasks
+            r = self.client.get("/api/recordings", headers=self._headers(), name="GET /api/recordings")
+            if r.status_code == 200:
+                self.recording_filenames = [rec["filename"] for rec in r.json() if rec.get("filename")]
 
         def _headers(self):
             return {"Authorization": f"Bearer {self.token}"} if self.token else {}
@@ -72,11 +83,45 @@ data:
                 name="POST /api/auth/login [fail]"
             )
 
+        # ── Spans added below ──────────────────────────────────────────────────
+
+        @task(1)
+        def register_user(self):
+            """Triggers bcrypt.hash span via POST /api/auth/register."""
+            self.client.post(
+                "/api/auth/register",
+                json={"name": "Load Test User", "email": _random_email(), "password": "Test@1234"},
+                name="POST /api/auth/register"
+            )
+
+        @task(3)
+        def update_progress(self):
+            """Triggers class.update_progress span via PUT /api/classes/:id/progress."""
+            class_id = random.choice(CLASS_IDS)
+            current_slide = random.randint(1, 19)
+            self.client.put(
+                f"/api/classes/{class_id}/progress",
+                json={"current_slide": current_slide, "total_slides": 20, "completed": current_slide == 19},
+                headers=self._headers(),
+                name="PUT /api/classes/:id/progress"
+            )
+
+        @task(2)
+        def stream_recording(self):
+            """Triggers recording.stream span via GET /api/recordings/stream/:filename."""
+            if not self.recording_filenames:
+                return
+            filename = random.choice(self.recording_filenames)
+            self.client.get(
+                f"/api/recordings/stream/{filename}",
+                headers={**self._headers(), "Range": "bytes=0-65535"},
+                name="GET /api/recordings/stream/:filename"
+            )
+
     class SREPlatformAdmin(HttpUser):
         """Simulates admin operations — lower frequency."""
         wait_time = between(5, 15)
         token = None
-        weight = 1  # 1 admin per 10 students (see below)
 
         def on_start(self):
             resp = self.client.post(
@@ -98,7 +143,21 @@ data:
         def check_health(self):
             self.client.get("/health", name="GET /health [admin]")
 
+        @task(1)
+        def upload_recording(self):
+            """Triggers recording.upload span via POST /api/recordings/upload."""
+            fake_video = io.BytesIO(b"\x00" * 1024)
+            self.client.post(
+                "/api/recordings/upload",
+                files={"recording": ("loadtest.mp4", fake_video, "video/mp4")},
+                data={"class_id": random.choice(CLASS_IDS), "title": "Load Test Recording"},
+                headers=self._headers(),
+                name="POST /api/recordings/upload"
+            )
+
     # Ratio: mostly students
+    # NOTE: ws.slide_progress and ws.send_announcement (Socket.IO) require
+    # python-socketio in the image and cannot be triggered via HTTP tasks.
     SREPlatformStudent.weight = 10
     SREPlatformAdmin.weight = 1
 ---

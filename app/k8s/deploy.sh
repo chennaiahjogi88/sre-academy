@@ -63,12 +63,12 @@ if [[ "$PUSH_IMAGES" == "true" ]]; then
     --builder multi-builder \
     --platform linux/amd64,linux/arm64 \
     --push \
-    -t kotidevops/kt-backend:v4 "$APP_DIR/backend"
+    -t kotidevops/kt-backend:v6 "$APP_DIR/backend"
   docker buildx build \
     --builder multi-builder \
     --platform linux/amd64,linux/arm64 \
     --push \
-    -t kotidevops/kt-frontend:v4 "$APP_DIR/frontend"
+    -t kotidevops/kt-frontend:v6 "$APP_DIR/frontend"
   echo "    Images pushed. Skipping minikube docker-env (using registry images)."
 else
 echo "==> Pointing Docker to minikube's daemon..."
@@ -80,16 +80,16 @@ eval "$(minikube docker-env --shell bash)"
     echo "==> Building multi-arch images for minikube (linux/amd64 + linux/arm64)..."
     docker buildx build --load \
       --platform linux/amd64,linux/arm64 \
-      -t kotidevops/kt-backend:v4 "$APP_DIR/backend"
+      -t kotidevops/kt-backend:v6 "$APP_DIR/backend"
     docker buildx build --load \
       --platform linux/amd64,linux/arm64 \
-      -t kotidevops/kt-frontend:v4 "$APP_DIR/frontend"
+      -t kotidevops/kt-frontend:v6 "$APP_DIR/frontend"
   else
     echo "==> Building Docker images (platform: $NATIVE_PLATFORM)..."
     docker build --platform "$NATIVE_PLATFORM" \
-      -t kotidevops/kt-backend:v4  "$APP_DIR/backend"
+      -t kotidevops/kt-backend:v6  "$APP_DIR/backend"
     docker build --platform "$NATIVE_PLATFORM" \
-      -t kotidevops/kt-frontend:v4 "$APP_DIR/frontend"
+      -t kotidevops/kt-frontend:v6 "$APP_DIR/frontend"
   fi
 fi
 

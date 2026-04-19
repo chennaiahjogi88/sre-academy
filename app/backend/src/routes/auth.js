@@ -5,6 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { loginAttemptsTotal } = require('../metrics');
 const { authenticate } = require('../middleware/auth');
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+
+const tracer = trace.getTracer('sre-platform-backend');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
@@ -23,7 +26,17 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ message: 'An account with that email already exists' });
     }
 
-    const password_hash = await bcrypt.hash(password, 10);
+    const password_hash = await tracer.startActiveSpan('bcrypt.hash', async (span) => {
+      try {
+        const hash = await bcrypt.hash(password, 10);
+        span.end();
+        return hash;
+      } catch (e) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
+        span.end();
+        throw e;
+      }
+    });
     const insertRes = await db.query(
       `INSERT INTO users (email, password_hash, name, role)
        VALUES ($1, $2, $3, 'student') RETURNING id, email, name, role`,
@@ -79,7 +92,18 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Account disabled' });
     }
 
-    const valid = await bcrypt.compare(password, user.password_hash);
+    const valid = await tracer.startActiveSpan('bcrypt.compare', async (span) => {
+      try {
+        const result = await bcrypt.compare(password, user.password_hash);
+        span.setAttributes({ 'bcrypt.match': result });
+        span.end();
+        return result;
+      } catch (e) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
+        span.end();
+        throw e;
+      }
+    });
     if (!valid) {
       loginAttemptsTotal.inc({ result: 'failure' });
       return res.status(401).json({ error: 'Invalid credentials' });
