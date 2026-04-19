@@ -568,6 +568,212 @@
                 flex-wrap: wrap;
             }
         }
+
+        /* ── Skeleton Loading ── */
+        @keyframes shimmer {
+            0%   { background-position: -600px 0; }
+            100% { background-position:  600px 0; }
+        }
+        .skeleton-card {
+            background: #0a1628;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .skel {
+            height: 12px;
+            background: linear-gradient(90deg, #1e293b 25%, #253347 50%, #1e293b 75%);
+            background-size: 600px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .skel.h6  { height: 24px; margin-bottom: 12px; }
+        .skel.h10 { height: 42px; border-radius: 50%; margin-bottom: 0; }
+        .skel.w20 { width: 20%; }
+        .skel.w40 { width: 40%; }
+        .skel.w60 { width: 60%; }
+        .skel.w80 { width: 80%; }
+        .skel.wfull { width: 100%; }
+
+        /* ── Ring Progress ── */
+        .ring-progress { width: 44px; height: 44px; flex-shrink: 0; }
+        .ring-bg   { fill: none; stroke: #1e293b; stroke-width: 3.5; }
+        .ring-fill {
+            fill: none;
+            stroke: #38bdf8;
+            stroke-width: 3.5;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dasharray 0.6s ease;
+        }
+        .ring-fill.done { stroke: #4ade80; }
+        .ring-text {
+            font-family: monospace;
+            font-size: 7px;
+            font-weight: 700;
+            fill: #94a3b8;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        .ring-wrap { display: flex; align-items: center; gap: 10px; }
+
+        /* ── Search & Filter Bar ── */
+        .search-bar {
+            padding: 14px 40px;
+            background: #0a1628;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-wrap { flex: 1; min-width: 180px; position: relative; }
+        .search-icon {
+            position: absolute;
+            left: 11px; top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+            pointer-events: none;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            background: #060d1a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.1); }
+        .search-input::placeholder { color: #475569; }
+        .module-filter-select {
+            padding: 8px 12px;
+            background: #060d1a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            min-width: 180px;
+            transition: all 0.2s;
+        }
+        .module-filter-select:focus { outline: none; border-color: #38bdf8; }
+        .search-count-badge { font-size: 12px; color: #64748b; white-space: nowrap; }
+
+        /* ── Resume Section ── */
+        .resume-section {
+            padding: 18px 40px;
+            background: rgba(56,189,248,0.03);
+            border-bottom: 1px solid rgba(56,189,248,0.12);
+            display: none;
+        }
+        .resume-section.visible { display: block; }
+        .resume-label {
+            font-size: 10px; font-weight: 700; color: #38bdf8;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+        }
+        .resume-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: #0a1628;
+            border: 1px solid rgba(56,189,248,0.25);
+            border-radius: 10px;
+            padding: 12px 18px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+            max-width: 540px;
+        }
+        .resume-card:hover {
+            border-color: #38bdf8;
+            box-shadow: 0 4px 20px rgba(56,189,248,0.15);
+            transform: translateX(4px);
+        }
+        .resume-card-icon  { font-size: 26px; flex-shrink: 0; }
+        .resume-card-num   { font-size: 11px; color: #38bdf8; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .resume-card-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+        .resume-card-prog  { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .resume-cta-btn {
+            margin-left: auto;
+            background: #38bdf8;
+            color: #0a1628;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Streak Badge ── */
+        .streak-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(251,191,36,0.1);
+            border: 1px solid rgba(251,191,36,0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fbbf24;
+            white-space: nowrap;
+        }
+
+        /* ── Module Header with Progress ── */
+        .module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .module-header-title { font-size: 18px; font-weight: 700; color: #e2e8f0; }
+        .module-done-badge {
+            font-size: 12px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 3px 10px;
+            color: #64748b;
+        }
+        .module-done-badge .done { color: #4ade80; font-weight: 700; }
+
+        /* ── No-results ── */
+        .no-results { text-align: center; padding: 60px 40px; color: #475569; }
+        .no-results-icon { font-size: 36px; margin-bottom: 12px; }
+        .no-results-msg  { font-size: 14px; }
+
+        /* ── Page fade-in ── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeInUp 0.35s ease both; }
+
+        /* ── Card shimmer on hover ── */
+        .class-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(56,189,248,0.04), transparent);
+            transition: left 0.5s ease;
+        }
+        .class-card:hover::before { left: 150%; }
+
+        @media (max-width: 768px) {
+            .search-bar { padding: 12px 16px; }
+            .resume-section { padding: 14px 16px; }
+        }
     </style>
 </head>
 <body>
@@ -593,6 +799,9 @@
                 <div class="online-badge"></div>
                 <span id="activeUsers">Loading...</span>
             </div>
+            <div id="streakWrap" style="display:none;">
+                <div class="streak-badge" id="streakBadge">🌱 Start your streak</div>
+            </div>
         </div>
         <div class="nav-right">
             <div class="user-info">
@@ -601,11 +810,15 @@
             </div>
             <div class="nav-links">
                 <a id="recordingsLink" href="/recordings.html">Recordings</a>
+                <a href="/resources.html">Resources</a>
                 <a id="adminLink" href="/admin.html" style="display: none;">Admin</a>
                 <button class="btn-logout" onclick="Auth.logout()">Logout</button>
             </div>
         </div>
     </nav>
+
+    <!-- Resume Section -->
+    <div class="resume-section" id="resumeSection"></div>
 
     <!-- Announcements Banner -->
     <div class="announcements-banner hidden" id="announcementsBanner">
@@ -623,6 +836,20 @@
             <div class="progress-fill" id="progressFill" style="width: 0%"></div>
         </div>
         <div class="progress-text" id="progressText">Loading...</div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-bar">
+        <div class="search-wrap">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input class="search-input" id="classSearch" type="text" placeholder="Search classes…" oninput="renderModules(_modules)">
+        </div>
+        <select class="module-filter-select" id="moduleFilter" onchange="renderModules(_modules)">
+            <option value="">All Modules</option>
+        </select>
+        <span class="search-count-badge" id="searchCount">— classes</span>
     </div>
 
     <!-- Hero -->
@@ -681,155 +908,238 @@
     <script src="/js/auth.js"></script>
     <script src="/js/ws.js"></script>
     <script>
-        // Require authentication
-        if (!Auth.requireAuth()) {
-            throw new Error('Redirecting to login...');
-        }
+        if (!Auth.requireAuth()) throw new Error('Redirecting to login...');
 
         const user = Auth.getUser();
         document.getElementById('userName').textContent = user.name || 'User';
         document.getElementById('heroName').textContent = user.name.split(' ')[0] || 'Student';
         document.getElementById('userRole').textContent = user.role.toUpperCase();
-
-        // Show admin link if user is admin
         if (Auth.isAdmin()) {
             document.getElementById('adminLink').style.display = 'block';
             document.getElementById('userRole').classList.add('admin-badge');
         }
 
-        // Initialize WebSocket
         WS.init();
-
-        // Listen for active users
         WS.on('active_users', (data) => {
             document.getElementById('activeUsers').textContent = `${data.count} online`;
         });
-
-        // Listen for announcements
         WS.on('announcement', (data) => {
-            const banner = document.getElementById('announcementsBanner');
             document.getElementById('announcementTitle').textContent = data.title;
             document.getElementById('announcementText').textContent = data.message;
-            banner.classList.remove('hidden');
+            document.getElementById('announcementsBanner').classList.remove('hidden');
         });
 
-        // Fetch classes and progress
+        // ── State shared with search/filter ─────────────────────────────────
+        let _classList   = [];
+        let _progressMap = {};
+        let _modules     = {};
+
+        // ── Helpers ─────────────────────────────────────────────────────────
+        function skeletonCard() {
+            return `<div class="skeleton-card">
+                <div class="skel h6 w20"></div>
+                <div class="skel w80"></div>
+                <div class="skel w60"></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:14px;border-top:1px solid #1e293b;padding-top:14px;">
+                    <div class="skel h10" style="width:44px;border-radius:50%;flex-shrink:0;"></div>
+                    <div style="flex:1"><div class="skel w40" style="margin-bottom:6px;"></div><div class="skel w20"></div></div>
+                </div>
+            </div>`;
+        }
+
+        function ringProgress(percent, done) {
+            const dash  = Math.min(100, Math.max(0, Math.round(percent)));
+            const label = done ? '✓' : (dash > 0 ? dash + '%' : '—');
+            return `<svg class="ring-progress" viewBox="0 0 36 36">
+                <path class="ring-bg"   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path class="ring-fill ${done ? 'done' : ''}" stroke-dasharray="${dash}, 100"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <text x="18" y="20.35" class="ring-text">${label}</text>
+            </svg>`;
+        }
+
+        function calcStreak(progressMap) {
+            const dayStrings = Object.values(progressMap)
+                .filter(p => p.last_viewed)
+                .map(p => {
+                    const d = new Date(p.last_viewed);
+                    return `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                });
+            const unique = [...new Set(dayStrings)].sort().reverse();
+            if (!unique.length) return 0;
+            const today = new Date();
+            let streak = 0;
+            for (let i = 0; i < unique.length; i++) {
+                const [yr, mo, dy] = unique[i].split('-').map(Number);
+                const diff = Math.round((today - new Date(yr, mo, dy)) / 86400000);
+                if (diff <= i + 1) streak++;
+                else break;
+            }
+            return streak;
+        }
+
+        // ── Render (search-aware) ────────────────────────────────────────────
+        function renderModules(moduleMap) {
+            const query   = (document.getElementById('classSearch')?.value || '').toLowerCase().trim();
+            const mFilter = document.getElementById('moduleFilter')?.value || '';
+            let totalShown = 0;
+
+            const html = Object.entries(moduleMap)
+                .filter(([name]) => !mFilter || name === mFilter)
+                .map(([moduleName, moduleClasses]) => {
+                    const filtered = query
+                        ? moduleClasses.filter(c => c.title.toLowerCase().includes(query))
+                        : moduleClasses;
+                    if (!filtered.length) return '';
+                    totalShown += filtered.length;
+
+                    const doneCount = filtered.filter(c => _progressMap[c.id]?.completed).length;
+
+                    const cardsHtml = filtered.map(cls => {
+                        const p           = _progressMap[cls.id];
+                        const isCompleted = p?.completed;
+                        const current     = p?.current_slide  || 0;
+                        const total       = p?.total_slides   || 0;
+                        const percent     = total > 0 ? Math.round((current / total) * 100) : 0;
+                        const classNum    = cls.id.replace('class-', '').padStart(2, '0');
+                        const sublabel    = isCompleted
+                            ? '<span style="color:#4ade80;font-size:11px;">Completed</span>'
+                            : percent > 0
+                                ? `<span style="color:#64748b;font-size:11px;">${current}/${total} slides</span>`
+                                : '<span style="color:#475569;font-size:11px;">Not started</span>';
+
+                        return `<a href="/ppts/${cls.file}" class="class-card ${isCompleted ? 'completed' : ''}">
+                            <div class="class-num">${classNum}</div>
+                            <div class="class-title">${cls.title}</div>
+                            <div class="class-footer">
+                                <div class="ring-wrap">
+                                    ${ringProgress(percent, isCompleted)}
+                                    ${sublabel}
+                                </div>
+                            </div>
+                        </a>`;
+                    }).join('');
+
+                    return `<div class="module-row fade-in">
+                        <div class="module-header">
+                            <div class="module-header-title">${moduleName}</div>
+                            <div class="module-done-badge">
+                                <span class="done">${doneCount}</span> / ${filtered.length} done
+                            </div>
+                        </div>
+                        <div class="cards-grid">${cardsHtml}</div>
+                    </div>`;
+                }).join('');
+
+            const countEl = document.getElementById('searchCount');
+            if (countEl) countEl.textContent = `${totalShown} class${totalShown !== 1 ? 'es' : ''}`;
+
+            document.getElementById('content').innerHTML = html ||
+                `<div class="no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <div class="no-results-msg">No classes match your search.</div>
+                </div>`;
+        }
+
+        // ── Load content ─────────────────────────────────────────────────────
         async function loadContent() {
+            document.getElementById('content').innerHTML = `<div class="module-row">
+                <div class="cards-grid">${Array(8).fill(0).map(skeletonCard).join('')}</div>
+            </div>`;
+
             try {
                 const [classesRes, progressRes] = await Promise.all([
                     Auth.fetch('/api/classes'),
                     Auth.fetch('/api/classes/progress/all')
                 ]);
+                if (!classesRes || !progressRes) throw new Error('Failed to load data');
 
-                if (!classesRes || !progressRes) {
-                    throw new Error('Failed to load data');
-                }
-
-                const classes = await classesRes.json();
+                const classes  = await classesRes.json();
                 const progress = await progressRes.json();
 
-                // Backend returns { classes: [...], isAuthenticated, role }
-                const classList = classes.classes || [];
-                // Backend returns progress as a flat object { class_id: row, ... }
-                const progressMap = progress || {};
+                _classList   = classes.classes || [];
+                _progressMap = progress || {};
 
-                // Group classes by module
-                const modules = {};
-                classList.forEach(cls => {
-                    if (!modules[cls.module]) {
-                        modules[cls.module] = [];
-                    }
-                    modules[cls.module].push(cls);
+                _modules = {};
+                _classList.forEach(cls => {
+                    if (!_modules[cls.module]) _modules[cls.module] = [];
+                    _modules[cls.module].push(cls);
                 });
 
-                // Calculate total progress
-                const totalClasses = classList.length;
-                const completedClasses = Object.keys(progressMap).filter(id => progressMap[id].completed).length;
-                const progressPercent = totalClasses > 0 ? Math.round((completedClasses / totalClasses) * 100) : 0;
-
-                document.getElementById('progressFill').style.width = progressPercent + '%';
-                document.getElementById('progressText').textContent = `${completedClasses} of ${totalClasses} classes completed`;
-
-                // Render content
-                const contentHtml = Object.entries(modules)
-                    .map(([moduleName, moduleClasses]) => {
-                        const cardsHtml = moduleClasses
-                            .map(cls => {
-                                const p = progressMap[cls.id];
-                                const isCompleted = p && p.completed;
-                                // current_slide / total_slides from progress row
-                                const currentSlide = p ? (p.current_slide || 0) : 0;
-                                const totalSlides = p ? (p.total_slides || 0) : 0;
-                                const slidePercent = totalSlides > 0
-                                    ? Math.round((currentSlide / totalSlides) * 100)
-                                    : 0;
-                                // Derive display number from id (class-1 → 01)
-                                const classNum = cls.id.replace('class-', '').padStart(2, '0');
-
-                                return `
-                                    <a href="/ppts/${cls.file}" class="class-card ${isCompleted ? 'completed' : ''}">
-                                        <div class="class-num">${classNum}</div>
-                                        <div class="class-title">${cls.title}</div>
-                                        <div class="class-footer">
-                                            <div class="progress-indicator">
-                                                <div class="progress-dot"></div>
-                                                <span>${slidePercent > 0 ? slidePercent + '%' : 'Not started'}</span>
-                                            </div>
-                                            ${isCompleted ? '<div class="completion-badge">✓ Done</div>' : ''}
-                                        </div>
-                                    </a>
-                                `;
-                            })
-                            .join('');
-
-                        return `
-                            <div class="module-row">
-                                <div class="module-title">${moduleName}</div>
-                                <div class="cards-grid">${cardsHtml}</div>
-                            </div>
-                        `;
-                    })
-                    .join('');
-
-                document.getElementById('content').innerHTML = contentHtml;
-
-                // Track slide progress when PPT is viewed
-                document.querySelectorAll('.class-card').forEach(card => {
-                    card.addEventListener('click', (e) => {
-                        // Progress tracking will be handled by the PPT viewer
-                        // when it calls WS.sendProgress()
+                // Populate module filter dropdown
+                const mSel = document.getElementById('moduleFilter');
+                if (mSel) {
+                    Object.keys(_modules).forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m; opt.textContent = m;
+                        mSel.appendChild(opt);
                     });
-                });
+                }
 
-            } catch (error) {
-                console.error('Error loading content:', error);
-                document.getElementById('content').innerHTML = `
-                    <div class="empty-state">
-                        <p>Failed to load classes. Please refresh the page.</p>
-                    </div>
-                `;
+                // Overall progress bar
+                const total     = _classList.length;
+                const completed = Object.values(_progressMap).filter(p => p.completed).length;
+                const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+                document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressText').textContent  = `${completed} of ${total} classes completed`;
+
+                // Streak badge
+                const streak = calcStreak(_progressMap);
+                const sw = document.getElementById('streakWrap');
+                const sb = document.getElementById('streakBadge');
+                if (sw && sb) {
+                    sb.textContent  = streak > 0 ? `🔥 ${streak} day streak` : '🌱 Start your streak';
+                    sw.style.display = 'flex';
+                }
+
+                // Resume section — most recently viewed in-progress class
+                const inProgress = _classList
+                    .filter(c => _progressMap[c.id] && !_progressMap[c.id].completed && _progressMap[c.id].last_viewed)
+                    .sort((a, b) => new Date(_progressMap[b.id].last_viewed) - new Date(_progressMap[a.id].last_viewed));
+
+                const resumeEl = document.getElementById('resumeSection');
+                if (resumeEl && inProgress.length) {
+                    const r    = inProgress[0];
+                    const rp   = _progressMap[r.id];
+                    const rNum = r.id.replace('class-', '').padStart(2, '0');
+                    const rPct = rp.total_slides > 0 ? Math.round((rp.current_slide / rp.total_slides) * 100) : 0;
+                    resumeEl.innerHTML = `
+                        <div class="resume-label">▶ Continue where you left off</div>
+                        <a href="/ppts/${r.file}" class="resume-card">
+                            <div class="resume-card-icon">📖</div>
+                            <div>
+                                <div class="resume-card-num">Class ${rNum}</div>
+                                <div class="resume-card-title">${r.title}</div>
+                                <div class="resume-card-prog">${rPct}% complete · slide ${rp.current_slide || 0} / ${rp.total_slides || '?'}</div>
+                            </div>
+                            <div class="resume-cta-btn">Resume →</div>
+                        </a>`;
+                    resumeEl.classList.add('visible');
+                }
+
+                renderModules(_modules);
+
+            } catch (err) {
+                console.error('Error loading content:', err);
+                document.getElementById('content').innerHTML =
+                    `<div class="empty-state"><p>Failed to load classes. Please refresh the page.</p></div>`;
             }
         }
 
-        // Fetch announcements
         async function loadAnnouncements() {
             try {
                 const res = await Auth.fetch('/api/announcements');
                 if (!res) return;
-
                 const data = await res.json();
                 if (Array.isArray(data) && data.length > 0) {
                     const latest = data[0];
                     document.getElementById('announcementTitle').textContent = latest.title;
-                    document.getElementById('announcementText').textContent = latest.message;
+                    document.getElementById('announcementText').textContent  = latest.message;
                     document.getElementById('announcementsBanner').classList.remove('hidden');
                 }
-            } catch (error) {
-                console.error('Error loading announcements:', error);
-            }
+            } catch (e) { console.error('Announcements error:', e); }
         }
 
-        // Load on mount
         loadContent();
         loadAnnouncements();
     </script>

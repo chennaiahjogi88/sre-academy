@@ -5,10 +5,68 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { loginAttemptsTotal } = require('../metrics');
 const { authenticate } = require('../middleware/auth');
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+
+const tracer = trace.getTracer('sre-platform-backend');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+
+    const existing = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ message: 'An account with that email already exists' });
+    }
+
+    const password_hash = await tracer.startActiveSpan('bcrypt.hash', async (span) => {
+      try {
+        const hash = await bcrypt.hash(password, 10);
+        span.end();
+        return hash;
+      } catch (e) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
+        span.end();
+        throw e;
+      }
+    });
+    const insertRes = await db.query(
+      `INSERT INTO users (email, password_hash, name, role)
+       VALUES ($1, $2, $3, 'student') RETURNING id, email, name, role`,
+      [email.toLowerCase().trim(), password_hash, name.trim()]
+    );
+    const user = insertRes.rows[0];
+
+    const jti = uuidv4();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role, jti },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    await db.query(
+      `INSERT INTO sessions (user_id, token_jti, ip_address, user_agent, expires_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [user.id, jti, req.ip, req.get('user-agent'), expiresAt]
+    );
+
+    res.status(201).json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -34,7 +92,18 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Account disabled' });
     }
 
-    const valid = await bcrypt.compare(password, user.password_hash);
+    const valid = await tracer.startActiveSpan('bcrypt.compare', async (span) => {
+      try {
+        const result = await bcrypt.compare(password, user.password_hash);
+        span.setAttributes({ 'bcrypt.match': result });
+        span.end();
+        return result;
+      } catch (e) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
+        span.end();
+        throw e;
+      }
+    });
     if (!valid) {
       loginAttemptsTotal.inc({ result: 'failure' });
       return res.status(401).json({ error: 'Invalid credentials' });

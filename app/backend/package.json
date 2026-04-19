@@ -19,7 +19,10 @@
     "pg": "^8.11.3",
     "prom-client": "^15.1.0",
     "socket.io": "^4.6.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "@opentelemetry/sdk-node": "^0.52.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.47.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.52.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

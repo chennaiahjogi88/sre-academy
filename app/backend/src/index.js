@@ -1,3 +1,6 @@
+// Tracing must be initialized before any other require
+require('./tracing');
+
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -8,11 +11,15 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
 const { register, httpRequestsTotal, httpRequestDuration, activeUsersGauge } = require('./metrics');
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+
+const tracer = trace.getTracer('sre-platform-backend');
 const authRoutes = require('./routes/auth');
 const classRoutes = require('./routes/classes');
 const recordingRoutes = require('./routes/recordings');
 const announcementRoutes = require('./routes/announcements');
 const adminRoutes = require('./routes/admin');
+const resourceRoutes = require('./routes/resources');
 
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +32,7 @@ global.io = io;
 global.wsConnectionCount = 0;
 
 // ── Middleware ──
+app.set('trust proxy', 1); // Trust ingress/nginx X-Forwarded-For header
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
@@ -53,6 +61,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/recordings', recordingRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/resources', resourceRoutes);
 
 // Prometheus metrics endpoint
 app.get('/metrics', async (req, res) => {
@@ -91,6 +100,14 @@ io.on('connection', (socket) => {
   // Client reports slide progress
   socket.on('slide_progress', async (data) => {
     if (!socket.user) return;
+    const span = tracer.startSpan('ws.slide_progress');
+    span.setAttributes({
+      'user.id': socket.user.id,
+      'user.role': socket.user.role,
+      'class.id': data.class_id,
+      'slide.current': data.current_slide,
+      'slide.total': data.total_slides,
+    });
     try {
       const db = require('./db');
       await db.query(
@@ -99,13 +116,21 @@ io.on('connection', (socket) => {
          ON CONFLICT (user_id, class_id) DO UPDATE SET current_slide=$3, total_slides=$4, last_viewed=NOW()`,
         [socket.user.id, data.class_id, data.current_slide, data.total_slides]
       );
-    } catch (_) {}
+      span.setStatus({ code: SpanStatusCode.OK });
+    } catch (e) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
+    } finally {
+      span.end();
+    }
   });
 
   // Admin broadcasts announcement
   socket.on('send_announcement', (data) => {
     if (socket.user?.role !== 'admin') return;
+    const span = tracer.startSpan('ws.send_announcement');
+    span.setAttributes({ 'user.id': socket.user.id, 'announcement.type': data.type || 'unknown' });
     io.emit('announcement', { ...data, creator_name: socket.user.name, created_at: new Date() });
+    span.end();
   });
 
   socket.on('disconnect', () => {

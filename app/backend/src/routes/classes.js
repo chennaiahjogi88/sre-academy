@@ -2,6 +2,9 @@ const express = require('express');
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
 const { classViewsTotal } = require('../metrics');
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+
+const tracer = trace.getTracer('sre-platform-backend');
 
 const router = express.Router();
 
@@ -54,6 +57,7 @@ const ALL_CLASSES = [
   { id: 'class-46', module: 'Advanced', title: 'Cost Optimization', file: 'cost_optimization.html', public: false },
   { id: 'class-47', module: 'Advanced', title: 'Observability Cost Control', file: 'observability_cost.html', public: false },
   { id: 'class-48', module: 'Advanced', title: 'K8s Security', file: 'k8s_security.html', public: false },
+  { id: 'class-49', module: 'Observability', title: 'Observability Masterclass', file: 'observability_class.html', public: false },
 ];
 
 // GET /api/classes — returns public classes always, private only if authenticated
@@ -88,26 +92,40 @@ router.get('/:id/progress', authenticate, async (req, res) => {
 
 // PUT /api/classes/:id/progress — update progress
 router.put('/:id/progress', authenticate, async (req, res) => {
-  try {
-    const { current_slide, total_slides, completed } = req.body;
-    const classId = req.params.id;
+  return tracer.startActiveSpan('class.update_progress', async (span) => {
+    try {
+      const { current_slide, total_slides, completed } = req.body;
+      const classId = req.params.id;
 
-    classViewsTotal.inc({ class_id: classId });
+      span.setAttributes({
+        'class.id': classId,
+        'user.id': req.user.id,
+        'slide.current': current_slide || 0,
+        'slide.total': total_slides || 0,
+        'class.completed': completed || false,
+      });
 
-    await db.query(
-      `INSERT INTO class_progress (user_id, class_id, current_slide, total_slides, completed, last_viewed)
-       VALUES ($1, $2, $3, $4, $5, NOW())
-       ON CONFLICT (user_id, class_id) DO UPDATE SET
-         current_slide = EXCLUDED.current_slide,
-         total_slides = EXCLUDED.total_slides,
-         completed = EXCLUDED.completed,
-         last_viewed = NOW()`,
-      [req.user.id, classId, current_slide || 0, total_slides || 0, completed || false]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update progress' });
-  }
+      classViewsTotal.inc({ class_id: classId });
+
+      await db.query(
+        `INSERT INTO class_progress (user_id, class_id, current_slide, total_slides, completed, last_viewed)
+         VALUES ($1, $2, $3, $4, $5, NOW())
+         ON CONFLICT (user_id, class_id) DO UPDATE SET
+           current_slide = EXCLUDED.current_slide,
+           total_slides = EXCLUDED.total_slides,
+           completed = EXCLUDED.completed,
+           last_viewed = NOW()`,
+        [req.user.id, classId, current_slide || 0, total_slides || 0, completed || false]
+      );
+      span.setStatus({ code: SpanStatusCode.OK });
+      span.end();
+      res.json({ success: true });
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      span.end();
+      res.status(500).json({ error: 'Failed to update progress' });
+    }
+  });
 });
 
 // GET /api/classes/progress/all — get all progress for current user

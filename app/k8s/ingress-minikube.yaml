@@ -1,0 +1,85 @@
+# ── ingress-nginx-controller Service (LoadBalancer) ──────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+---
+# ── NGINX Ingress — sre-platform namespace ────────────────────────────────────
+#
+# Prerequisites (one-time, run before deploying this file):
+#   minikube addons enable ingress
+#
+# After the controller is up, get the minikube IP and update /etc/hosts:
+#   minikube ip
+#
+# Hostnames used:
+#   app.ktech.io      → SRE Platform frontend
+#   api.ktech.io      → SRE Platform backend API
+#   locust.ktech.io   → Locust load-test UI
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sre-app-ingress
+  namespace: sre-platform
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    # WebSocket support (required for the live student dashboard)
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/websocket-services: "frontend-service"
+spec:
+  ingressClassName: nginx
+  rules:
+    # ── Frontend ──────────────────────────────────────────────────────────────
+    - host: app.ktech.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
+    # ── Backend API ───────────────────────────────────────────────────────────
+    - host: api.ktech.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3001
+
+    # ── Locust load-test UI ───────────────────────────────────────────────────
+    - host: locust.ktech.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: locust-master-service
+                port:
+                  number: 8089

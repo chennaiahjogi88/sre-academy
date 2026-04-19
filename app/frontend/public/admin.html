@@ -880,10 +880,10 @@
                 if (!res) return;
 
                 const data = await res.json();
-                const classes = data.data || [];
+                const classes = data.classes || [];
 
                 const html = classes.map(c => `
-                    <option value="${c.id}">${c.class_number}: ${c.title}</option>
+                    <option value="${c.id}">${c.id}: ${c.title}</option>
                 `).join('');
 
                 document.getElementById('recClass').innerHTML = '<option value="">Select a class...</option>' + html;
@@ -955,7 +955,7 @@
             formData.append('class_id', classId);
             formData.append('title', title);
             formData.append('description', description);
-            formData.append('file', file);
+            formData.append('recording', file);
 
             try {
                 const token = Auth.getToken();
