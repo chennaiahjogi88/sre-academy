@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: kotidevops/kt-backend:v2
+          image: kotidevops/kt-backend:v4
           imagePullPolicy: Always
           ports:
             - containerPort: 3001

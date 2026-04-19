@@ -28,7 +28,7 @@ spec:
 # After the controller is up, get the minikube IP and update /etc/hosts:
 #   minikube ip
 #
-# Hostnames used (update these to your real domain or EKS NLB hostname):
+# Hostnames used:
 #   app.ktech.io      → SRE Platform frontend
 #   api.ktech.io      → SRE Platform backend API
 #   locust.ktech.io   → Locust load-test UI
@@ -49,7 +49,7 @@ spec:
   ingressClassName: nginx
   rules:
     # ── Frontend ──────────────────────────────────────────────────────────────
-    - host: app.ktech.io      # Replace with your domain / NLB hostname
+    - host: app.ktech.io
       http:
         paths:
           - path: /
@@ -61,7 +61,7 @@ spec:
                   number: 80
 
     # ── Backend API ───────────────────────────────────────────────────────────
-    - host: api.ktech.io      # Replace with your domain / NLB hostname
+    - host: api.ktech.io
       http:
         paths:
           - path: /
@@ -73,7 +73,7 @@ spec:
                   number: 3001
 
     # ── Locust load-test UI ───────────────────────────────────────────────────
-    - host: locust.ktech.io   # Replace with your domain / NLB hostname
+    - host: locust.ktech.io
       http:
         paths:
           - path: /

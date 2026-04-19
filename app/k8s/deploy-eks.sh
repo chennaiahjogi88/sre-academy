@@ -13,7 +13,7 @@ KUBECTL="kubectl --request-timeout=5m"
 # CONFIG — set these before running
 # ---------------------------------------------------------------------------
 DOCKERHUB_USER="${DOCKERHUB_USER:-kotidevops}"
-BACKEND_IMAGE="${BACKEND_IMAGE:-${DOCKERHUB_USER}/kt-backend:v2}"
+BACKEND_IMAGE="${BACKEND_IMAGE:-${DOCKERHUB_USER}/kt-backend:v4}"
 # ---------------------------------------------------------------------------
 
 usage() {
@@ -175,10 +175,10 @@ deploy_all() {
   echo ""
   echo "==> Applying application stack (namespace: $APP_NS)..."
   $KUBECTL apply -f "$SCRIPT_DIR/namespace.yaml"
-  $KUBECTL apply -f "$SCRIPT_DIR/storageclass.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/storageclass-eks.yaml"
   $KUBECTL apply -f "$SCRIPT_DIR/configmap.yaml"
-  $KUBECTL apply -f "$SCRIPT_DIR/postgres.yaml"
-  $KUBECTL apply -f "$SCRIPT_DIR/backend.yaml"
+  sed 's/storageClassName: standard/storageClassName: gp3/g' "$SCRIPT_DIR/postgres.yaml" | $KUBECTL apply -f -
+  sed 's/storageClassName: standard/storageClassName: gp3/g' "$SCRIPT_DIR/backend.yaml" | $KUBECTL apply -f -
   $KUBECTL apply -f "$SCRIPT_DIR/frontend.yaml"
   $KUBECTL apply -f "$SCRIPT_DIR/locust/locust.yaml"
 
@@ -204,7 +204,7 @@ deploy_all() {
   # ── Ingress resources ──────────────────────────────────────────────────────
   echo ""
   echo "==> Applying Ingress resources..."
-  $KUBECTL apply -f "$SCRIPT_DIR/ingress.yaml"
+  $KUBECTL apply -f "$SCRIPT_DIR/ingress-eks.yaml"
   $KUBECTL apply -f "$SCRIPT_DIR/monitoring/ingress.yaml"
 
   # ── Wait for rollouts ──────────────────────────────────────────────────────
@@ -287,7 +287,7 @@ teardown_all() {
   confirm_or_exit "This will delete BOTH the app ($APP_NS) and monitoring ($MON_NS) namespaces. Continue?" "$auto_confirm"
 
   echo "==> Removing Ingress resources..."
-  $KUBECTL delete -f "$SCRIPT_DIR/ingress.yaml"             --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/ingress-eks.yaml"         --ignore-not-found
   $KUBECTL delete -f "$SCRIPT_DIR/monitoring/ingress.yaml"  --ignore-not-found
 
   echo "==> Tearing down application stack..."
@@ -296,7 +296,7 @@ teardown_all() {
   $KUBECTL delete -f "$SCRIPT_DIR/backend.yaml"               --ignore-not-found
   $KUBECTL delete -f "$SCRIPT_DIR/postgres.yaml"              --ignore-not-found
   $KUBECTL delete -f "$SCRIPT_DIR/configmap.yaml"             --ignore-not-found
-  $KUBECTL delete -f "$SCRIPT_DIR/storageclass.yaml"          --ignore-not-found
+  $KUBECTL delete -f "$SCRIPT_DIR/storageclass-eks.yaml"      --ignore-not-found
   $KUBECTL delete -f "$SCRIPT_DIR/namespace.yaml"             --ignore-not-found
 
   echo "==> Tearing down monitoring stack..."

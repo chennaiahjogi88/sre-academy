@@ -1,10 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ── Argument parsing ─────────────────────────────────────────────────────────
+PUSH_IMAGES=false          # --push  : build multi-arch and push to Docker Hub
+MULTI_ARCH=false           # --multi-arch : build linux/amd64 + linux/arm64 locally
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -g|--global)     ;;
+        --push)          PUSH_IMAGES=true;  MULTI_ARCH=true ;;
+        --multi-arch)    MULTI_ARCH=true ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NS="sre-platform"
 MON_NS="monitoring"
+ROLLOUT_TIMEOUT="300s"
+
+# ── Detect host OS and architecture ─────────────────────────────────────────
+HOST_OS=$(uname -s)
+HOST_ARCH=$(uname -m)
+case "$HOST_ARCH" in
+    x86_64)        NATIVE_PLATFORM="linux/amd64" ;;
+    arm64|aarch64) NATIVE_PLATFORM="linux/arm64" ;;
+    *)             echo "    Unknown arch '$HOST_ARCH', defaulting to linux/amd64"
+                   NATIVE_PLATFORM="linux/amd64" ;;
+esac
+echo "==> Host: $HOST_OS / $HOST_ARCH  (native platform: $NATIVE_PLATFORM)"
 
 echo "==> Checking minikube status..."
 if ! minikube status --format='{{.Host}}' 2>/dev/null | grep -q "Running"; then
@@ -17,25 +43,61 @@ fi
 echo "==> Enabling ingress addon..."
 minikube addons enable ingress
 
-echo "==> Patching ingress-nginx-controller service to LoadBalancer..."
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=90s
-kubectl patch svc ingress-nginx-controller -n ingress-nginx --type='json' \
-  -p='[{"op": "replace", "path": "/spec/type", "value": "LoadBalancer"}]'
+ensure_buildx_builder() {
+  local builder_name="multi-builder"
+  if ! docker buildx inspect "$builder_name" >/dev/null 2>&1; then
+    echo "==> Creating docker buildx builder '$builder_name'..."
+    docker buildx create --name "$builder_name" --driver docker-container --use >/dev/null
+  else
+    docker buildx use "$builder_name"
+  fi
+  docker buildx inspect --bootstrap "$builder_name" >/dev/null
+}
 
-# echo "==> Pointing Docker to minikube's daemon..."
-# eval "$(minikube docker-env)"
+# ── Build Docker images ──────────────────────────────────────────────────────
+if [[ "$PUSH_IMAGES" == "true" ]]; then
+  # Multi-arch build + push to Docker Hub (requires `docker buildx` + logged-in account)
+  ensure_buildx_builder
+  echo "==> Building & pushing multi-arch images (linux/amd64 + linux/arm64)..."
+  docker buildx build \
+    --builder multi-builder \
+    --platform linux/amd64,linux/arm64 \
+    --push \
+    -t kotidevops/kt-backend:v4 "$APP_DIR/backend"
+  docker buildx build \
+    --builder multi-builder \
+    --platform linux/amd64,linux/arm64 \
+    --push \
+    -t kotidevops/kt-frontend:v4 "$APP_DIR/frontend"
+  echo "    Images pushed. Skipping minikube docker-env (using registry images)."
+else
+echo "==> Pointing Docker to minikube's daemon..."
+# Pointing Docker to minikube's daemon
+eval "$(minikube docker-env --shell bash)"
 
-echo "==> Building Docker images..."
-docker build -t kotidevops/kt-backend:v2 "$APP_DIR/backend"
-docker build -t kotidevops/kt-frontend:v1 "$APP_DIR/frontend"
+  if [[ "$MULTI_ARCH" == "true" ]]; then
+    ensure_buildx_builder
+    echo "==> Building multi-arch images for minikube (linux/amd64 + linux/arm64)..."
+    docker buildx build --load \
+      --platform linux/amd64,linux/arm64 \
+      -t kotidevops/kt-backend:v4 "$APP_DIR/backend"
+    docker buildx build --load \
+      --platform linux/amd64,linux/arm64 \
+      -t kotidevops/kt-frontend:v4 "$APP_DIR/frontend"
+  else
+    echo "==> Building Docker images (platform: $NATIVE_PLATFORM)..."
+    docker build --platform "$NATIVE_PLATFORM" \
+      -t kotidevops/kt-backend:v4  "$APP_DIR/backend"
+    docker build --platform "$NATIVE_PLATFORM" \
+      -t kotidevops/kt-frontend:v4 "$APP_DIR/frontend"
+  fi
+fi
 
 # ── Application namespace ────────────────────────────────────────────────────
 echo ""
 echo "==> Deploying application stack (namespace: $APP_NS)..."
 kubectl apply -f "$SCRIPT_DIR/namespace.yaml"
+kubectl apply -f "$SCRIPT_DIR/storageclass-minikube.yaml"
 kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 kubectl apply -f "$SCRIPT_DIR/postgres.yaml"
 kubectl apply -f "$SCRIPT_DIR/backend.yaml"
@@ -53,22 +115,28 @@ kubectl apply -f "$SCRIPT_DIR/monitoring/jaeger.yaml"
 kubectl apply -f "$SCRIPT_DIR/monitoring/prometheus.yaml"
 kubectl apply -f "$SCRIPT_DIR/monitoring/grafana.yaml"
 
+# ── Ingress resources ──────────────────────────────────────────────────────
+echo ""
+echo "==> Applying Ingress resources..."
+kubectl apply -f "$SCRIPT_DIR/ingress-minikube.yaml"
+kubectl apply -f "$SCRIPT_DIR/monitoring/ingress.yaml"
+
 # ── Wait for critical services ───────────────────────────────────────────────
 echo ""
 echo "==> Waiting for Postgres..."
-kubectl rollout status statefulset/postgres -n "$APP_NS" --timeout=120s
+kubectl rollout status statefulset/postgres -n "$APP_NS" --timeout="$ROLLOUT_TIMEOUT"
 
 echo "==> Waiting for backend..."
-kubectl rollout status deployment/sre-backend -n "$APP_NS" --timeout=120s
+kubectl rollout status deployment/sre-backend -n "$APP_NS" --timeout="$ROLLOUT_TIMEOUT"
 
 echo "==> Waiting for frontend..."
-kubectl rollout status deployment/sre-frontend -n "$APP_NS" --timeout=120s
+kubectl rollout status deployment/sre-frontend -n "$APP_NS" --timeout="$ROLLOUT_TIMEOUT"
 
 echo "==> Waiting for Prometheus..."
-kubectl rollout status deployment/prometheus -n "$MON_NS" --timeout=120s
+kubectl rollout status deployment/prometheus -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
 echo "==> Waiting for Grafana..."
-kubectl rollout status deployment/grafana -n "$MON_NS" --timeout=120s
+kubectl rollout status deployment/grafana -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
