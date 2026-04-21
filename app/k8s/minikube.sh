@@ -146,6 +146,7 @@ deploy() {
   kubectl apply -f "$SCRIPT_DIR/monitoring/promtail.yaml"
   kubectl apply -f "$SCRIPT_DIR/monitoring/jaeger.yaml"
   kubectl apply -f "$SCRIPT_DIR/monitoring/prometheus.yaml"
+  kubectl apply -f "$SCRIPT_DIR/monitoring/alertmanager.yaml"
   kubectl apply -f "$SCRIPT_DIR/monitoring/grafana.yaml"
 
   echo ""
@@ -172,6 +173,12 @@ deploy() {
   echo "==> Waiting for Prometheus..."
   kubectl rollout status deployment/prometheus -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
+  echo "==> Waiting for Alertmanager..."
+  kubectl rollout status deployment/alertmanager -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
+
+  echo "==> Waiting for MailHog..."
+  kubectl rollout status deployment/mailhog -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
+
   echo "==> Waiting for Grafana..."
   kubectl rollout status deployment/grafana -n "$MON_NS" --timeout="$ROLLOUT_TIMEOUT"
 
@@ -186,10 +193,12 @@ deploy() {
   echo "║    kubectl port-forward svc/frontend-service  8080:80    -n $APP_NS"
   echo "║    kubectl port-forward svc/backend-service   3001:3001  -n $APP_NS"
   echo "║    kubectl port-forward svc/locust-master-service 8089:8089 -n $APP_NS"
-  echo "║    kubectl port-forward svc/prometheus-service 9090:9090 -n $MON_NS"
-  echo "║    kubectl port-forward svc/grafana-service   3000:3000  -n $MON_NS"
-  echo "║    kubectl port-forward svc/loki-service      3100:3100  -n $MON_NS"
-  echo "║    kubectl port-forward svc/jaeger-service    16686:16686 -n $MON_NS"
+  echo "║    kubectl port-forward svc/prometheus-service    9090:9090  -n $MON_NS"
+  echo "║    kubectl port-forward svc/alertmanager-service 9093:9093  -n $MON_NS"
+  echo "║    kubectl port-forward svc/mailhog-service       8025:8025  -n $MON_NS"
+  echo "║    kubectl port-forward svc/grafana-service       3000:3000  -n $MON_NS"
+  echo "║    kubectl port-forward svc/loki-service          3100:3100  -n $MON_NS"
+  echo "║    kubectl port-forward svc/jaeger-service       16686:16686 -n $MON_NS"
   echo "╠══════════════════════════════════════════════════════════════╣"
   echo "║  Credentials:                                               ║"
   echo "║    Grafana:  admin / Grafana@123                            ║"

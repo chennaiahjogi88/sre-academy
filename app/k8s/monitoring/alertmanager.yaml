@@ -1,0 +1,225 @@
+# ── MailHog — fake SMTP server for local/dev alert testing ───────────────────
+# Catches all emails sent by Alertmanager and shows them in a web UI.
+# Web UI:  http://mailhog.ktech.io  (or kubectl port-forward svc/mailhog-service 8025)
+# SMTP:    mailhog-service:1025  (no auth, no TLS)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailhog
+  namespace: monitoring
+  labels:
+    app: mailhog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailhog
+  template:
+    metadata:
+      labels:
+        app: mailhog
+    spec:
+      containers:
+        - name: mailhog
+          image: mailhog/mailhog:v1.0.1
+          ports:
+            - containerPort: 1025  # SMTP
+            - containerPort: 8025  # Web UI
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "20m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailhog-service
+  namespace: monitoring
+spec:
+  selector:
+    app: mailhog
+  ports:
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+    - name: web
+      port: 8025
+      targetPort: 8025
+---
+# ── Gmail credentials (app password) — stored as a Secret ────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-gmail-secret
+  namespace: monitoring
+type: Opaque
+stringData:
+  gmail-password: "iukxcplyvtbxxxrn"
+---
+# ── Alertmanager configuration ────────────────────────────────────────────────
+# Routes:
+#   critical → imkoti.p@gmail.com  (group_wait 5s, repeat 30m)
+#   warning  → imkoti.p@gmail.com  (group_wait 15s, repeat 4h)
+#   info     → silenced (no email)
+# Uses Gmail SMTP with app password mounted from Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname', 'severity', 'cluster']
+      group_wait: 15s
+      group_interval: 2m
+      repeat_interval: 4h
+      receiver: 'sre-team-email'
+      routes:
+        - matchers:
+            - severity="critical"
+          receiver: 'oncall-critical'
+          group_wait: 5s
+          repeat_interval: 30m
+          continue: true      # also fan-out to mailhog-debug below
+        - matchers:
+            - severity="info"
+          receiver: 'null'
+        - receiver: 'mailhog-debug'  # catch-all: every alert lands in MailHog inbox
+
+    receivers:
+      - name: 'sre-team-email'
+        email_configs:
+          - to: 'imkoti.p@gmail.com'
+            smarthost: 'smtp.gmail.com:587'
+            from: 'imkoti.p@gmail.com'
+            auth_username: 'imkoti.p@gmail.com'
+            auth_password_file: '/etc/alertmanager/secrets/gmail-password'
+            require_tls: true
+            send_resolved: true
+            headers:
+              Subject: '[{{ .Status | toUpper }}][{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }} — ktech-sre'
+            html: |
+              <h2>{{ .Status | toUpper }}: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}</h2>
+              <p><b>Severity:</b> {{ .GroupLabels.severity }}</p>
+              {{ range .Alerts }}
+              <p><b>Description:</b> {{ .Annotations.description }}</p>
+              <p><b>Labels:</b> {{ range .Labels.SortedPairs }}<code>{{ .Name }}={{ .Value }}</code> {{ end }}</p>
+              {{ end }}
+
+      - name: 'oncall-critical'
+        email_configs:
+          - to: 'imkoti.p@gmail.com'
+            smarthost: 'smtp.gmail.com:587'
+            from: 'imkoti.p@gmail.com'
+            auth_username: 'imkoti.p@gmail.com'
+            auth_password_file: '/etc/alertmanager/secrets/gmail-password'
+            require_tls: true
+            send_resolved: true
+            headers:
+              Subject: '[CRITICAL] {{ .GroupLabels.alertname }} — ktech-sre — ACTION REQUIRED'
+            html: |
+              <h1 style="color:red">CRITICAL ALERT FIRED</h1>
+              {{ range .Alerts }}
+              <h3>{{ .Annotations.summary }}</h3>
+              <p>{{ .Annotations.description }}</p>
+              <p><b>Labels:</b> {{ range .Labels.SortedPairs }}<code>{{ .Name }}={{ .Value }}</code> {{ end }}</p>
+              <p><b>Started:</b> {{ .StartsAt }}</p>
+              {{ end }}
+
+      - name: 'mailhog-debug'
+        email_configs:
+          - to: 'sre-alerts@ktech.local'
+            smarthost: 'mailhog-service:1025'
+            from: 'alertmanager@ktech.local'
+            require_tls: false
+            send_resolved: true
+            headers:
+              Subject: '[{{ .Status | toUpper }}][{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }} — ktech-sre'
+
+      - name: 'null'
+
+    inhibit_rules:
+      - source_matchers:
+          - severity="critical"
+        target_matchers:
+          - severity="warning"
+        equal: ['alertname']
+---
+# ── Alertmanager deployment ───────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.26.0
+          args:
+            - '--config.file=/etc/alertmanager/alertmanager.yml'
+            - '--storage.path=/alertmanager'
+            - '--web.external-url=http://alertmanager.ktech.io'
+            - '--log.level=debug'
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+            - name: gmail-secret
+              mountPath: /etc/alertmanager/secrets
+              readOnly: true
+            - name: data
+              mountPath: /alertmanager
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "20m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: alertmanager-config
+        - name: gmail-secret
+          secret:
+            secretName: alertmanager-gmail-secret
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-service
+  namespace: monitoring
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - name: web
+      port: 9093
+      targetPort: 9093

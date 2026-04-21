@@ -54,3 +54,27 @@ spec:
                 name: jaeger-service
                 port:
                   number: 16686
+
+    # ── Alertmanager ──────────────────────────────────────────────────────────
+    - host: alertmanager.ktech.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: alertmanager-service
+                port:
+                  number: 9093
+
+    # ── MailHog (fake email inbox — catches all Alertmanager emails) ──────────
+    - host: mailhog.ktech.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mailhog-service
+                port:
+                  number: 8025

@@ -18,7 +18,7 @@ data:
     alerting:
       alertmanagers:
         - static_configs:
-            - targets: []
+            - targets: ['alertmanager-service:9093']
 
     scrape_configs:
       # Prometheus self-monitoring
@@ -26,11 +26,7 @@ data:
         static_configs:
           - targets: ['localhost:9090']
 
-      # ── Auto-discover pods in sre-platform with prometheus.io/scrape=true ──
-      # Uses the annotations already on the backend Deployment:
-      #   prometheus.io/scrape: "true"
-      #   prometheus.io/port: "3001"
-      #   prometheus.io/path: "/metrics"
+      # ── Auto-discover pods in sre-platform that opt in with prometheus.io/scrape=true ──
       - job_name: kubernetes-pods
         kubernetes_sd_configs:
           - role: pod
@@ -93,7 +89,7 @@ data:
               description: "More than 0.5 failed logins/sec for 2+ minutes"
 
           - alert: BackendDown
-            expr: up{job="kubernetes-pods", app="sre-backend"} == 0
+            expr: absent(up{job="kubernetes-pods", app="sre-backend"})
             for: 30s
             labels:
               severity: critical
