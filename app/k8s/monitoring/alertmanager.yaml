@@ -49,22 +49,22 @@ spec:
       port: 8025
       targetPort: 8025
 ---
-# ── Gmail credentials (app password) — stored as a Secret ────────────────────
+# ── Slack webhook URL — stored as a Secret ────────────────────────────────────
 apiVersion: v1
 kind: Secret
 metadata:
-  name: alertmanager-gmail-secret
+  name: alertmanager-slack-secret
   namespace: monitoring
 type: Opaque
 stringData:
-  gmail-password: "iukxcplyvtbxxxrn"
+  slack-webhook-url: "https://hooks.slack.com/services/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"
 ---
 # ── Alertmanager configuration ────────────────────────────────────────────────
 # Routes:
-#   critical → imkoti.p@gmail.com  (group_wait 5s, repeat 30m)
-#   warning  → imkoti.p@gmail.com  (group_wait 15s, repeat 4h)
-#   info     → silenced (no email)
-# Uses Gmail SMTP with app password mounted from Secret.
+#   critical → #alerts  (group_wait 5s, repeat 30m, color: danger)
+#   warning  → #alerts  (group_wait 15s, repeat 4h)
+#   info     → silenced (null receiver)
+# Webhook URL is mounted from Secret via slack_api_url_file.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -74,74 +74,58 @@ data:
   alertmanager.yml: |
     global:
       resolve_timeout: 5m
+      slack_api_url_file: '/etc/alertmanager/secrets/slack-webhook-url'
 
     route:
       group_by: ['alertname', 'severity', 'cluster']
       group_wait: 15s
       group_interval: 2m
       repeat_interval: 4h
-      receiver: 'sre-team-email'
+      receiver: 'slack-sre-team'
       routes:
         - matchers:
             - severity="critical"
-          receiver: 'oncall-critical'
+          receiver: 'slack-oncall-critical'
           group_wait: 5s
           repeat_interval: 30m
-          continue: true      # also fan-out to mailhog-debug below
+          continue: true      # also fan-out to slack-debug below
         - matchers:
             - severity="info"
           receiver: 'null'
-        - receiver: 'mailhog-debug'  # catch-all: every alert lands in MailHog inbox
+        - receiver: 'slack-debug'  # catch-all: every alert lands in #alerts
 
     receivers:
-      - name: 'sre-team-email'
-        email_configs:
-          - to: 'imkoti.p@gmail.com'
-            smarthost: 'smtp.gmail.com:587'
-            from: 'imkoti.p@gmail.com'
-            auth_username: 'imkoti.p@gmail.com'
-            auth_password_file: '/etc/alertmanager/secrets/gmail-password'
-            require_tls: true
+      - name: 'slack-sre-team'
+        slack_configs:
+          - channel: '#alerts'
             send_resolved: true
-            headers:
-              Subject: '[{{ .Status | toUpper }}][{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }} — ktech-sre'
-            html: |
-              <h2>{{ .Status | toUpper }}: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}</h2>
-              <p><b>Severity:</b> {{ .GroupLabels.severity }}</p>
-              {{ range .Alerts }}
-              <p><b>Description:</b> {{ .Annotations.description }}</p>
-              <p><b>Labels:</b> {{ range .Labels.SortedPairs }}<code>{{ .Name }}={{ .Value }}</code> {{ end }}</p>
+            title: '[{{ .Status | toUpper }}][{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }} — ktech-sre'
+            text: |
+              {{ range .Alerts }}*Summary:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Labels:* {{ range .Labels.SortedPairs }}`{{ .Name }}={{ .Value }}` {{ end }}
               {{ end }}
 
-      - name: 'oncall-critical'
-        email_configs:
-          - to: 'imkoti.p@gmail.com'
-            smarthost: 'smtp.gmail.com:587'
-            from: 'imkoti.p@gmail.com'
-            auth_username: 'imkoti.p@gmail.com'
-            auth_password_file: '/etc/alertmanager/secrets/gmail-password'
-            require_tls: true
+      - name: 'slack-oncall-critical'
+        slack_configs:
+          - channel: '#alerts'
             send_resolved: true
-            headers:
-              Subject: '[CRITICAL] {{ .GroupLabels.alertname }} — ktech-sre — ACTION REQUIRED'
-            html: |
-              <h1 style="color:red">CRITICAL ALERT FIRED</h1>
-              {{ range .Alerts }}
-              <h3>{{ .Annotations.summary }}</h3>
-              <p>{{ .Annotations.description }}</p>
-              <p><b>Labels:</b> {{ range .Labels.SortedPairs }}<code>{{ .Name }}={{ .Value }}</code> {{ end }}</p>
-              <p><b>Started:</b> {{ .StartsAt }}</p>
+            color: 'danger'
+            title: ':fire: [CRITICAL] {{ .GroupLabels.alertname }} — ktech-sre — ACTION REQUIRED'
+            text: |
+              {{ range .Alerts }}*Summary:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Labels:* {{ range .Labels.SortedPairs }}`{{ .Name }}={{ .Value }}` {{ end }}
+              *Started:* {{ .StartsAt }}
               {{ end }}
 
-      - name: 'mailhog-debug'
-        email_configs:
-          - to: 'sre-alerts@ktech.local'
-            smarthost: 'mailhog-service:1025'
-            from: 'alertmanager@ktech.local'
-            require_tls: false
+      - name: 'slack-debug'
+        slack_configs:
+          - channel: '#alerts'
             send_resolved: true
-            headers:
-              Subject: '[{{ .Status | toUpper }}][{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }} — ktech-sre'
+            title: '[{{ .Status | toUpper }}][{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }} — ktech-sre'
+            text: |
+              {{ range .Alerts }}*Summary:* {{ .Annotations.summary }}{{ end }}
 
       - name: 'null'
 
@@ -183,7 +167,7 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/alertmanager
-            - name: gmail-secret
+            - name: slack-secret
               mountPath: /etc/alertmanager/secrets
               readOnly: true
             - name: data
@@ -205,9 +189,9 @@ spec:
         - name: config
           configMap:
             name: alertmanager-config
-        - name: gmail-secret
+        - name: slack-secret
           secret:
-            secretName: alertmanager-gmail-secret
+            secretName: alertmanager-slack-secret
         - name: data
           emptyDir: {}
 ---
