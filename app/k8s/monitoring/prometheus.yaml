@@ -124,6 +124,17 @@ data:
               summary: "Elevated 5xx error rate"
               description: "More than 0.1 server errors/sec for 2+ minutes"
 
+          - alert: High429Rate
+            expr: |
+              sum by (app) (rate(http_requests_total{status_code="429"}[5m]))
+                / sum by (app) (rate(http_requests_total[5m])) > 0.05
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Elevated 429 (Too Many Requests) rate"
+              description: "More than 5% of requests returning 429 for 5+ minutes, per app. This often indicates rate limiting or upstream throttling."
+
       - name: postgres
         rules:
           - alert: PostgresDown
