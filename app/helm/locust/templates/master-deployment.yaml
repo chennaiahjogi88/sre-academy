@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-master
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "locust.labels" . | nindent 4 }}
+    app.kubernetes.io/component: master
+spec:
+  replicas: {{ .Values.master.replicaCount }}
+  selector:
+    matchLabels:
+      app: locust-master
+  template:
+    metadata:
+      labels:
+        app: locust-master
+        {{- include "locust.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: locust-master
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --master
+            - --host={{ .Values.targetHost }}
+          ports:
+            - containerPort: 8089
+              name: web-ui
+            - containerPort: 5557
+              name: master-p1
+            - containerPort: 5558
+              name: master-p2
+          volumeMounts:
+            - name: scripts
+              mountPath: /home/locust
+          resources:
+            {{- toYaml .Values.master.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: locust-scripts

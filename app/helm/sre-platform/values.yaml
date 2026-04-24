@@ -56,7 +56,6 @@ ingress:
   hosts:
     frontend: app.ktech.io
     backend: api.ktech.io
-    locust: locust.ktech.io
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "512m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
@@ -75,3 +74,6 @@ secrets:
   jwtSecret: "change_this_in_production"
   postgresPassword: "sre_password_2024"
   grafanaPassword: "Grafana@123"
+
+# ingress-nginx is deployed as a separate chart (helm/ingress-nginx)
+# and must be installed before this chart.

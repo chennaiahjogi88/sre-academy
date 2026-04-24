@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: locust
   namespace: argocd
   labels:
     app.kubernetes.io/part-of: ktech-sre-academy
@@ -13,19 +13,13 @@ spec:
   source:
     repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
     targetRevision: helm
-    path: app/helm/monitoring
+    path: app/helm/locust
     helm:
       valueFiles:
         - values.yaml
-      # Override Slack webhook at deploy time:
-      # parameters:
-      #   - name: alertmanager.slackWebhookUrl
-      #     value: <your-webhook-url>
-      #   - name: grafana.adminPassword
-      #     value: <your-grafana-password>
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: locust
   syncPolicy:
     automated:
       prune: true

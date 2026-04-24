@@ -4,15 +4,20 @@ metadata:
   name: ktech-sre
   namespace: argocd
 spec:
-  description: KTech SRE Academy — platform and monitoring apps
+  description: KTech SRE Academy — platform, monitoring, locust, ingress
   sourceRepos:
     - https://github.com/myproject-vs/ktech-sre-academy.git
+    - https://kubernetes.github.io/ingress-nginx
   destinations:
+    - namespace: ingress-nginx
+      server: https://kubernetes.default.svc
     - namespace: sre-platform
       server: https://kubernetes.default.svc
     - namespace: monitoring
       server: https://kubernetes.default.svc
-    - namespace: '*'
+    - namespace: locust
+      server: https://kubernetes.default.svc
+    - namespace: argocd
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: 'storage.k8s.io'
@@ -21,6 +26,10 @@ spec:
       kind: ClusterRole
     - group: 'rbac.authorization.k8s.io'
       kind: ClusterRoleBinding
+    - group: 'networking.k8s.io'
+      kind: IngressClass
+    - group: 'admissionregistration.k8s.io'
+      kind: ValidatingWebhookConfiguration
     - group: ''
       kind: Namespace
   namespaceResourceWhitelist:

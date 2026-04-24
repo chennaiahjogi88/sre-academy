@@ -1,0 +1,33 @@
+image:
+  repository: locustio/locust
+  tag: "2.15.1"
+  pullPolicy: IfNotPresent
+
+master:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+worker:
+  replicaCount: 2
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+# Target host for load tests — override per environment
+targetHost: "http://backend-service.sre-platform.svc.cluster.local:3001"
+
+ingress:
+  host: locust.ktech.io
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"

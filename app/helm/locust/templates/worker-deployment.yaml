@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "locust.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app: locust-worker
+  template:
+    metadata:
+      labels:
+        app: locust-worker
+        {{- include "locust.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: locust-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --worker
+            - --master-host=locust-master-service
+          volumeMounts:
+            - name: scripts
+              mountPath: /home/locust
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: locust-scripts

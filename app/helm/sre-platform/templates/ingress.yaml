@@ -32,13 +32,3 @@ spec:
                 port:
                   number: {{ .Values.backend.port }}
 
-    - host: {{ .Values.ingress.hosts.locust }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: locust-master-service
-                port:
-                  number: 8089
