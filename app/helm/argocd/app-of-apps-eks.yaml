@@ -1,0 +1,34 @@
+# App of Apps — EKS entry point.
+# Apply this once manually on an EKS cluster; ArgoCD then reconciles all four child apps:
+#   wave 1: ingress-nginx  (NLB, internet-facing)
+#   wave 2: sre-platform, monitoring, locust  (git-backed helm charts, EKS values)
+#
+# Prerequisites (EKS cluster):
+#   - EBS CSI driver installed (for gp3 StorageClass)
+#   - Node IAM role has AmazonEBSCSIDriverPolicy or equivalent
+#   - ArgoCD installed and running (see README.md Step 2)
+#
+# Bootstrap (run once):
+#   kubectl apply -f helm/argocd/projects/ktech-project.yaml
+#   kubectl apply -f helm/argocd/app-of-apps-eks.yaml
+#
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ktech-sre-root
+  namespace: argocd
+spec:
+  project: ktech-sre
+  source:
+    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
+    targetRevision: helm
+    path: app/helm/argocd/apps-eks
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

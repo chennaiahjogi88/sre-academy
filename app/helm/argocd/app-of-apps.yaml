@@ -1,7 +1,9 @@
-# App of Apps — ArgoCD root application.
+# App of Apps — minikube entry point.
 # Apply this once manually; ArgoCD then reconciles all four child apps automatically:
-#   wave 1: ingress-nginx  (upstream helm chart, NodePort)
-#   wave 2: sre-platform, monitoring, locust  (git-backed helm charts)
+#   wave 1: ingress-nginx  (upstream helm chart, LoadBalancer via minikube tunnel)
+#   wave 2: sre-platform, monitoring, locust  (git-backed helm charts, minikube values)
+#
+# For EKS deployments use app-of-apps-eks.yaml instead.
 #
 # Bootstrap (run once):
 #   kubectl apply -f helm/argocd/projects/ktech-project.yaml

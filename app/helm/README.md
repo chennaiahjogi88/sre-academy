@@ -49,12 +49,19 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 Apply the ArgoCD Project and root Application once. After this, ArgoCD manages everything.
 
+**Minikube:**
 ```bash
 kubectl apply -f helm/argocd/projects/ktech-project.yaml
 kubectl apply -f helm/argocd/app-of-apps.yaml
 ```
 
-ArgoCD will discover and sync `sre-platform` and `monitoring` automatically.
+**EKS** (see EKS prerequisites below first):
+```bash
+kubectl apply -f helm/argocd/projects/ktech-project.yaml
+kubectl apply -f helm/argocd/app-of-apps-eks.yaml
+```
+
+ArgoCD will discover and sync all four child apps automatically.
 
 Check sync status:
 
@@ -75,15 +82,41 @@ kubectl get applications -n argocd
 
 ## Environment switching
 
-The `sre-platform` app defaults to `values-minikube.yaml`. To switch to EKS, edit `helm/argocd/apps/sre-platform-app.yaml`:
+Two separate App-of-Apps entry points handle environment differences — no manual file edits needed:
 
-```yaml
-helm:
-  valueFiles:
-    - values-eks.yaml   # change from values-minikube.yaml
-```
+| Entry point | Target cluster | ingress-nginx | sre-platform values |
+|---|---|---|---|
+| `app-of-apps.yaml` | Minikube | LoadBalancer (minikube tunnel) | `values-minikube.yaml` |
+| `app-of-apps-eks.yaml` | EKS | NLB (internet-facing) | `values-eks.yaml` |
 
-Commit and push — ArgoCD picks up the change automatically.
+Apply whichever matches your cluster and ArgoCD does the rest.
+
+---
+
+## EKS prerequisites
+
+Before bootstrapping on EKS, ensure:
+
+1. **EBS CSI driver** is installed on the cluster (required for gp3 PVCs):
+   ```bash
+   # Check if already installed
+   kubectl get daemonset ebs-csi-node -n kube-system
+   ```
+
+2. **Node IAM role** has the `AmazonEBSCSIDriverPolicy` managed policy attached.
+
+3. **Route53 DNS** — after `ingress-nginx` syncs, get the NLB hostname and create CNAME/Alias records:
+   ```bash
+   # Get the NLB hostname
+   kubectl get svc -n ingress-nginx ingress-nginx-controller \
+     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+   ```
+   Then create records in Route53:
+   - `app.ktech.io`       → NLB hostname
+   - `api.ktech.io`       → NLB hostname
+   - `locust.ktech.io`    → NLB hostname
+   - `alertmanager.ktech.io` → NLB hostname
+   - `grafana.ktech.io`   → NLB hostname (if exposed via ingress)
 
 ---
 
@@ -118,21 +151,44 @@ helm upgrade --install sre-platform helm/sre-platform \
 ## Manual Helm deploy (without ArgoCD)
 
 ```bash
-# App stack (minikube)
-helm upgrade --install sre-platform helm/sre-platform \
+# --- Minikube ---
+
+# ingress-nginx (must come first)
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --version 4.10.1 \
+  -n ingress-nginx --create-namespace
+
+# App stack
+helm upgrade --install sre-platform app/helm/sre-platform \
   -n sre-platform --create-namespace \
-  -f helm/sre-platform/values-minikube.yaml
+  -f app/helm/sre-platform/values-minikube.yaml
 
 # Monitoring stack
-helm upgrade --install monitoring helm/monitoring \
+helm upgrade --install monitoring app/helm/monitoring \
   -n monitoring --create-namespace
 
-# App stack (EKS)
-helm upgrade --install sre-platform helm/sre-platform \
+# --- EKS ---
+
+# ingress-nginx with NLB
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --version 4.10.1 \
+  -n ingress-nginx --create-namespace \
+  --set controller.service.type=LoadBalancer \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"=nlb \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
+
+# App stack
+helm upgrade --install sre-platform app/helm/sre-platform \
   -n sre-platform --create-namespace \
-  -f helm/sre-platform/values-eks.yaml \
+  -f app/helm/sre-platform/values-eks.yaml \
   --set secrets.jwtSecret=$JWT_SECRET \
   --set secrets.postgresPassword=$PG_PASSWORD
+
+# Monitoring stack (same values on EKS — no storage class dependency)
+helm upgrade --install monitoring app/helm/monitoring \
+  -n monitoring --create-namespace
 ```
 
 ---

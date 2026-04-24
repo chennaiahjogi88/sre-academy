@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sre-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: ktech-sre-academy
+  annotations:
+    # Wave 2 — depends on ingress-nginx (wave 1)
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: ktech-sre
+  source:
+    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
+    targetRevision: helm
+    path: app/helm/sre-platform
+    helm:
+      valueFiles:
+        # EKS: gp3 StorageClass via EBS CSI driver, NLB-ready ingress annotations
+        - values-eks.yaml
+      # Override secrets at deploy time:
+      # parameters:
+      #   - name: secrets.jwtSecret
+      #     value: <your-jwt-secret>
+      #   - name: secrets.postgresPassword
+      #     value: <your-pg-password>
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sre-platform
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

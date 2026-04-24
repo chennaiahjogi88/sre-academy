@@ -1,0 +1,8 @@
+# EKS environment overrides for the monitoring stack.
+# Loki uses emptyDir (no PVC), so no storage class override is needed.
+# All domain names (alertmanager.ktech.io etc.) are environment-agnostic —
+# point your Route53 records to the NLB DNS name and everything works.
+#
+# Add overrides here as your EKS setup evolves, e.g.:
+#   alertmanager:
+#     externalUrl: "https://alertmanager.ktech.io"   # switch to https once cert-manager is set up
