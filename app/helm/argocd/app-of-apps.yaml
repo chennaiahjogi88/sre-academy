@@ -1,0 +1,31 @@
+# App of Apps — minikube entry point.
+# Apply this once manually; ArgoCD then reconciles all four child apps automatically:
+#   wave 1: ingress-nginx  (upstream helm chart, LoadBalancer via minikube tunnel)
+#   wave 2: sre-platform, monitoring, locust  (git-backed helm charts, minikube values)
+#
+# For EKS deployments use app-of-apps-eks.yaml instead.
+#
+# Bootstrap (run once):
+#   kubectl apply -f helm/argocd/projects/ktech-project.yaml
+#   kubectl apply -f helm/argocd/app-of-apps.yaml
+#
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ktech-sre-root
+  namespace: argocd
+spec:
+  project: ktech-sre
+  source:
+    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
+    targetRevision: helm
+    path: app/helm/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

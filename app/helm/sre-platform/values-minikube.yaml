@@ -1,0 +1,29 @@
+# Minikube environment overrides
+# Usage: helm upgrade --install sre-platform ./helm/sre-platform \
+#          -n sre-platform --create-namespace \
+#          -f helm/sre-platform/values-minikube.yaml
+
+storage:
+  class: standard
+  backendPvcSize: 20Gi
+  postgresPvcSize: 5Gi
+
+storageClass:
+  create: true
+  name: standard
+  provisioner: k8s.io/minikube-hostpath
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+  isDefault: "true"
+  parameters: {}
+
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/websocket-services: "frontend-service"
+
+# ingress-nginx is deployed as a separate chart (helm/ingress-nginx)
+# and must be installed before this chart.

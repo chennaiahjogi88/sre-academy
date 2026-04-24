@@ -1,0 +1,12 @@
+apiVersion: v2
+name: locust
+description: Locust load testing chart for ktech-sre-academy
+type: application
+version: 0.1.0
+appVersion: "2.15.1"
+keywords:
+  - sre
+  - ktech
+  - load-testing
+maintainers:
+  - name: kotidevops

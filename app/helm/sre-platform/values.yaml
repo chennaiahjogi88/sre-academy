@@ -1,0 +1,79 @@
+# Default values for sre-platform.
+# Override with values-minikube.yaml or values-eks.yaml per environment.
+
+backend:
+  image:
+    repository: kotidevops/kt-backend
+    tag: v6
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  port: 3001
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+frontend:
+  image:
+    repository: kotidevops/kt-frontend
+    tag: v6
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  port: 80
+  resources:
+    requests:
+      memory: "200Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+postgres:
+  image: postgres:15-alpine
+  exporterImage: prometheuscommunity/postgres-exporter:v0.15.0
+  database: sre_platform
+  user: sre_user
+
+storage:
+  # Override per environment: "standard" (minikube) or "gp3" (EKS)
+  class: standard
+  backendPvcSize: 20Gi
+  postgresPvcSize: 5Gi
+
+storageClass:
+  create: true
+  name: standard
+  provisioner: k8s.io/minikube-hostpath
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+  isDefault: "true"
+  parameters: {}
+
+ingress:
+  hosts:
+    frontend: app.ktech.io
+    backend: api.ktech.io
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/websocket-services: "frontend-service"
+
+otel:
+  serviceName: sre-platform-backend
+  endpoint: http://jaeger-service.monitoring.svc.cluster.local:4318
+  resourceAttributes: "service.version=2.0.0,deployment.environment=production"
+
+# IMPORTANT: Override these secrets in production.
+# Use --set secrets.jwtSecret=<value> or a sealed-secrets/external-secrets solution.
+secrets:
+  jwtSecret: "change_this_in_production"
+  postgresPassword: "sre_password_2024"
+  grafanaPassword: "Grafana@123"
+
+# ingress-nginx is deployed as a separate chart (helm/ingress-nginx)
+# and must be installed before this chart.

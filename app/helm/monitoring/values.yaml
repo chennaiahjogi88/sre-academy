@@ -1,0 +1,79 @@
+# Default values for the monitoring stack
+
+prometheus:
+  image: prom/prometheus:v2.47.0
+  retentionTime: 30d
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  scrapeNamespaces:
+    - sre-platform
+
+grafana:
+  image: grafana/grafana:10.2.0
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  adminPassword: "Grafana@123"
+
+loki:
+  image: grafana/loki:2.9.4
+  retentionHours: 168
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+promtail:
+  image: grafana/promtail:2.9.4
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+
+jaeger:
+  image: jaegertracing/all-in-one:1.54
+  maxTraces: "10000"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+alertmanager:
+  image: prom/alertmanager:v0.26.0
+  externalUrl: "http://alertmanager.ktech.io"
+  slackWebhookUrl: "https://hooks.slack.com/services/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"
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "20m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+
+mailhog:
+  image: mailhog/mailhog:v1.0.1
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "20m"
+    limits:
+      memory: "64Mi"
+      cpu: "100m"

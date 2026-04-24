@@ -1,0 +1,12 @@
+apiVersion: v2
+name: sre-platform
+description: SRE Training Platform — frontend, backend, postgres
+type: application
+version: 0.1.0
+appVersion: "v6"
+keywords:
+  - sre
+  - ktech
+  - training
+maintainers:
+  - name: kotidevops
