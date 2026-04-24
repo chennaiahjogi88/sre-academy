@@ -1,0 +1,27 @@
+# App of Apps — ArgoCD root application.
+# Apply this once manually; ArgoCD then manages sre-platform + monitoring autonomously.
+#
+# Bootstrap:
+#   kubectl apply -f helm/argocd/projects/ktech-project.yaml
+#   kubectl apply -f helm/argocd/app-of-apps.yaml
+#
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ktech-sre-root
+  namespace: argocd
+spec:
+  project: ktech-sre
+  source:
+    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
+    targetRevision: helm
+    path: app/helm/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

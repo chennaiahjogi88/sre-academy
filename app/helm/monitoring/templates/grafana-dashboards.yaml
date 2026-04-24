@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "monitoring.labels" . | nindent 4 }}
+data:
+  sre-platform.json: |-
+{{ .Files.Get "files/dashboards/sre-platform.json" | indent 4 }}
+  slo-dashboard.json: |-
+{{ .Files.Get "files/dashboards/slo-dashboard.json" | indent 4 }}
+  traffic-dashboard.json: |-
+{{ .Files.Get "files/dashboards/traffic-dashboard.json" | indent 4 }}
+  database-metrics.json: |-
+{{ .Files.Get "files/dashboards/database-metrics.json" | indent 4 }}

@@ -1,0 +1,363 @@
+{
+  "title": "PostgreSQL — Database Metrics",
+  "uid": "postgres-metrics",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "tags": ["database", "postgres", "sre"],
+  "schemaVersion": 38,
+  "version": 1,
+  "panels": [
+
+    {
+      "type": "row",
+      "title": "Health & Connections",
+      "id": 100,
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "PostgreSQL Up",
+      "id": 1,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "targets": [{ "expr": "pg_up", "legendFormat": "Up" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "value" }
+    },
+    {
+      "type": "stat",
+      "title": "Active Connections",
+      "id": 2,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "targets": [{ "expr": "sum(pg_stat_activity_count{datname=\"sre_platform\"})", "legendFormat": "Active" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 80 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "stat",
+      "title": "Max Connections",
+      "id": 3,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "targets": [{ "expr": "pg_settings_max_connections", "legendFormat": "Max" }],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "gauge",
+      "title": "Connection Utilization %",
+      "id": 4,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 8 },
+      "targets": [{
+        "expr": "100 * sum(pg_stat_activity_count{datname=\"sre_platform\"}) / pg_settings_max_connections",
+        "legendFormat": "Utilization %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 80 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": true, "showThresholdMarkers": true }
+    },
+    {
+      "type": "timeseries",
+      "title": "Connections by State over Time",
+      "id": 5,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 8 },
+      "targets": [
+        { "expr": "pg_stat_activity_count{datname=\"sre_platform\",state=\"active\"}", "legendFormat": "active" },
+        { "expr": "pg_stat_activity_count{datname=\"sre_platform\",state=\"idle\"}", "legendFormat": "idle" },
+        { "expr": "pg_stat_activity_count{datname=\"sre_platform\",state=\"idle in transaction\"}", "legendFormat": "idle in tx" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Active Connections over Time",
+      "id": 6,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum(pg_stat_activity_count{datname=\"sre_platform\"})", "legendFormat": "Total Active" },
+        { "expr": "pg_settings_max_connections", "legendFormat": "Max Connections" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Max Connections" }, "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 8] } }, { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row",
+      "title": "Transaction Throughput",
+      "id": 200,
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "Commits / sec",
+      "id": 20,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 14, "w": 4, "h": 4 },
+      "targets": [{ "expr": "rate(pg_stat_database_xact_commit_total{datname=\"sre_platform\"}[1m])", "legendFormat": "Commits/s" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "stat",
+      "title": "Rollbacks / sec",
+      "id": 21,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 4, "y": 14, "w": 4, "h": 4 },
+      "targets": [{ "expr": "rate(pg_stat_database_xact_rollback_total{datname=\"sre_platform\"}[1m])", "legendFormat": "Rollbacks/s" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 1 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "timeseries",
+      "title": "Commits vs Rollbacks",
+      "id": 22,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 8, "y": 14, "w": 16, "h": 8 },
+      "targets": [
+        { "expr": "rate(pg_stat_database_xact_commit_total{datname=\"sre_platform\"}[1m])", "legendFormat": "Commits/s" },
+        { "expr": "rate(pg_stat_database_xact_rollback_total{datname=\"sre_platform\"}[1m])", "legendFormat": "Rollbacks/s" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Rollbacks/s" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Commits/s" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row",
+      "title": "Cache & Buffer Performance",
+      "id": 300,
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "type": "gauge",
+      "title": "Buffer Cache Hit Ratio",
+      "id": 30,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 23, "w": 6, "h": 8 },
+      "targets": [{
+        "expr": "100 * rate(pg_stat_database_blks_hit_total{datname=\"sre_platform\"}[5m]) / (rate(pg_stat_database_blks_hit_total{datname=\"sre_platform\"}[5m]) + rate(pg_stat_database_blks_read_total{datname=\"sre_platform\"}[5m]))",
+        "legendFormat": "Cache Hit %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 98 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": true, "showThresholdMarkers": true }
+    },
+    {
+      "type": "timeseries",
+      "title": "Cache Hit Ratio over Time",
+      "id": 31,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 6, "y": 23, "w": 10, "h": 8 },
+      "targets": [{
+        "expr": "100 * rate(pg_stat_database_blks_hit_total{datname=\"sre_platform\"}[5m]) / (rate(pg_stat_database_blks_hit_total{datname=\"sre_platform\"}[5m]) + rate(pg_stat_database_blks_read_total{datname=\"sre_platform\"}[5m]))",
+        "legendFormat": "Cache Hit %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 98 }] }
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Blocks Read vs Hit (I/O pressure)",
+      "id": 32,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 16, "y": 23, "w": 8, "h": 8 },
+      "targets": [
+        { "expr": "rate(pg_stat_database_blks_hit_total{datname=\"sre_platform\"}[1m])", "legendFormat": "Blocks Hit/s" },
+        { "expr": "rate(pg_stat_database_blks_read_total{datname=\"sre_platform\"}[1m])", "legendFormat": "Blocks Read/s (disk)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "iops", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Blocks Read/s (disk)" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row",
+      "title": "Database Size & Growth",
+      "id": 400,
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "Database Size",
+      "id": 40,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 32, "w": 6, "h": 4 },
+      "targets": [{ "expr": "pg_database_size_bytes{datname=\"sre_platform\"}", "legendFormat": "Size" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "fixed", "fixedColor": "blue" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "timeseries",
+      "title": "Database Size over Time",
+      "id": 41,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 6, "y": 32, "w": 18, "h": 8 },
+      "targets": [{ "expr": "pg_database_size_bytes{datname=\"sre_platform\"}", "legendFormat": "DB Size" }],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 10 } }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row",
+      "title": "Locks",
+      "id": 500,
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "Total Locks",
+      "id": 50,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 41, "w": 4, "h": 4 },
+      "targets": [{ "expr": "sum(pg_locks_count{datname=\"sre_platform\"})", "legendFormat": "Locks" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 20 }, { "color": "red", "value": 50 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "timeseries",
+      "title": "Locks by Mode over Time",
+      "id": 51,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 4, "y": 41, "w": 20, "h": 8 },
+      "targets": [
+        { "expr": "pg_locks_count{datname=\"sre_platform\",mode=\"ExclusiveLock\"}", "legendFormat": "ExclusiveLock" },
+        { "expr": "pg_locks_count{datname=\"sre_platform\",mode=\"RowExclusiveLock\"}", "legendFormat": "RowExclusiveLock" },
+        { "expr": "pg_locks_count{datname=\"sre_platform\",mode=\"ShareLock\"}", "legendFormat": "ShareLock" },
+        { "expr": "pg_locks_count{datname=\"sre_platform\",mode=\"AccessShareLock\"}", "legendFormat": "AccessShareLock" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row",
+      "title": "Background Writer & Checkpoints",
+      "id": 600,
+      "gridPos": { "x": 0, "y": 49, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Checkpoint Activity",
+      "id": 60,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 50, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(pg_stat_bgwriter_checkpoints_timed_total[5m])", "legendFormat": "Timed Checkpoints/s" },
+        { "expr": "rate(pg_stat_bgwriter_checkpoints_req_total[5m])", "legendFormat": "Requested Checkpoints/s" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Requested Checkpoints/s" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Buffers Written",
+      "id": 61,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 50, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(pg_stat_bgwriter_buffers_checkpoint_total[5m])", "legendFormat": "Checkpoint" },
+        { "expr": "rate(pg_stat_bgwriter_buffers_clean_total[5m])", "legendFormat": "Clean (bgwriter)" },
+        { "expr": "rate(pg_stat_bgwriter_buffers_backend_total[5m])", "legendFormat": "Backend (direct write)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "iops", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Backend (direct write)" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+  ]
+}

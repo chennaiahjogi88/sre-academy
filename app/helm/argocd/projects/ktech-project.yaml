@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ktech-sre
+  namespace: argocd
+spec:
+  description: KTech SRE Academy — platform and monitoring apps
+  sourceRepos:
+    - https://github.com/myproject-vs/ktech-sre-academy.git
+  destinations:
+    - namespace: sre-platform
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: 'storage.k8s.io'
+      kind: StorageClass
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRole
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRoleBinding
+    - group: ''
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,13 @@
+apiVersion: v2
+name: monitoring
+description: SRE Platform observability stack — Prometheus, Grafana, Loki, Promtail, Jaeger, Alertmanager
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - monitoring
+  - observability
+  - prometheus
+  - grafana
+maintainers:
+  - name: kotidevops
