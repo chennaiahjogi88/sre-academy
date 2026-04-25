@@ -3,9 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <title>Ktech SRE Training Platform</title>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <style>
+        :root {
+            --bg-base:    #060d1a;
+            --bg-card:    #0a1628;
+            --bg-raised:  #0f172a;
+            --border:     #1e293b;
+            --accent:     #38bdf8;
+            --accent-dim: #0ea5e9;
+            --text:       #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-faint: #64748b;
+            --green:      #4ade80;
+            --amber:      #fbbf24;
+            --purple:     #818cf8;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,10 +30,30 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #060d1a;
-            color: #e2e8f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-base);
+            color: var(--text);
             line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; right: 0;
+            width: 900px; height: 700px;
+            background: radial-gradient(ellipse at top right, rgba(56,189,248,0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 700px; height: 600px;
+            background: radial-gradient(ellipse at bottom left, rgba(129,140,248,0.04) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
         }
 
         /* Navigation */
@@ -188,6 +225,8 @@
             font-weight: 800;
             color: #38bdf8;
             margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
         }
 
         .stat-label {
@@ -240,8 +279,8 @@
         }
 
         .class-card:hover {
-            border-color: #38bdf8;
-            box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15);
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 8px 32px rgba(56, 189, 248, 0.18), 0 0 0 1px rgba(56,189,248,0.1);
             transform: translateY(-4px);
         }
 
@@ -435,19 +474,16 @@
 
         /* Animations */
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .section {
-            animation: slideIn 0.6s ease;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
         }
+        .section.revealed { opacity: 1; transform: translateY(0); }
 
         /* Hero two-column layout */
         .hero-inner {
@@ -1678,6 +1714,71 @@
             }
         });
         closeBtn.addEventListener('click', () => window_.classList.remove('open'));
+    })();
+    </script>
+
+    <!-- COUNTER ANIMATION + SCROLL REVEAL -->
+    <script>
+    (function() {
+        // Counter animation for stat numbers
+        function animateCounter(el, targetStr, duration) {
+            const isPlus = targetStr.includes('+');
+            const target = parseInt(targetStr);
+            if (isNaN(target)) { el.textContent = targetStr; return; }
+            const start = performance.now();
+            function step(now) {
+                const progress = Math.min((now - start) / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(target * ease) + (isPlus ? '+' : '');
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        // Set up stat counters
+        document.querySelectorAll('.stat-number').forEach(el => {
+            el.dataset.target = el.textContent.trim();
+            el.textContent = '0';
+        });
+
+        // Section scroll reveal + counter trigger
+        const revealObs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    revealObs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08 });
+
+        const counterObs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounter(entry.target, entry.target.dataset.target, 1200);
+                    counterObs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.section, .courses-section').forEach((s, i) => {
+            revealObs.observe(s);
+        });
+        document.querySelectorAll('.stat-number').forEach(el => counterObs.observe(el));
+
+        // Stagger section reveals slightly
+        document.querySelectorAll('.section').forEach((s, i) => {
+            s.style.transitionDelay = `${i * 40}ms`;
+        });
+
+        // Nav active state
+        const curPath = window.location.pathname;
+        document.querySelectorAll('.nav-links a').forEach(a => {
+            if (a.getAttribute('href') === curPath) {
+                a.style.color = '#38bdf8';
+                a.style.background = 'rgba(56,189,248,0.08)';
+                a.style.borderRadius = '6px';
+            }
+        });
     })();
     </script>
 
