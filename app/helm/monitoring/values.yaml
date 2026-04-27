@@ -1,9 +1,10 @@
 # Default values for the monitoring stack
 
 prometheus:
+spec:
+  replicas: 2
   image: prom/prometheus:v2.47.0
   retentionTime: 30d
-  replicas: 2
   resources:
     requests:
       memory: "256Mi"
