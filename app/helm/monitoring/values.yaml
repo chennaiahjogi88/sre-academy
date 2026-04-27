@@ -3,6 +3,7 @@
 prometheus:
   image: prom/prometheus:v2.47.0
   retentionTime: 30d
+  replicas: 2
   resources:
     requests:
       memory: "256Mi"
