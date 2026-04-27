@@ -2,7 +2,7 @@
 
 prometheus:
   spec:
-     replicas: 3
+     replicas: 1
   image: prom/prometheus:v2.47.0
   retentionTime: 30d
   resources:
