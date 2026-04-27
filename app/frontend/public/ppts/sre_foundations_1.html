@@ -18,6 +18,37 @@
             overflow: hidden;
         }
 
+        /* Progress bar at top of screen */
+        #slide-progress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            transition: width 0.3s ease;
+            z-index: 999;
+        }
+
+        /* Keyboard hint */
+        #key-hint {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 22, 40, 0.9);
+            border: 1px solid #1e293b;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #64748b;
+            letter-spacing: 0.5px;
+            animation: hintFadeOut 0.4s ease 3.5s forwards;
+            pointer-events: none;
+            z-index: 998;
+        }
+        @keyframes hintFadeOut {
+            to { opacity: 0; transform: translateX(-50%) translateY(8px); }
+        }
+
         #slides {
             width: 100vw;
             height: 100vh;
@@ -399,6 +430,8 @@
     </style>
 </head>
 <body>
+    <div id="slide-progress"></div>
+    <div id="key-hint">← → Arrow keys to navigate · Space to advance</div>
     <div id="slides">
         <!-- Slide 1: Title -->
         <div class="slide s-title">
@@ -643,6 +676,8 @@ Availability (%) = MTBF / (MTBF + MTTR) × 100
             document.getElementById('progressFill').style.width = ((n + 1) / totalSlides * 100) + '%';
             document.getElementById('prevBtn').disabled = n === 0;
             document.getElementById('nextBtn').disabled = n === totalSlides - 1;
+            const prog = document.getElementById('slide-progress');
+            if (prog) prog.style.width = ((n / (totalSlides - 1)) * 100) + '%';
         }
 
         function nextSlide() {
