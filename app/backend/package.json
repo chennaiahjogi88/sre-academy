@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "NODE_OPTIONS=--no-experimental-webstorage jest --forceExit"
+    "test": "jest --forceExit"
   },
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.47.0",
