@@ -141,11 +141,14 @@ io.on('connection', (socket) => {
 });
 
 // ── Start ──
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`SRE Platform Backend running on port ${PORT}`);
-  console.log(`Prometheus metrics: http://localhost:${PORT}/metrics`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-});
+// Skip binding in test environment — supertest creates its own ephemeral server.
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3001;
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`SRE Platform Backend running on port ${PORT}`);
+    console.log(`Prometheus metrics: http://localhost:${PORT}/metrics`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 module.exports = { app, server };
