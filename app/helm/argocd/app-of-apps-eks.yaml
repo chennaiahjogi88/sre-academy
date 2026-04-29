@@ -21,7 +21,7 @@ spec:
   project: ktech-sre
   source:
     repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
-    targetRevision: helm
+    targetRevision: main
     path: app/helm/argocd/apps-eks
   destination:
     server: https://kubernetes.default.svc
