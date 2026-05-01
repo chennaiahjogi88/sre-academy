@@ -17,6 +17,8 @@ spec:
     helm:
       values: |
         controller:
+          extraArgs:
+            enable-ssl-passthrough: ""
           service:
             type: LoadBalancer
           metrics:

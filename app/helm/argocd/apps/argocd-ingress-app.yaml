@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: ktech-sre-academy
+  annotations:
+    # Wave 2 — depends on ingress-nginx (wave 1)
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: ktech-sre
+  source:
+    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
+    targetRevision: main
+    path: app/k8s/argocd-ingress
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
