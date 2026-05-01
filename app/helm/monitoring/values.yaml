@@ -79,3 +79,9 @@ mailhog:
     limits:
       memory: "64Mi"
       cpu: "100m"
+
+ingress:
+  hosts:
+    prometheus: prometheus.ktech.io
+    grafana: grafana.ktech.io
+    jaeger: jaeger.ktech.io
