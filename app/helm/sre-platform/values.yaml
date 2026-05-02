@@ -4,7 +4,7 @@
 backend:
   image:
     repository: kotidevops/kt-backend
-    tag: v19
+    tag: v20
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 3001
@@ -19,7 +19,7 @@ backend:
 frontend:
   image:
     repository: kotidevops/kt-frontend
-    tag: v19
+    tag: v20
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 80
