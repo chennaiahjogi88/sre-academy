@@ -14,3 +14,5 @@ data:
 {{ .Files.Get "files/dashboards/traffic-dashboard.json" | indent 4 }}
   database-metrics.json: |-
 {{ .Files.Get "files/dashboards/database-metrics.json" | indent 4 }}
+  availability-sli-slo.json: |-
+{{ .Files.Get "files/dashboards/availability-sli-slo.json" | indent 4 }}

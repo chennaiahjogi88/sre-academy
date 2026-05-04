@@ -49,9 +49,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limiting
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
-const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many login attempts' } });
+// Rate limiting — configurable via env vars for load-test environments
+const RATE_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000');   // 1 min default
+const RATE_MAX       = parseInt(process.env.RATE_LIMIT_MAX       || '1000');    // 1000 req/min/IP
+const LOGIN_MAX      = parseInt(process.env.LOGIN_LIMIT_MAX      || '50');      // 50 login attempts/min/IP
+const limiter = rateLimit({ windowMs: RATE_WINDOW_MS, max: RATE_MAX, standardHeaders: true, legacyHeaders: false });
+const loginLimiter = rateLimit({ windowMs: RATE_WINDOW_MS, max: LOGIN_MAX, message: { error: 'Too many login attempts' } });
 app.use('/api/', limiter);
 app.use('/api/auth/login', loginLimiter);
 

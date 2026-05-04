@@ -4,8 +4,11 @@
 backend:
   image:
     repository: kotidevops/kt-backend
-    tag: v21
+    tag: v22
     pullPolicy: IfNotPresent
+  rateLimitWindowMs: "60000"
+  rateLimitMax: "1000"
+  loginLimitMax: "50"
   replicaCount: 2
   port: 3001
   resources:

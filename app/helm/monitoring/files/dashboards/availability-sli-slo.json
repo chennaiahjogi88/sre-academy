@@ -1,0 +1,537 @@
+{
+  "title": "App Availability — SLI / SLO / SLA",
+  "uid": "availability-sli-slo",
+  "description": "Teaching dashboard: Availability SLIs, SLO burn rate, and SLA compliance windows",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "tags": ["sli", "slo", "sla", "availability", "teaching"],
+  "panels": [
+
+    { "type": "row", "title": "🎯  SLO Targets — What We Promise", "id": 200, "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "collapsed": false },
+
+    {
+      "type": "stat",
+      "title": "Availability SLI  (rolling 1h)",
+      "description": "SLI = good_requests / total_requests.  Target SLO = 99.9 %",
+      "id": 1,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 1, "w": 5, "h": 5 },
+      "targets": [{
+        "expr": "100 * (1 - sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h])))",
+        "legendFormat": "Availability %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 90, "max": 100,
+          "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 99 },
+              { "color": "green", "value": 99.9 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background", "graphMode": "area" }
+    },
+
+    {
+      "type": "stat",
+      "title": "Latency SLI — p95  (rolling 5m)",
+      "description": "SLI = 95th-percentile response time.  Target SLO ≤ 500 ms",
+      "id": 2,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 5, "y": 1, "w": 5, "h": 5 },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+        "legendFormat": "p95 ms"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 0,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" }
+    },
+
+    {
+      "type": "stat",
+      "title": "Error Rate SLI  (rolling 5m)",
+      "description": "SLI = 5xx errors / total requests.  Target SLO < 0.1 %",
+      "id": 3,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 10, "y": 1, "w": 5, "h": 5 },
+      "targets": [{
+        "expr": "100 * sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+        "legendFormat": "Error %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" }
+    },
+
+    {
+      "type": "stat",
+      "title": "Request Rate  (RPS)",
+      "description": "Total throughput — context for all SLIs",
+      "id": 4,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 15, "y": 1, "w": 4, "h": 5 },
+      "targets": [{
+        "expr": "sum(rate(http_requests_total[1m]))",
+        "legendFormat": "RPS"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" }
+    },
+
+    {
+      "type": "gauge",
+      "title": "SLO Compliance Gauge  (99.9 % target)",
+      "description": "Shows how far above or below the SLO target we are right now.",
+      "id": 5,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 19, "y": 1, "w": 5, "h": 5 },
+      "targets": [{
+        "expr": "100 * (1 - sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h])))",
+        "legendFormat": "Availability %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 98, "max": 100,
+          "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 99 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": true, "showThresholdMarkers": true }
+    },
+
+    { "type": "row", "title": "🔥  Error Budget — How Much We Can Afford to Lose", "id": 201, "gridPos": { "x": 0, "y": 6, "w": 24, "h": 1 }, "collapsed": false },
+
+    {
+      "type": "stat",
+      "title": "Error Budget Remaining  (30-day SLA window)",
+      "description": "SLO=99.9% → 43.2 min of allowed downtime per 30 days.  Budget consumed = (1-availability) × 30d in minutes.",
+      "id": 10,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 7, "w": 6, "h": 5 },
+      "targets": [{
+        "expr": "43.2 - (sum(increase(http_requests_total{status_code=~\"5..\"}[30d])) / sum(increase(http_requests_total[30d]))) * 43200",
+        "legendFormat": "Budget left (min)"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "decimals": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "green", "value": 20 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" }
+    },
+
+    {
+      "type": "stat",
+      "title": "Error Budget Burn Rate  (1h vs 30d)",
+      "description": "Burn rate > 1 means consuming budget faster than it replenishes.  Burn rate > 14.4 = critical (exhausts 30d budget in 2 days).",
+      "id": 11,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 6, "y": 7, "w": 6, "h": 5 },
+      "targets": [{
+        "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)",
+        "legendFormat": "Burn Rate"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 14.4 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Error Budget Burn Rate Over Time",
+      "description": "Multi-window burn rate.  Green zone = burn rate ≤ 1 (within budget).  Red zone = alert territory.",
+      "id": 12,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 7, "w": 12, "h": 5 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))) / (1 - 0.999)",
+          "legendFormat": "5m burn rate"
+        },
+        {
+          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)",
+          "legendFormat": "1h burn rate"
+        },
+        {
+          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[6h])) / sum(rate(http_requests_total[6h]))) / (1 - 0.999)",
+          "legendFormat": "6h burn rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "5m burn rate" },  "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "1h burn rate" },  "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "6h burn rate" },  "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    { "type": "row", "title": "📈  SLI Trends Over Time", "id": 202, "gridPos": { "x": 0, "y": 12, "w": 24, "h": 1 }, "collapsed": false },
+
+    {
+      "type": "timeseries",
+      "title": "Availability SLI  (% successful requests, 5m windows)",
+      "description": "Each point = availability % in that 5-minute window.  Red dashed line = 99.9% SLO target.",
+      "id": 20,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "100 * (1 - sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])))",
+          "legendFormat": "Availability %"
+        },
+        {
+          "expr": "vector(99.9)",
+          "legendFormat": "SLO Target (99.9%)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 90,
+          "max": 100,
+          "custom": { "lineWidth": 2 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Availability %" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "SLO Target (99.9%)" }, "properties": [
+            { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+            { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+            { "id": "custom.lineWidth", "value": 1 }
+          ]}
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Latency SLI  (p50 / p95 / p99 response times)",
+      "description": "SLO target for p95 ≤ 500ms.  Watch p99 for tail latency issues.",
+      "id": 21,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "p50 (ms)"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "p95 (ms)"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "p99 (ms)"
+        },
+        {
+          "expr": "vector(500)",
+          "legendFormat": "SLO Target p95 (500ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "p50 (ms)" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "p95 (ms)" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "p99 (ms)" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "SLO Target p95 (500ms)" }, "properties": [
+            { "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } },
+            { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+            { "id": "custom.lineWidth", "value": 1 }
+          ]}
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    { "type": "row", "title": "🚨  Error Analysis — What's Breaking", "id": 203, "gridPos": { "x": 0, "y": 21, "w": 24, "h": 1 }, "collapsed": false },
+
+    {
+      "type": "timeseries",
+      "title": "HTTP Errors by Status Code",
+      "description": "4xx = client errors (404 Not Found, 429 Too Many Requests).  5xx = server errors — these consume SLO error budget.",
+      "id": 30,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"4..\"}[5m])) by (status_code)",
+          "legendFormat": "4xx — {{status_code}}"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) by (status_code)",
+          "legendFormat": "5xx — {{status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Error Rate by Endpoint",
+      "description": "Which endpoints are failing?  Helps narrow down SLO violations to specific routes.",
+      "id": 31,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(http_requests_total{status_code=~\"[45]..\"}[5m])) by (route, status_code))",
+          "legendFormat": "{{route}} — {{status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    { "type": "row", "title": "📅  SLA Compliance Windows", "id": 204, "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 }, "collapsed": false },
+
+    {
+      "type": "stat",
+      "title": "Availability SLA — Last 24 Hours",
+      "id": 40,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 31, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "100 * (1 - sum(increase(http_requests_total{status_code=~\"5..\"}[24h])) / sum(increase(http_requests_total[24h])))",
+        "legendFormat": "24h Availability"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+
+    {
+      "type": "stat",
+      "title": "Availability SLA — Last 7 Days",
+      "id": 41,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 6, "y": 31, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "100 * (1 - sum(increase(http_requests_total{status_code=~\"5..\"}[7d])) / sum(increase(http_requests_total[7d])))",
+        "legendFormat": "7d Availability"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+
+    {
+      "type": "stat",
+      "title": "Availability SLA — Last 30 Days",
+      "id": 42,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 31, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "100 * (1 - sum(increase(http_requests_total{status_code=~\"5..\"}[30d])) / sum(increase(http_requests_total[30d])))",
+        "legendFormat": "30d Availability"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+
+    {
+      "type": "text",
+      "title": "SLI / SLO / SLA — Concept Reference",
+      "id": 50,
+      "gridPos": { "x": 18, "y": 31, "w": 6, "h": 4 },
+      "options": {
+        "mode": "markdown",
+        "content": "| Term | Definition |\n|------|------------|\n| **SLI** | Metric that measures service behaviour (e.g. availability %) |\n| **SLO** | Internal target for an SLI (e.g. ≥ 99.9 % availability) |\n| **SLA** | External agreement — penalty if SLO not met |\n| **Error Budget** | 1 − SLO = 0.1 % of requests can fail (≈ 43 min/month) |\n| **Burn Rate** | How fast error budget is consumed vs replenished |"
+      }
+    },
+
+    { "type": "row", "title": "⚡  Throughput & Saturation", "id": 205, "gridPos": { "x": 0, "y": 35, "w": 24, "h": 1 }, "collapsed": false },
+
+    {
+      "type": "timeseries",
+      "title": "Request Volume by Endpoint",
+      "description": "Which endpoints get the most traffic?  USE for capacity planning.",
+      "id": 60,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 36, "w": 12, "h": 7 },
+      "targets": [{
+        "expr": "topk(8, sum(rate(http_requests_total[5m])) by (route))",
+        "legendFormat": "{{route}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Request Success vs Failure Rate",
+      "description": "Visual split of good traffic vs bad traffic.  SLI numerator (green) / denominator (grey).",
+      "id": 61,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 36, "w": 12, "h": 7 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"2..\"}[5m]))",
+          "legendFormat": "2xx Success"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"4..\"}[5m]))",
+          "legendFormat": "4xx Client Error"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx Server Error"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "2xx Success" },      "properties": [{ "id": "color", "value": { "fixedColor": "green",  "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "4xx Client Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "5xx Server Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "red",    "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    }
+
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}
