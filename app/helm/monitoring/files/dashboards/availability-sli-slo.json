@@ -20,7 +20,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 0, "y": 1, "w": 5, "h": 5 },
       "targets": [{
-        "expr": "100 * (1 - sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h])))",
+        "expr": "100 * (1 - (sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) or vector(0)) / sum(rate(http_requests_total[1h])))",
         "legendFormat": "Availability %"
       }],
       "fieldConfig": {
@@ -80,7 +80,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 10, "y": 1, "w": 5, "h": 5 },
       "targets": [{
-        "expr": "100 * sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+        "expr": "100 * (sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))",
         "legendFormat": "Error %"
       }],
       "fieldConfig": {
@@ -137,7 +137,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 19, "y": 1, "w": 5, "h": 5 },
       "targets": [{
-        "expr": "100 * (1 - sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h])))",
+        "expr": "100 * (1 - (sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) or vector(0)) / sum(rate(http_requests_total[1h])))",
         "legendFormat": "Availability %"
       }],
       "fieldConfig": {
@@ -169,7 +169,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 0, "y": 7, "w": 6, "h": 5 },
       "targets": [{
-        "expr": "43.2 - (sum(increase(http_requests_total{status_code=~\"5..\"}[30d])) / sum(increase(http_requests_total[30d]))) * 43200",
+        "expr": "43.2 - ((sum(increase(http_requests_total{status_code=~\"5..\"}[30d])) or vector(0)) / sum(increase(http_requests_total[30d]))) * 43200",
         "legendFormat": "Budget left (min)"
       }],
       "fieldConfig": {
@@ -198,7 +198,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 6, "y": 7, "w": 6, "h": 5 },
       "targets": [{
-        "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)",
+        "expr": "((sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) or vector(0)) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)",
         "legendFormat": "Burn Rate"
       }],
       "fieldConfig": {
@@ -228,15 +228,15 @@
       "gridPos": { "x": 12, "y": 7, "w": 12, "h": 5 },
       "targets": [
         {
-          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))) / (1 - 0.999)",
+          "expr": "((sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_requests_total[5m]))) / (1 - 0.999)",
           "legendFormat": "5m burn rate"
         },
         {
-          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)",
+          "expr": "((sum(rate(http_requests_total{status_code=~\"5..\"}[1h])) or vector(0)) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)",
           "legendFormat": "1h burn rate"
         },
         {
-          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[6h])) / sum(rate(http_requests_total[6h]))) / (1 - 0.999)",
+          "expr": "((sum(rate(http_requests_total{status_code=~\"5..\"}[6h])) or vector(0)) / sum(rate(http_requests_total[6h]))) / (1 - 0.999)",
           "legendFormat": "6h burn rate"
         }
       ],
@@ -268,7 +268,7 @@
       "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "100 * (1 - sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])))",
+          "expr": "100 * (1 - (sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_requests_total[5m])))",
           "legendFormat": "Availability %"
         },
         {
@@ -410,7 +410,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 0, "y": 31, "w": 6, "h": 4 },
       "targets": [{
-        "expr": "100 * (1 - sum(increase(http_requests_total{status_code=~\"5..\"}[24h])) / sum(increase(http_requests_total[24h])))",
+        "expr": "100 * (1 - (sum(increase(http_requests_total{status_code=~\"5..\"}[24h])) or vector(0)) / sum(increase(http_requests_total[24h])))",
         "legendFormat": "24h Availability"
       }],
       "fieldConfig": {
@@ -430,7 +430,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 6, "y": 31, "w": 6, "h": 4 },
       "targets": [{
-        "expr": "100 * (1 - sum(increase(http_requests_total{status_code=~\"5..\"}[7d])) / sum(increase(http_requests_total[7d])))",
+        "expr": "100 * (1 - (sum(increase(http_requests_total{status_code=~\"5..\"}[7d])) or vector(0)) / sum(increase(http_requests_total[7d])))",
         "legendFormat": "7d Availability"
       }],
       "fieldConfig": {
@@ -450,7 +450,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "x": 12, "y": 31, "w": 6, "h": 4 },
       "targets": [{
-        "expr": "100 * (1 - sum(increase(http_requests_total{status_code=~\"5..\"}[30d])) / sum(increase(http_requests_total[30d])))",
+        "expr": "100 * (1 - (sum(increase(http_requests_total{status_code=~\"5..\"}[30d])) or vector(0)) / sum(increase(http_requests_total[30d])))",
         "legendFormat": "30d Availability"
       }],
       "fieldConfig": {
@@ -513,7 +513,7 @@
           "legendFormat": "4xx Client Error"
         },
         {
-          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))",
+          "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) or vector(0))",
           "legendFormat": "5xx Server Error"
         }
       ],

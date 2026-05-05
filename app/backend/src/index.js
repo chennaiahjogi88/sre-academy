@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
 const { register, httpRequestsTotal, httpRequestDuration, activeUsersGauge } = require('./metrics');
+const { router: chaosRouter, chaosMiddleware } = require('./routes/chaos');
 const { trace, SpanStatusCode } = require('@opentelemetry/api');
 
 const tracer = trace.getTracer('sre-platform-backend');
@@ -49,6 +50,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Chaos middleware — must run after metrics so injected 500s are still counted
+app.use(chaosMiddleware);
+
 // Rate limiting — configurable via env vars for load-test environments
 const RATE_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000');   // 1 min default
 const RATE_MAX       = parseInt(process.env.RATE_LIMIT_MAX       || '1000');    // 1000 req/min/IP
@@ -59,6 +63,7 @@ app.use('/api/', limiter);
 app.use('/api/auth/login', loginLimiter);
 
 // ── Routes ──
+app.use('/chaos', chaosRouter);
 app.use('/api/auth', authRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/recordings', recordingRoutes);
