@@ -2225,3 +2225,215 @@ data:
         }
       ]
     }
+  pod-cpu-namespace.json: |-
+    {
+      "title": "Kubernetes — Pod CPU Utilisation per Namespace",
+      "uid": "pod-cpu-namespace",
+      "editable": true,
+      "graphTooltip": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "tags": ["kubernetes", "cpu", "namespace", "sre"],
+      "schemaVersion": 38,
+      "version": 1,
+      "panels": [
+
+        {
+          "type": "row",
+          "title": "CPU Summary",
+          "id": 100,
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+          "collapsed": false
+        },
+        {
+          "type": "stat",
+          "title": "Total CPU Cores Used",
+          "id": 1,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+          "targets": [{
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
+            "legendFormat": "Total CPU"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 2,
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 2 },
+                  { "color": "red", "value": 4 }
+                ]
+              }
+            }
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" }
+        },
+        {
+          "type": "stat",
+          "title": "Namespaces with Running Pods",
+          "id": 2,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+          "targets": [{
+            "expr": "count(count by (namespace) (container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}))",
+            "legendFormat": "Namespaces"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": { "mode": "fixed", "fixedColor": "blue" }
+            }
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" }
+        },
+        {
+          "type": "bargauge",
+          "title": "CPU Usage by Namespace (current)",
+          "id": 3,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 12, "y": 1, "w": 12, "h": 8 },
+          "targets": [{
+            "expr": "sort_desc(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])))",
+            "legendFormat": "{{namespace}}"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 3,
+              "color": { "mode": "palette-classic" }
+            }
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          }
+        },
+
+        {
+          "type": "row",
+          "title": "CPU Usage Over Time",
+          "id": 200,
+          "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+          "collapsed": false
+        },
+        {
+          "type": "timeseries",
+          "title": "CPU Cores Used per Namespace",
+          "id": 10,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 0, "y": 10, "w": 24, "h": 10 },
+          "targets": [{
+            "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
+            "legendFormat": "{{namespace}}"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "stacking": { "mode": "normal", "group": "A" }
+              }
+            }
+          },
+          "options": {
+            "tooltip": { "mode": "multi" },
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+          }
+        },
+
+        {
+          "type": "row",
+          "title": "CPU Requests vs Actual & Throttling",
+          "id": 300,
+          "gridPos": { "x": 0, "y": 20, "w": 24, "h": 1 },
+          "collapsed": false
+        },
+        {
+          "type": "timeseries",
+          "title": "CPU Actual vs Requested per Namespace",
+          "id": 20,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 0, "y": 21, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
+              "legendFormat": "actual — {{namespace}}"
+            },
+            {
+              "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\",container!=\"\"})",
+              "legendFormat": "requested — {{namespace}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "short", "custom": { "lineWidth": 2 } }
+          },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "bottom" } }
+        },
+        {
+          "type": "timeseries",
+          "title": "CPU Throttling % per Namespace",
+          "id": 21,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 12, "y": 21, "w": 12, "h": 8 },
+          "targets": [{
+            "expr": "100 * sum by (namespace) (rate(container_cpu_cfs_throttled_periods_total{container!=\"\",container!=\"POD\"}[5m])) / sum by (namespace) (rate(container_cpu_cfs_periods_total{container!=\"\",container!=\"POD\"}[5m]))",
+            "legendFormat": "{{namespace}}"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "lineWidth": 2, "fillOpacity": 5 },
+              "color": { "mode": "palette-classic" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 25 },
+                  { "color": "red", "value": 50 }
+                ]
+              }
+            }
+          },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "bottom" } }
+        },
+
+        {
+          "type": "row",
+          "title": "Per-Pod CPU Detail",
+          "id": 400,
+          "gridPos": { "x": 0, "y": 29, "w": 24, "h": 1 },
+          "collapsed": false
+        },
+        {
+          "type": "timeseries",
+          "title": "Top 10 CPU-Consuming Pods",
+          "id": 30,
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 0, "y": 30, "w": 24, "h": 10 },
+          "targets": [{
+            "expr": "topk(10, sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])))",
+            "legendFormat": "{{namespace}} / {{pod}}"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": { "lineWidth": 1 }
+            }
+          },
+          "options": {
+            "tooltip": { "mode": "multi" },
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+          }
+        }
+      ]
+    }
