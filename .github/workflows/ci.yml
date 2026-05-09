@@ -6,6 +6,16 @@ on:
     paths:
       - 'app/backend/**'
       - 'app/frontend/**'
+  workflow_dispatch:
+    inputs:
+      build_backend:
+        description: 'Build backend image'
+        type: boolean
+        default: false
+      build_frontend:
+        description: 'Build frontend image'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,15 +39,20 @@ jobs:
       - name: Check changed paths
         id: check
         run: |
-          if git diff --name-only HEAD~1 HEAD | grep -q '^app/backend/'; then
-            echo "backend=true" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "backend=${{ inputs.build_backend }}" >> "$GITHUB_OUTPUT"
+            echo "frontend=${{ inputs.build_frontend }}" >> "$GITHUB_OUTPUT"
           else
-            echo "backend=false" >> "$GITHUB_OUTPUT"
-          fi
-          if git diff --name-only HEAD~1 HEAD | grep -q '^app/frontend/'; then
-            echo "frontend=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "frontend=false" >> "$GITHUB_OUTPUT"
+            if git diff --name-only HEAD~1 HEAD | grep -q '^app/backend/'; then
+              echo "backend=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "backend=false" >> "$GITHUB_OUTPUT"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -q '^app/frontend/'; then
+              echo "frontend=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "frontend=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
   # Run backend unit tests before spending time on Docker builds
