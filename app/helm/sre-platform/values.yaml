@@ -4,7 +4,7 @@
 backend:
   image:
     repository: kotidevops/kt-backend
-    tag: v23
+    tag: v24
     pullPolicy: IfNotPresent
   rateLimitWindowMs: "60000"
   rateLimitMax: "1000"
@@ -22,7 +22,7 @@ backend:
 frontend:
   image:
     repository: kotidevops/kt-frontend
-    tag: v23
+    tag: v24
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 80
