@@ -22,7 +22,7 @@ backend:
 frontend:
   image:
     repository: kotidevops/kt-frontend
-    tag: v29
+    tag: v30
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 80
