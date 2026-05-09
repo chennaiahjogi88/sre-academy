@@ -1008,11 +1008,50 @@
             position: absolute;
             inset: -5px;
             border-radius: 50%;
-            background: conic-gradient(from 0deg, #38bdf8, #818cf8, #c084fc, #38bdf8);
+            background: conic-gradient(from 0deg, transparent 0%, transparent 55%, #38bdf8 72%, #818cf8 85%, #c084fc 95%, transparent 100%);
             z-index: 0;
-            animation: spin 8s linear infinite;
+            animation: spin 3.5s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .orbit {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .orbit-1 {
+            width: 288px; height: 288px;
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            animation: orbit-cw 7s linear infinite;
+            z-index: 0;
+        }
+        .orbit-2 {
+            width: 322px; height: 322px;
+            border: 1px solid rgba(192, 132, 252, 0.14);
+            animation: orbit-ccw 11s linear infinite;
+            z-index: 0;
+        }
+        .orbit-dot {
+            position: absolute;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .dot-cyan {
+            width: 9px; height: 9px;
+            top: -4.5px;
+            background: #38bdf8;
+            box-shadow: 0 0 8px 3px rgba(56,189,248,0.8), 0 0 16px 6px rgba(56,189,248,0.3);
+        }
+        .dot-purple {
+            width: 7px; height: 7px;
+            top: -3.5px;
+            background: #c084fc;
+            box-shadow: 0 0 8px 3px rgba(192,132,252,0.8), 0 0 16px 6px rgba(192,132,252,0.3);
+        }
+        @keyframes orbit-cw  { to { transform: translate(-50%,-50%) rotate(360deg); } }
+        @keyframes orbit-ccw { to { transform: translate(-50%,-50%) rotate(-360deg); } }
         .instructor-photo {
             width: 240px;
             height: 240px;
@@ -1021,17 +1060,17 @@
             z-index: 1;
             border: 4px solid #0a1628;
             background-image: url('/instructor.jpg');
-            background-size: 180%;
-            background-position: center 10%;
+            background-size: 130%;
+            background-position: center 22%;
             background-repeat: no-repeat;
-            background-color: #0a1628;
+            background-color: #060d1a;
         }
         .instructor-photo-wrap::after {
             content: '';
             position: absolute;
             inset: 4px;
             border-radius: 50%;
-            background: radial-gradient(ellipse at center, transparent 50%, #060d1a 80%);
+            background: radial-gradient(ellipse at center, transparent 55%, #060d1a 85%);
             z-index: 2;
             pointer-events: none;
         }
@@ -1424,6 +1463,8 @@
     <section id="instructor" class="section instructor-section">
         <div class="instructor-inner">
             <div class="instructor-photo-wrap">
+                <div class="orbit orbit-1"><div class="orbit-dot dot-cyan"></div></div>
+                <div class="orbit orbit-2"><div class="orbit-dot dot-purple"></div></div>
                 <div class="instructor-photo" role="img" aria-label="Koteswar P — Lead Instructor"></div>
                 <span class="instructor-badge">Lead Instructor</span>
             </div>
