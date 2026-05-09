@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <title>Ktech SRE Training Platform</title>
+    <title>Ktech SRE Academy — Master Site Reliability Engineering</title>
+    <meta name="description" content="Ktech SRE Academy — Live training in Site Reliability Engineering, Kubernetes, Observability and Cloud. Taught by a Senior SRE with 13+ years of experience. Next batch starts May 20th.">
+    <meta property="og:title" content="Ktech SRE Academy — Master Site Reliability Engineering">
+    <meta property="og:description" content="Live SRE training covering Kubernetes, Prometheus, Grafana, Incident Response and more. Next batch: May 20th. Learn from 13+ years of production experience.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/instructor.jpg">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><polygon points='18,2 32,10 32,26 18,34 4,26 4,10' fill='%230a1628' stroke='%2338bdf8' stroke-width='1.5'/><line x1='13' y1='11' x2='13' y2='25' stroke='%2338bdf8' stroke-width='2.2' stroke-linecap='round'/><line x1='13' y1='18' x2='23' y2='11' stroke='%23818cf8' stroke-width='2.2' stroke-linecap='round'/><line x1='13' y1='18' x2='23' y2='25' stroke='%23818cf8' stroke-width='2.2' stroke-linecap='round'/><circle cx='28' cy='10' r='2.5' fill='%23c084fc'/></svg>" type="image/svg+xml">
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <style>
         :root {
@@ -980,6 +986,106 @@
         @media (max-width: 640px) {
             .testimonials-inner { padding: 0 20px; }
         }
+
+        /* Instructor Section */
+        .instructor-section {
+            background: linear-gradient(135deg, #060d1a 0%, #0a1628 60%, #0f1f3d 100%);
+            padding: 100px 40px;
+        }
+        .instructor-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            gap: 64px;
+            align-items: center;
+        }
+        .instructor-photo-wrap {
+            flex-shrink: 0;
+            position: relative;
+        }
+        .instructor-photo-wrap::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #38bdf8, #818cf8, #c084fc, #38bdf8);
+            z-index: 0;
+            animation: spin 8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .instructor-photo {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: center top;
+            position: relative;
+            z-index: 1;
+            border: 4px solid #0a1628;
+        }
+        .instructor-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            color: #0a1628;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 2;
+            white-space: nowrap;
+        }
+        .instructor-info { flex: 1; }
+        .instructor-eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #38bdf8;
+            margin-bottom: 12px;
+        }
+        .instructor-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+            line-height: 1.1;
+        }
+        .instructor-title {
+            font-size: 16px;
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+        .instructor-bio {
+            font-size: 15px;
+            color: #cbd5e1;
+            line-height: 1.75;
+            margin-bottom: 28px;
+        }
+        .instructor-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .instructor-tag {
+            background: rgba(56,189,248,0.1);
+            border: 1px solid rgba(56,189,248,0.25);
+            color: #7dd3fc;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        @media (max-width: 768px) {
+            .instructor-inner {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 36px;
+            }
+            .instructor-tags { justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -1028,7 +1134,7 @@
             <div class="hero-content">
                 <h1>Master Site Reliability Engineering</h1>
                 <p class="subtitle">
-                    Join our January 2026 SRE Batch. Learn from industry experts. Build production-grade observability and incident response systems.
+                    Next batch starts May 20th. Learn from a Senior SRE with 13+ years of experience. Build production-grade observability and incident response systems.
                 </p>
                 <a href="/login.html" class="btn-cta">Get Started — Login →</a>
             </div>
@@ -1229,8 +1335,8 @@
             <div class="stat-label">Tools</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">Jan 2026</div>
-            <div class="stat-label">Batch</div>
+            <div class="stat-number">May 20</div>
+            <div class="stat-label">Next Batch</div>
         </div>
     </div>
 
@@ -1297,6 +1403,32 @@
                     <a href="/register.html" class="course-cta">Enroll Now →</a>
                 </div>
 
+            </div>
+        </div>
+    </section>
+
+    <!-- Instructor Section -->
+    <section class="section instructor-section">
+        <div class="instructor-inner">
+            <div class="instructor-photo-wrap">
+                <img src="/instructor.jpg" alt="Koteswar P — Lead Instructor" class="instructor-photo">
+                <span class="instructor-badge">Lead Instructor</span>
+            </div>
+            <div class="instructor-info">
+                <div class="instructor-eyebrow">Meet your instructor</div>
+                <div class="instructor-name">Koteswar P</div>
+                <div class="instructor-title">Senior SRE &nbsp;·&nbsp; 13+ Years of Production Experience</div>
+                <p class="instructor-bio">
+                    Koteswar has spent over a decade building and operating large-scale distributed systems at production. He specialises in Kubernetes reliability, deep observability pipelines, and leading incident response at scale. His teaching style bridges real-world war stories with hands-on labs — so you leave with skills you can apply on day one.
+                </p>
+                <div class="instructor-tags">
+                    <span class="instructor-tag">Kubernetes</span>
+                    <span class="instructor-tag">Observability</span>
+                    <span class="instructor-tag">Incident Response</span>
+                    <span class="instructor-tag">Prometheus &amp; Grafana</span>
+                    <span class="instructor-tag">SLO / Error Budgets</span>
+                    <span class="instructor-tag">Chaos Engineering</span>
+                </div>
             </div>
         </div>
     </section>
@@ -1570,7 +1702,7 @@
             <div class="footer-cta">Ready to Master SRE?</div>
             <a href="/login.html" class="btn-cta">Login to continue →</a>
             <p class="footer-note">
-                Ktech SRE Training Platform — Jan 2026 Batch
+                Ktech SRE Academy — Next Batch: May 20th
             </p>
         </div>
     </footer>
@@ -1735,7 +1867,7 @@
                 ]
             },
             enroll: {
-                msg: "Enrolling is easy!\n1️⃣ Click 'Register' in the top nav\n2️⃣ Create your account\n3️⃣ Choose your course\n4️⃣ Join the live batch\n\nCurrent batch starts January 2026. Seats are limited — grab yours early!",
+                msg: "Enrolling is easy!\n1️⃣ Click 'Register' in the top nav\n2️⃣ Create your account\n3️⃣ Choose your course\n4️⃣ Join the live batch\n\nNext batch starts May 20th. Seats are limited — grab yours early!",
                 replies: [
                     { label: "Register now",         next: "register_link" },
                     { label: "Is there a free trial?", next: "free"        },
@@ -1758,7 +1890,7 @@
                 ]
             },
             batch: {
-                msg: "📅 Current Batch: January 2026\n\n• Classes run on weekends (Sat & Sun)\n• 2–3 hours per session\n• All sessions are recorded\n• Access recordings anytime from the portal\n\nYou'll also get access to hands-on labs and a private community.",
+                msg: "📅 Next Batch: May 20th\n\n• Classes run on weekends (Sat & Sun)\n• 2–3 hours per session\n• All sessions are recorded\n• Access recordings anytime from the portal\n\nYou'll also get access to hands-on labs and a private community.",
                 replies: [
                     { label: "How do I enroll?",     next: "enroll"  },
                     { label: "What courses are there?", next: "courses"},
