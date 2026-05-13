@@ -1,16 +1,16 @@
-{{- if .Values.storageClass.create }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: {{ .Values.storageClass.name }}
-  namespace: sre-platform
-  annotations:
-    storageclass.kubernetes.io/is-default-class: {{ .Values.storageClass.isDefault | quote }}
-provisioner: {{ .Values.storageClass.provisioner }}
-reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
-volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
-{{- if .Values.storageClass.parameters }}
-parameters:
-  {{- toYaml .Values.storageClass.parameters | nindent 2 }}
-{{- end }}
-{{- end }}
+# {{- if .Values.storageClass.create }}
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: {{ .Values.storageClass.name }}
+#   namespace: sre-platform
+#   annotations:
+#     storageclass.kubernetes.io/is-default-class: {{ .Values.storageClass.isDefault | quote }}
+# provisioner: {{ .Values.storageClass.provisioner }}
+# reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+# volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
+# {{- if .Values.storageClass.parameters }}
+# parameters:
+#   {{- toYaml .Values.storageClass.parameters | nindent 2 }}
+# {{- end }}
+# {{- end }}
