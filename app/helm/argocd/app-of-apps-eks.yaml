@@ -20,7 +20,7 @@ metadata:
 spec:
   project: ktech-sre
   source:
-    repoURL: https://github.com/chennaiahjogi88/sre-academy.git
+    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
     targetRevision: main
     path: app/helm/argocd/apps-eks
   destination:
