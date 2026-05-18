@@ -11,7 +11,7 @@ metadata:
 spec:
   project: ktech-sre
   source:
-    repoURL: https://github.com/myproject-vs/ktech-sre-academy.git
+    repoURL: https://github.com/chennaiahjogi88/sre-academy.git
     targetRevision: main
     path: app/helm/sre-platform
     helm:
