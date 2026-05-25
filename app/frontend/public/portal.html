@@ -194,9 +194,9 @@
 
         .btn-logout {
             padding: 6px 14px;
-            background: #f87171;
-            color: #fff;
-            border: none;
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
@@ -207,7 +207,9 @@
         }
 
         .btn-logout:hover {
-            background: #ef4444;
+            border-color: #ef4444;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.08);
         }
 
         /* Hero Section */
@@ -267,8 +269,8 @@
         .metric-card {
             background: rgba(10, 22, 40, 0.55);
             border: 1px solid rgba(56, 189, 248, 0.18);
-            border-radius: 8px;
-            padding: 10px 16px;
+            border-radius: 10px;
+            padding: 14px 18px;
             display: flex;
             align-items: center;
             gap: 14px;
@@ -380,23 +382,37 @@
 
         .progress-bar {
             width: 100%;
-            height: 8px;
+            height: 10px;
             background: #1e293b;
-            border-radius: 4px;
+            border-radius: 5px;
             overflow: hidden;
             margin-bottom: 8px;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #38bdf8, #0ea5e9);
-            transition: width 0.3s ease;
-            border-radius: 4px;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            transition: width 0.6s ease;
+            border-radius: 5px;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
         }
 
         .progress-text {
             font-size: 12px;
             color: #64748b;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-pct {
+            font-size: 14px;
+            font-weight: 700;
+            color: #38bdf8;
         }
 
         /* Main Content */
@@ -898,7 +914,10 @@
 
     <!-- Progress Section -->
     <div class="progress-section">
-        <div class="progress-label">Overall Progress</div>
+        <div class="progress-header">
+            <div class="progress-label">Overall Progress</div>
+            <div class="progress-pct" id="progressPct">—</div>
+        </div>
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill" style="width: 0%"></div>
         </div>
@@ -1158,6 +1177,7 @@
                 const completed = Object.values(_progressMap).filter(p => p.completed).length;
                 const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
                 document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressPct').textContent   = pct + '%';
                 document.getElementById('progressText').textContent  = `${completed} of ${total} classes completed`;
 
                 // Streak badge

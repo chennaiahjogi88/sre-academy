@@ -363,14 +363,22 @@
         .locked-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(10, 22, 40, 0.7);
+            background: rgba(6, 13, 26, 0.78);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            backdrop-filter: blur(2px);
+            gap: 8px;
+            backdrop-filter: blur(3px);
             border-radius: 12px;
+            transition: background 0.2s;
         }
+
+        .locked-overlay svg { opacity: 0.5; }
+        .locked-overlay span { font-size: 11px; color: #475569; letter-spacing: 0.5px; text-transform: uppercase; }
+        .class-card.locked:hover .locked-overlay { background: rgba(6, 13, 26, 0.88); }
+        .class-card.locked:hover .locked-overlay svg { opacity: 0.7; }
+        .class-card.locked:hover .locked-overlay span { color: #38bdf8; }
 
         .class-card.locked {
             opacity: 0.6;
@@ -1509,7 +1517,7 @@
     </section>
 
     <!-- Locked Modules -->
-    <section style="background: #0f172a; padding: 80px 40px;">
+    <section style="background: #0f172a; padding: 48px 40px;">
         <div style="max-width: 1400px; margin: 0 auto;">
         <h2 class="section-title">What's <span class="accent">Inside</span></h2>
         <div class="modules-grid">
@@ -1517,61 +1525,61 @@
                 <div class="module-icon">🏗️</div>
                 <div class="module-name">AWS Fundamentals</div>
                 <div class="module-count">8 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">🐳</div>
                 <div class="module-name">Docker & Containers</div>
                 <div class="module-count">6 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">⚙️</div>
                 <div class="module-name">Kubernetes</div>
                 <div class="module-count">8 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">📊</div>
                 <div class="module-name">Observability</div>
                 <div class="module-count">6 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">🔔</div>
                 <div class="module-name">Monitoring & Alerting</div>
                 <div class="module-count">5 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">🚨</div>
                 <div class="module-name">Incident Response</div>
                 <div class="module-count">7 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">📝</div>
                 <div class="module-name">Logging & Tracing</div>
                 <div class="module-count">4 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">🔐</div>
                 <div class="module-name">Security & Compliance</div>
                 <div class="module-count">4 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">💡</div>
                 <div class="module-name">Automation & IaC</div>
                 <div class="module-count">4 classes</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
             <div class="module-card locked" onclick="window.location.href='/login.html'">
                 <div class="module-icon">🎓</div>
                 <div class="module-name">Capstone & Labs</div>
                 <div class="module-count">2 projects</div>
-                <div class="locked-overlay">🔒</div>
+                <div class="locked-overlay"><svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Login to unlock</span></div>
             </div>
         </div>
         <p style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">

@@ -493,5 +493,57 @@
             }
         });
     </script>
+    <canvas id="particleCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:0;"></canvas>
+    <script>
+    (function() {
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let W, H, particles;
+        const COUNT = 55, MAX_DIST = 130;
+
+        function resize() {
+            W = canvas.width  = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+
+        function init() {
+            particles = Array.from({ length: COUNT }, () => ({
+                x: Math.random() * W, y: Math.random() * H,
+                vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+                r: Math.random() * 1.5 + 0.5,
+            }));
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            for (let i = 0; i < COUNT; i++) {
+                const p = particles[i];
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > W) p.vx *= -1;
+                if (p.y < 0 || p.y > H) p.vy *= -1;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56,189,248,0.35)';
+                ctx.fill();
+                for (let j = i + 1; j < COUNT; j++) {
+                    const q = particles[j];
+                    const dx = p.x - q.x, dy = p.y - q.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < MAX_DIST) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+                        ctx.strokeStyle = `rgba(56,189,248,${0.12 * (1 - d / MAX_DIST)})`;
+                        ctx.lineWidth = 0.6;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', () => { resize(); init(); });
+        resize(); init(); draw();
+    })();
+    </script>
 </body>
 </html>

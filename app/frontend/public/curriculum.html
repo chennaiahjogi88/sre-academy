@@ -62,10 +62,12 @@
       border-radius: 4px; font-weight: 600; text-transform: uppercase; font-size: 11px;
     }
     .admin-badge { background: #f97316; }
+    .nav-links a.active { color: #38bdf8; background: #1e293b; }
     .btn-logout {
-      padding: 6px 14px; background: #f87171; color: #fff;
-      border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500;
+      padding: 6px 14px; background: transparent; color: #94a3b8;
+      border: 1px solid #334155; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500; transition: all 0.2s;
     }
+    .btn-logout:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.08); }
 
     /* ── Main ── */
     .container { max-width: 1200px; margin: 0 auto; padding: 40px 40px 80px; }
@@ -406,7 +408,7 @@ function renderAll() {
         <div class="module-color-bar" style="background:${color}"></div>
         <div class="module-name">${mod}</div>
         <div class="module-meta">${classes.length} classes &nbsp;·&nbsp; ${delivered} delivered &nbsp;·&nbsp; ${completed} completed</div>
-        <div class="module-progress-ring">
+        <div class="module-progress-ring" title="${completed} of ${classes.length} completed">
           <svg viewBox="0 0 36 36" width="36" height="36">
             <circle class="ring-bg" cx="18" cy="18" r="15"/>
             <circle class="ring-fill" cx="18" cy="18" r="15"
@@ -559,8 +561,8 @@ function updateStats() {
   const completed  = CURRICULUM.filter(c => _progress[c.id]?.completed).length;
   const pct = delivered ? Math.round((completed / delivered) * 100) : 0;
 
-  document.getElementById('statDelivered').textContent = delivered;
-  document.getElementById('statCompleted').textContent = completed;
+  document.getElementById('statDelivered').textContent = delivered || '—';
+  document.getElementById('statCompleted').textContent = completed || '—';
   document.getElementById('statPct').textContent = delivered ? `${pct}%` : '—';
 }
 </script>
