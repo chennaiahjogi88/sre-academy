@@ -186,6 +186,11 @@
     .progress-badge.completed { background: #15803d33; color: #4ade80; border: 1px solid #15803d55; }
     .progress-badge.in-progress { background: #1e40af33; color: #60a5fa; border: 1px solid #1e40af55; }
     .progress-badge.not-started { display: none; }
+    .is-admin .progress-badge { cursor: pointer; }
+    .is-admin .progress-badge.not-started { display: inline-block; background: #ffffff08; color: #475569; border: 1px solid #ffffff12; }
+    .is-admin .progress-badge:hover.completed { background: #15803d55; }
+    .is-admin .progress-badge:hover.in-progress { background: #1e40af55; }
+    .is-admin .progress-badge:hover.not-started { background: #ffffff15; color: #94a3b8; }
 
     /* Slide progress mini-bar */
     .slide-progress-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
@@ -270,7 +275,7 @@
     <button class="filter-pill" onclick="setFilter('delivered', this)">✓ Delivered</button>
     <button class="filter-pill" onclick="setFilter('upcoming', this)">Upcoming</button>
     <button class="filter-pill" onclick="setFilter('completed', this)">My Completions</button>
-    <div class="admin-hint" id="adminHint">Admin: click a delivery badge to toggle delivered / upcoming</div>
+    <div class="admin-hint" id="adminHint">Admin: click delivery badge → toggle delivered/upcoming &nbsp;·&nbsp; click completion badge → mark complete/reset</div>
   </div>
 
   <div id="curriculumRoot"><div class="loading-state">Loading curriculum…</div></div>
@@ -454,7 +459,7 @@ function buildCard(cls) {
     ${cls.tools ? `<div class="card-tools">${cls.tools}</div>` : ''}
     <div class="card-footer">
       <span class="delivery-badge ${delivery}" data-id="${cls.id}" onclick="toggleDelivery(event, '${cls.id}')">${deliveryLabel}</span>
-      ${progressLabel ? `<span class="progress-badge ${progressClass}">${progressLabel}</span>` : ''}
+      <span class="progress-badge ${progressClass}" data-id="${cls.id}" onclick="toggleCompletion(event, '${cls.id}')">${progressLabel || 'Not Started'}</span>
     </div>
     ${hasProgress && !isCompleted ? `
       <div class="slide-progress-wrap">
@@ -480,6 +485,34 @@ async function toggleDelivery(e, classId) {
     if (!res || !res.ok) return;
     _deliveryStatus[classId] = next;
     // Re-render just this card
+    const card = document.querySelector(`.class-card[data-class-id="${classId}"]`);
+    if (card) {
+      const cls = CURRICULUM.find(c => c.id === classId);
+      if (cls) card.replaceWith(buildCard(cls));
+    }
+    applyFilter(_currentFilter);
+    updateStats();
+  } catch (_) {}
+}
+
+// ── Completion toggle (admin only) ───────────────────────────────────────────
+async function toggleCompletion(e, classId) {
+  if (!_isAdmin) return;
+  e.stopPropagation();
+  const prog = _progress[classId];
+  const next = !prog?.completed;
+
+  try {
+    const res = await Auth.fetch(`/api/classes/${classId}/progress`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        completed: next,
+        current_slide: next ? (prog?.total_slides || 1) : 0,
+        total_slides: prog?.total_slides || 1,
+      }),
+    });
+    if (!res || !res.ok) return;
+    _progress[classId] = { ...(_progress[classId] || {}), completed: next, current_slide: next ? (prog?.total_slides || 1) : 0 };
     const card = document.querySelector(`.class-card[data-class-id="${classId}"]`);
     if (card) {
       const cls = CURRICULUM.find(c => c.id === classId);
