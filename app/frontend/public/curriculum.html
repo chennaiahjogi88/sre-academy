@@ -351,7 +351,7 @@ let _currentFilter = 'all';
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!Auth.init()) return;
+  if (!Auth.requireAuth()) return;
   const user = Auth.getUser();
   if (!user) return;
 
