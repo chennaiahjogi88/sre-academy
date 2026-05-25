@@ -60,19 +60,26 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
 <div class="slide s-title active">
   <div class="tag tag-k8s">Class 10 · Kubernetes</div>
   <h1>K8s <span class='accent'>Architecture</span></h1>
-  Control plane components, etcd, API server, kubelet and the node architecture
+  <p class="sub">Control plane components, etcd, API server, kubelet and the node architecture</p>
+  <div style="display:flex;gap:20px;margin-top:32px;flex-wrap:wrap;justify-content:center">
+    <span style="font-size:13px;color:#475569">⏱ 70 minutes</span>
+    <span style="font-size:13px;color:#475569">⎈ Kubernetes Internals</span>
+    <span style="font-size:13px;color:#475569">🔧 Production Ops</span>
+  </div>
 </div>
 
 <div class="slide s-dark">
   <div class="tag tag-k8s">Session Plan</div>
   <h2>K8s Architecture Deep Dive</h2>
   <div class="agenda">
-<div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">01</div><div class="ag-text"><strong>Cluster Overview</strong>Control plane vs workers · 10 min</div></div>
-<div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">02</div><div class="ag-text"><strong>Control Plane</strong>API Server, etcd, Scheduler · 15 min</div></div>
-<div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">03</div><div class="ag-text"><strong>Worker Nodes</strong>kubelet, kube-proxy, CRI · 12 min</div></div>
-<div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">04</div><div class="ag-text"><strong>How a Pod Gets Created</strong>Full lifecycle · 13 min</div></div>
-<div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">05</div><div class="ag-text"><strong>Quiz</strong>Review · 10 min</div></div>
-<div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">🏠</div><div class="ag-text"><strong>Portal</strong><a href="index.html" style="color:#6b8ff5;font-size:12px">index.html</a></div></div>
+<div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">01</div><div class="ag-text"><strong>Cluster Overview</strong>Control plane vs workers · 8 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">02</div><div class="ag-text"><strong>Control Plane</strong>API Server, etcd, Scheduler · 12 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">03</div><div class="ag-text"><strong>Worker Nodes</strong>kubelet, kube-proxy, CRI · 10 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">04</div><div class="ag-text"><strong>How a Pod Gets Created</strong>Full lifecycle · 10 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">05</div><div class="ag-text"><strong>Namespaces & kubectl</strong>Multi-tenancy, commands · 10 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#7c1d0d33;color:#fb923c">06</div><div class="ag-text"><strong>etcd Backup & HA</strong>Data safety, recovery · 8 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">07</div><div class="ag-text"><strong>Quiz</strong>Review · 12 min</div></div>
+<div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">🏠</div><div class="ag-text"><strong>Portal</strong><a href="/portal.html" style="color:#6b8ff5;font-size:12px">index.html</a></div></div>
 </div>
 </div>
 
@@ -145,6 +152,66 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
 </div>
 </div>
 
+<!-- Namespaces & kubectl -->
+<div class="slide s-teal">
+  <div class="tag tag-k8s">Segment 5 — Namespaces</div>
+  <h2>Namespaces & Essential kubectl</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent4">Namespaces</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Logical partitioning of cluster resources</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Default namespaces: <code style="color:#2dd4bf">default</code>, <code style="color:#2dd4bf">kube-system</code>, <code style="color:#2dd4bf">kube-public</code></li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Resources are namespace-scoped or cluster-scoped (Nodes, PVs)</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Use for: env isolation (dev/staging), team isolation, RBAC</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Resource Quotas &amp; LimitRanges apply per namespace</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent">Essential kubectl Commands</h3>
+      <ul>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl get pods -n kube-system</code></li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl describe pod &lt;name&gt;</code> — events &amp; status</li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl logs &lt;pod&gt; -f</code> — stream logs</li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl exec -it &lt;pod&gt; -- sh</code> — exec into pod</li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl top nodes / pods</code> — resource usage</li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl get events --sort-by='.lastTimestamp'</code></li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl rollout status deploy/&lt;name&gt;</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- etcd Backup & HA -->
+<div class="slide s-amber">
+  <div class="tag tag-amber">Segment 6 — etcd</div>
+  <h2>etcd Backup & High Availability</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent3">Why etcd Backup Matters</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> etcd holds ALL cluster state — Pods, Deployments, Secrets, ConfigMaps</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Losing etcd without backup = losing the entire cluster</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Backup command: <code style="color:#fbbf24">etcdctl snapshot save /backup/etcd.db</code></li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Restore: <code style="color:#fbbf24">etcdctl snapshot restore /backup/etcd.db</code></li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Automate via CronJob — store snapshots in S3</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> On managed clusters (EKS/GKE), etcd backup is managed by the cloud provider</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent2">HA Architecture</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> etcd uses <strong>Raft consensus</strong> — needs majority (quorum)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> 3 nodes: quorum = 2 (can lose 1)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> 5 nodes: quorum = 3 (can lose 2) — recommended for large clusters</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Always use odd number of etcd members</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Multiple API servers behind a load balancer</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Leader election for controller-manager &amp; scheduler</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <div class="slide s-dark">
   <div class="tag tag-k8s">Quiz</div>
   <h2>K8s Architecture Quiz ⚡</h2>
@@ -167,21 +234,21 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
 <span style="font-size:13px;color:#fbbf24">✓ etcd & Scheduler</span>
 <span style="font-size:13px;color:#c084fc">✓ Pod Lifecycle</span>
 </div>
-<a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+<a href="/portal.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
 </div>
 
 </div>
 <div id="nav">
   <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
   <div id="slide-title-nav">K8s Architecture</div>
-  <div id="progress"><div id="bar" style="width:12.5%"></div></div>
-  <div id="slide-info">1 / 8</div>
+  <div id="progress"><div id="bar" style="width:10%"></div></div>
+  <div id="slide-info">1 / 10</div>
   <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
-  <a href="index.html" class="home-link">🏠 Portal</a>
+  <a href="/portal.html" class="home-link">🏠 Portal</a>
 </div>
 <script>
-const titles=["K8s Architecture", "K8s Architecture Deep Dive", "Cluster: Control Plane + Worker Nodes", "Control Plane Components", "Worker Node Components", "How a Pod Gets Created", "K8s Architecture Quiz ⚡", "Architecture Mastered! ⎈"];
-let cur=0;const total=8;
+const titles=["Title","Agenda","Cluster Overview","Control Plane","Worker Nodes","Pod Lifecycle","Namespaces & kubectl","etcd Backup & HA","Quiz","Wrap Up"];
+let cur=0;const total=10;
 const slides=document.querySelectorAll('.slide');
 function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
 function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}

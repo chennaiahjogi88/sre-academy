@@ -45,3 +45,6 @@ cd app/k8s/
 | App (admin) | `admin@ktech.sre` | `Admin@123` |
 | App (student) | `student@ktech.sre` | `Student@123` |
 | Grafana | `admin` | `Grafana@123` |
+
+---
+DEMO @ 9th May

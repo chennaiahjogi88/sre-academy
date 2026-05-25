@@ -84,7 +84,7 @@ h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
 #bar{height:4px;border-radius:2px;transition:width .3s}
 #slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
 #slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
-.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;overflow-x:auto}
+.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;white-space:pre-wrap;overflow-x:auto}
 .prop{color:#c084fc}.str{color:#4ade80}.val{color:#fbbf24}.cmt{color:#475569}.kw{color:#60a5fa}
 .badge-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
 .badge{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
@@ -257,7 +257,75 @@ kubectl taint nodes node1 <span class="str">gpu=true:NoSchedule</span>
   <div class="hbox green" style="margin-top:12px;max-width:860px">🎯 <b>Use case:</b> Dedicate GPU nodes for ML workloads. Taint GPU nodes, add toleration only to ML pods. Other pods won't land there.</div>
 </div>
 
-<!-- Slide 7: Quiz -->
+<!-- Slide 7: Pod Priority & Preemption -->
+<div class="slide s-blue" data-title="Pod Priority & Preemption">
+  <div class="tag tag-blue">Segment 5 — Priority</div>
+  <h2>Pod Priority & Preemption</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">PriorityClass</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="prop">apiVersion</span>: scheduling.k8s.io/v1
+<span class="prop">kind</span>: PriorityClass
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">high-priority</span>
+<span class="prop">value</span>: <span class="val">1000000</span>
+<span class="prop">globalDefault</span>: <span class="kw">false</span>
+<span class="prop">description</span>: <span class="str">"Critical workloads"</span>
+---
+<span class="cmt"># Reference in a Pod/Deployment:</span>
+<span class="prop">spec</span>:
+  <span class="prop">priorityClassName</span>: <span class="str">high-priority</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#4ade80">How Preemption Works</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> High-priority pod can't be scheduled → scheduler looks for nodes where evicting lower-priority pods would make room</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Lower-priority pods are evicted (gracefully)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Built-in system classes: <code style="color:#4ade80">system-cluster-critical</code>, <code style="color:#4ade80">system-node-critical</code></li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Protect critical pods: kube-dns, CNI, monitoring agents</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">⚠</span> Preemption respects PodDisruptionBudgets</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: Topology Spread Constraints -->
+<div class="slide s-green" data-title="Topology Spread Constraints">
+  <div class="tag tag-green">Segment 6 — Spread</div>
+  <h2>Topology Spread Constraints</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#4ade80">What & Why</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Controls how pods spread across failure domains (zones, nodes)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Prevents all replicas landing in one AZ (single point of failure)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> More powerful than podAntiAffinity — handles uneven distributions</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <code style="color:#4ade80">maxSkew</code>: max allowed difference between zones</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <code style="color:#4ade80">whenUnsatisfiable</code>: DoNotSchedule or ScheduleAnyway</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#fbbf24">YAML Example</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="prop">topologySpreadConstraints</span>:
+- <span class="prop">maxSkew</span>: <span class="val">1</span>
+  <span class="prop">topologyKey</span>: <span class="str">topology.kubernetes.io/zone</span>
+  <span class="prop">whenUnsatisfiable</span>: <span class="str">DoNotSchedule</span>
+  <span class="prop">labelSelector</span>:
+    <span class="prop">matchLabels</span>:
+      <span class="prop">app</span>: <span class="str">myapp</span>
+- <span class="prop">maxSkew</span>: <span class="val">1</span>
+  <span class="prop">topologyKey</span>: <span class="str">kubernetes.io/hostname</span>
+  <span class="prop">whenUnsatisfiable</span>: <span class="str">ScheduleAnyway</span>
+      </div>
+    </div>
+  </div>
+  <div class="hbox green" style="margin-top:12px;max-width:860px">🎯 Best practice: Spread across zones (DoNotSchedule) AND nodes (ScheduleAnyway) for HA without hard blocking</div>
+</div>
+
+<!-- Slide 9: Quiz -->
 <div class="slide s-dark" data-title="Quiz">
   <div class="tag tag-teal">Knowledge Check</div>
   <h2>Quick Quiz 🎯</h2>
@@ -296,12 +364,12 @@ kubectl taint nodes node1 <span class="str">gpu=true:NoSchedule</span>
     <div class="hbox green">✅ nodeSelector &amp; Node Affinity</div>
     <div class="hbox green">✅ Taints, tolerations &amp; effects</div>
   </div>
-  <a href="index.html" style="margin-top:24px;color:#60a5fa;font-size:14px;text-decoration:none">← Back to Portal</a>
+  <a href="/portal.html" style="margin-top:24px;color:#60a5fa;font-size:14px;text-decoration:none">← Back to Portal</a>
 </div>
 
 </div>
 <nav id="nav">
-  <a href="index.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
+  <a href="/portal.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
   <button class="nav-btn" id="btnPrev">← Prev</button>
   <div id="progress"><div id="bar"></div></div>
   <span id="slide-title-nav"></span>

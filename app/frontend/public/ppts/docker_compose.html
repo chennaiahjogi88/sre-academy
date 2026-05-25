@@ -66,10 +66,11 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   <h2>What We'll Cover</h2>
   <div class="agenda">
     <div class="ag-item"><div class="ag-num" style="background:#2496ed22;color:#60b5f5">01</div><div class="ag-text"><strong>Why Compose?</strong>The problem it solves · 8 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>Compose File Anatomy</strong>services, networks, volumes · 15 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>Full Stack Example</strong>App + DB + Cache · 15 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">04</div><div class="ag-text"><strong>Overrides & Profiles</strong>Dev vs prod config · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">05</div><div class="ag-text"><strong>Quiz</strong>Review · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>Compose File Anatomy</strong>services, networks, volumes · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>Full Stack Example</strong>App + DB + Cache · 12 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">04</div><div class="ag-text"><strong>Overrides & Profiles</strong>Dev vs prod config · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">05</div><div class="ag-text"><strong>Resource Limits & Watch</strong>CPU, memory, live reload · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">06</div><div class="ag-text"><strong>Quiz</strong>Review · 8 min</div></div>
     <div class="ag-item"><div class="ag-num" style="background:#2496ed22;color:#60b5f5">🏠</div><div class="ag-text"><strong>Portal</strong><a href="/portal.html" style="color:#60b5f5;font-size:12px">index.html</a></div></div>
   </div>
 </div>
@@ -194,6 +195,48 @@ docker run -d --name app \<br>
   </div>
 </div>
 
+<!-- Resource Limits & Watch -->
+<div class="slide s-docker">
+  <div class="tag tag-docker">Segment 5 — Production Tips</div>
+  <h2>Resource Limits & Compose Watch</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">Resource Constraints</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="prop">services:</span><br>
+&nbsp;&nbsp;<span class="prop">app:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">deploy:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">resources:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">limits:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">cpus:</span> <span class="str">"0.5"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">memory:</span> <span class="str">512M</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">reservations:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">cpus:</span> <span class="str">"0.25"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">memory:</span> <span class="str">256M</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">restart:</span> <span class="str">unless-stopped</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#2dd4bf">Compose Watch (v2.22+)</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="prop">services:</span><br>
+&nbsp;&nbsp;<span class="prop">app:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">develop:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">watch:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="prop">action:</span> <span class="str">sync</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">path:</span> <span class="str">./src</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">target:</span> <span class="str">/app/src</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="prop">action:</span> <span class="str">rebuild</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">path:</span> <span class="str">package.json</span>
+      </div>
+      <ul style="margin-top:8px">
+        <li style="color:#94a3b8;font-size:12px"><code style="color:#2dd4bf">docker compose watch</code> — live sync files to container without restart</li>
+        <li style="color:#94a3b8;font-size:12px"><code style="color:#2dd4bf">docker compose top</code> — view process table</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <div class="slide s-dark">
   <div class="tag tag-docker">Quiz</div>
   <h2>Docker Compose Quiz ⚡</h2>
@@ -223,14 +266,14 @@ docker run -d --name app \<br>
 <div id="nav">
   <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
   <div id="slide-title-nav">Docker Compose</div>
-  <div id="progress"><div id="bar" style="width:12.5%"></div></div>
-  <div id="slide-info">1 / 8</div>
+  <div id="progress"><div id="bar" style="width:11%"></div></div>
+  <div id="slide-info">1 / 9</div>
   <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
   <a href="/portal.html" class="home-link">🏠 Portal</a>
 </div>
 <script>
-const titles=["Title","Agenda","Why Compose","Compose File","Full Stack Example","Overrides & Profiles","Quiz","Wrap Up"];
-let cur=0;const total=8;
+const titles=["Title","Agenda","Why Compose","Compose File","Full Stack","Overrides","Resource Limits & Watch","Quiz","Wrap Up"];
+let cur=0;const total=9;
 const slides=document.querySelectorAll('.slide');
 function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
 function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}

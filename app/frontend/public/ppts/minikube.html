@@ -260,7 +260,103 @@ kubectl top pods -n demo
   </div>
 </div>
 
-<!-- Slide 7: Quiz -->
+<!-- Slide 7: Ingress in Minikube -->
+<div class="slide s-blue" data-title="Ingress & Service Tunneling">
+  <div class="tag tag-blue">Segment 5 — Ingress</div>
+  <h2>Ingress & Service Tunneling</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">Enable Ingress</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Enable ingress addon</span>
+minikube addons enable ingress
+
+<span class="cmt"># Create a basic Ingress</span>
+<span class="prop">apiVersion</span>: networking.k8s.io/v1
+<span class="prop">kind</span>: Ingress
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">demo-ingress</span>
+<span class="prop">spec</span>:
+  <span class="prop">rules</span>:
+  - <span class="prop">host</span>: <span class="str">demo.local</span>
+    <span class="prop">http</span>:
+      <span class="prop">paths</span>:
+      - <span class="prop">path</span>: <span class="str">/</span>
+        <span class="prop">pathType</span>: <span class="str">Prefix</span>
+        <span class="prop">backend</span>:
+          <span class="prop">service</span>:
+            <span class="prop">name</span>: <span class="str">api</span>
+            <span class="prop">port</span>: {<span class="prop">number</span>: <span class="val">8080</span>}
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#4ade80">Access Services Locally</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Add to /etc/hosts for ingress</span>
+echo "$(minikube ip) demo.local" | \
+  sudo tee -a /etc/hosts
+
+<span class="cmt"># Or use minikube tunnel (LoadBalancer)</span>
+minikube tunnel
+<span class="cmt"># Then service gets external IP 127.0.0.1</span>
+
+<span class="cmt"># Or port-forward directly</span>
+kubectl port-forward svc/api 8080:8080
+
+<span class="cmt"># Open service in browser</span>
+minikube service api --url
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: Debugging -->
+<div class="slide s-amber" data-title="Debugging in Minikube">
+  <div class="tag tag-amber">Segment 6 — Debugging</div>
+  <h2>Debugging Pods & Services</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#fbbf24">Pod Not Starting?</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Check pod status and events</span>
+kubectl describe pod &lt;pod-name&gt;
+<span class="cmt"># Look for: Events at the bottom</span>
+<span class="cmt"># Common: ImagePullBackOff, CrashLoopBackOff</span>
+
+<span class="cmt"># Check logs</span>
+kubectl logs &lt;pod-name&gt;
+kubectl logs &lt;pod-name&gt; --previous  <span class="cmt"># last crash</span>
+
+<span class="cmt"># Exec into running pod</span>
+kubectl exec -it &lt;pod-name&gt; -- sh
+
+<span class="cmt"># Run a debug pod with tools</span>
+kubectl run debug --image=nicolaka/netshoot \
+  -it --rm -- bash
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#c084fc">Service Not Reachable?</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Check endpoints (are pods selected?)</span>
+kubectl get endpoints &lt;service-name&gt;
+<span class="cmt"># If NONE: label selector mismatch</span>
+
+<span class="cmt"># Check service definition</span>
+kubectl describe svc &lt;service-name&gt;
+
+<span class="cmt"># Test DNS resolution from a pod</span>
+kubectl run test --image=busybox -it --rm \
+  -- nslookup &lt;service-name&gt;
+
+<span class="cmt"># Check minikube dashboard</span>
+minikube dashboard
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: Quiz -->
 <div class="slide s-dark" data-title="Quiz">
   <div class="tag tag-teal">Knowledge Check</div>
   <h2>Quick Quiz 🎯</h2>

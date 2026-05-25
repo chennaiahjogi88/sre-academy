@@ -84,7 +84,7 @@ h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
 #bar{height:4px;border-radius:2px;transition:width .3s}
 #slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
 #slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
-.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;overflow-x:auto}
+.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;white-space:pre-wrap;overflow-x:auto}
 .prop{color:#c084fc}.str{color:#4ade80}.val{color:#fbbf24}.cmt{color:#475569}.kw{color:#60a5fa}
 .badge-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
 .badge{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
@@ -265,7 +265,63 @@ h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
   <div class="hbox green" style="margin-top:12px;max-width:860px">🎯 <b>SRE Rule:</b> Every production Deployment with replicas &gt; 1 should have a PDB. Without it, a node drain could take down all replicas simultaneously.</div>
 </div>
 
-<!-- Slide 7: Quiz -->
+<!-- Slide 7: Resource Management & QoS -->
+<div class="slide s-blue" data-title="Resource QoS Classes">
+  <div class="tag tag-blue">Segment 5 — QoS</div>
+  <h2>Quality of Service (QoS) Classes</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">Three QoS Classes</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">Guaranteed</span> — requests == limits for ALL containers. Highest priority, never evicted under memory pressure.</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">Burstable</span> — requests set but limits &gt; requests. Evicted after BestEffort pods under pressure.</li>
+        <li style="color:#94a3b8"><span style="color:#fb923c">BestEffort</span> — no requests or limits set. First to be evicted. Only for non-critical workloads.</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> QoS class is automatically assigned — you don't set it directly</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Check: <code style="color:#60a5fa">kubectl get pod myapp -o jsonpath='{.status.qosClass}'</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#4ade80">SRE Best Practice</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Critical services (API, DB): <strong>Guaranteed</strong> QoS</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Set CPU requests = CPU limits for critical services</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Memory: requests slightly below limits (allow burst)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Use LimitRange to enforce defaults per namespace</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Monitor with <code style="color:#4ade80">kubectl top pods</code> and VPA recommendations</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: Topology Spread for Reliability -->
+<div class="slide s-green" data-title="High Availability Patterns">
+  <div class="tag tag-green">Segment 6 — HA</div>
+  <h2>HA Reliability Checklist</h2>
+  <div style="width:100%;max-width:860px;display:flex;flex-direction:column;gap:10px">
+    <div style="background:#4ade8015;border:1px solid #4ade8033;border-radius:10px;padding:12px 18px;display:flex;gap:14px;align-items:center">
+      <span style="font-size:18px;width:30px">✅</span>
+      <div><div style="font-size:14px;font-weight:600;color:#4ade80">Minimum 3 replicas for critical services</div><div style="font-size:12px;color:#64748b">1 replica = SPOF. 2 replicas = both down during rolling update. 3+ = always available</div></div>
+    </div>
+    <div style="background:#60a5fa15;border:1px solid #60a5fa33;border-radius:10px;padding:12px 18px;display:flex;gap:14px;align-items:center">
+      <span style="font-size:18px;width:30px">✅</span>
+      <div><div style="font-size:14px;font-weight:600;color:#60a5fa">PodDisruptionBudget (minAvailable: 2)</div><div style="font-size:12px;color:#64748b">Prevents node drain from taking all replicas at once</div></div>
+    </div>
+    <div style="background:#c084fc15;border:1px solid #c084fc33;border-radius:10px;padding:12px 18px;display:flex;gap:14px;align-items:center">
+      <span style="font-size:18px;width:30px">✅</span>
+      <div><div style="font-size:14px;font-weight:600;color:#c084fc">Topology spread across AZs</div><div style="font-size:12px;color:#64748b">topologySpreadConstraints prevents all pods in same availability zone</div></div>
+    </div>
+    <div style="background:#fbbf2415;border:1px solid #fbbf2433;border-radius:10px;padding:12px 18px;display:flex;gap:14px;align-items:center">
+      <span style="font-size:18px;width:30px">✅</span>
+      <div><div style="font-size:14px;font-weight:600;color:#fbbf24">Liveness + Readiness probes configured</div><div style="font-size:12px;color:#64748b">Auto-restart unhealthy pods + remove from LB during deployment</div></div>
+    </div>
+    <div style="background:#2dd4bf15;border:1px solid #2dd4bf33;border-radius:10px;padding:12px 18px;display:flex;gap:14px;align-items:center">
+      <span style="font-size:18px;width:30px">✅</span>
+      <div><div style="font-size:14px;font-weight:600;color:#2dd4bf">RollingUpdate with maxUnavailable: 0</div><div style="font-size:12px;color:#64748b">Zero-downtime deployments — new pods ready before old ones stop</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: Quiz -->
 <div class="slide s-dark" data-title="Quiz">
   <div class="tag tag-teal">Knowledge Check</div>
   <h2>Quick Quiz 🎯</h2>
@@ -304,12 +360,12 @@ h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
     <div class="hbox green">✅ Startup probe — protect slow starters</div>
     <div class="hbox green">✅ PDB — minimum availability guarantee</div>
   </div>
-  <a href="index.html" style="margin-top:24px;color:#60a5fa;font-size:14px;text-decoration:none">← Back to Portal</a>
+  <a href="/portal.html" style="margin-top:24px;color:#60a5fa;font-size:14px;text-decoration:none">← Back to Portal</a>
 </div>
 
 </div>
 <nav id="nav">
-  <a href="index.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
+  <a href="/portal.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
   <button class="nav-btn" id="btnPrev">← Prev</button>
   <div id="progress"><div id="bar"></div></div>
   <span id="slide-title-nav"></span>

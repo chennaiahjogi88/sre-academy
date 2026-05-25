@@ -90,7 +90,7 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
     <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>Route Tables & IGW</strong>Traffic routing · 12 min</div></div>
     <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">04</div><div class="ag-text"><strong>NAT Gateway</strong>Outbound for private subnets · 12 min</div></div>
     <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">05</div><div class="ag-text"><strong>Lab & Quiz</strong>Hands-on + review · 14 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">🏠</div><div class="ag-text"><strong>Back to Portal</strong><a href="index.html" style="color:#4ade80;font-size:12px">index.html</a></div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">🏠</div><div class="ag-text"><strong>Back to Portal</strong><a href="/portal.html" style="color:#4ade80;font-size:12px">index.html</a></div></div>
   </div>
 </div>
 
@@ -206,8 +206,63 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   </div>
 </div>
 
+<!-- 3-Tier VPC Architecture -->
+<div class="slide s-blue">
+  <div class="tag tag-blue">Segment 5 — Architecture</div>
+  <h2>3-Tier VPC Architecture</h2>
+  <div style="width:100%;max-width:860px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:#60a5fa15;border:1px solid #60a5fa33;border-radius:10px;padding:12px 20px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:start">
+        <div style="text-align:center;padding-top:4px"><div style="font-size:12px;font-weight:700;color:#60a5fa">PUBLIC SUBNET</div><div style="font-size:11px;color:#64748b">10.0.1.0/24</div></div>
+        <div style="font-size:13px;color:#94a3b8">Load Balancers (ALB/NLB), NAT Gateways, Bastion Host. Has route to IGW. Receives internet traffic.</div>
+      </div>
+      <div style="background:#4ade8015;border:1px solid #4ade8033;border-radius:10px;padding:12px 20px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:start">
+        <div style="text-align:center;padding-top:4px"><div style="font-size:12px;font-weight:700;color:#4ade80">PRIVATE SUBNET</div><div style="font-size:11px;color:#64748b">10.0.2.0/24</div></div>
+        <div style="font-size:13px;color:#94a3b8">App servers, EKS worker nodes, Lambda. No direct internet access. Outbound via NAT Gateway. Security Group allows inbound only from ALB SG.</div>
+      </div>
+      <div style="background:#c084fc15;border:1px solid #c084fc33;border-radius:10px;padding:12px 20px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:start">
+        <div style="text-align:center;padding-top:4px"><div style="font-size:12px;font-weight:700;color:#c084fc">DATA SUBNET</div><div style="font-size:11px;color:#64748b">10.0.3.0/24</div></div>
+        <div style="font-size:13px;color:#94a3b8">RDS, ElastiCache, Redshift. No outbound internet. Security Group allows inbound only from App SG (port 5432/6379). Most restricted tier.</div>
+      </div>
+    </div>
+    <div style="background:#ffffff08;border-radius:10px;padding:8px 18px;margin-top:10px;font-size:13px;color:#94a3b8;text-align:center">
+      Best practice: Replicate all 3 tiers across <strong>at least 2 AZs</strong> for high availability
+    </div>
+  </div>
+</div>
+
+<!-- Security Groups vs NACLs -->
 <div class="slide s-dark">
-  <div class="tag tag-green">Segment 5 — Quiz</div>
+  <div class="tag tag-amber">Segment 6 — Security</div>
+  <h2>Security Groups vs NACLs</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#fbbf24">Security Groups</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Applied at the <strong>instance/ENI level</strong></li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> <strong>Stateful</strong> — return traffic auto-allowed</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> ALLOW rules only — no DENY</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Can reference other SGs as sources</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Up to 5 SGs per ENI</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> First line of defense for instances</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#60a5fa">Network ACLs (NACLs)</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Applied at the <strong>subnet level</strong></li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> <strong>Stateless</strong> — must allow both inbound AND outbound</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> ALLOW and DENY rules — numbered priority</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Rule 100 processed before rule 200</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Default NACL allows all traffic</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Use for: blocking specific IPs at subnet level</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="slide s-dark">
+  <div class="tag tag-green">Segment 7 — Quiz</div>
   <h2>VPC Quick Quiz ⚡</h2>
   <div class="quiz-box">
     <div class="q-item"><div class="q">Q1. What makes a subnet "public"?</div><button class="btn" onclick="reveal(this)">Show Answer</button><div class="a">✅ Its route table has a route to an Internet Gateway (0.0.0.0/0 → igw-xxxx).</div></div>
@@ -228,21 +283,21 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
     <span style="font-size:13px;color:#fbbf24">✓ Route Tables & IGW</span>
     <span style="font-size:13px;color:#2dd4bf">✓ NAT Gateway</span>
   </div>
-  <a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+  <a href="/portal.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
 </div>
 
 </div>
 <div id="nav">
   <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
   <div id="slide-title-nav">AWS VPC</div>
-  <div id="progress"><div id="bar" style="width:12.5%"></div></div>
-  <div id="slide-info">1 / 8</div>
+  <div id="progress"><div id="bar" style="width:10%"></div></div>
+  <div id="slide-info">1 / 10</div>
   <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
-  <a href="index.html" class="home-link">🏠 Portal</a>
+  <a href="/portal.html" class="home-link">🏠 Portal</a>
 </div>
 <script>
-const titles=["Title","Agenda","What is VPC","Subnets","Route Tables & IGW","NAT Gateway","Quiz","Wrap Up"];
-let cur=0;const total=8;
+const titles=["Title","Agenda","What is VPC","Subnets","Route Tables & IGW","NAT Gateway","3-Tier Architecture","Security Groups vs NACLs","Quiz","Wrap Up"];
+let cur=0;const total=10;
 const slides=document.querySelectorAll('.slide');
 function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
 function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}

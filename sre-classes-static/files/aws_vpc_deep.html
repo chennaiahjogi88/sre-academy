@@ -10,7 +10,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#fff;heigh
 .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:40px 60px;animation:fadein .35s ease}
 .slide.active{display:flex}
 @keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.s-title{background:linear-gradient(135deg,#0f172a,#071a1a)}.s-dark{background:#0f172a}.s-teal{background:#071a1a}.s-green{background:#0b1f14}.s-blue{background:#0f1f3d}.s-amber{background:#1c1200}.s-purple{background:#130d2e}
+.s-title{background:linear-gradient(135deg,#0f172a,#071a1a)}.s-dark{background:#0f172a}.s-teal{background:#071a1a}.s-green{background:#0b1f14}.s-blue{background:#0f1f3d}.s-amber{background:#1c1200}.s-purple{background:#130d2e}.s-coral{background:#1f0b06}
+.comp-table{width:100%;max-width:860px;border-collapse:collapse}
+.comp-table th{padding:10px 16px;font-size:13px;text-align:left;border-bottom:1px solid #ffffff20;color:#94a3b8}
+.comp-table td{padding:9px 16px;font-size:13px;color:#94a3b8;border-bottom:1px solid #ffffff0a}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;width:100%;max-width:900px}
 .tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:16px;display:inline-block}
 .tag-teal{background:#0d423f33;color:#2dd4bf;border:1px solid #0d423f55}
 .tag-green{background:#14532d33;color:#4ade80;border:1px solid #14532d55}
@@ -69,12 +73,14 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   <div class="tag tag-teal">Session Plan</div>
   <h2>What We'll Cover</h2>
   <div class="agenda">
-    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">01</div><div class="ag-text"><strong>VPC Peering</strong>Connect VPCs privately · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>VPC Endpoints</strong>Private AWS service access · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>VPC Flow Logs</strong>Traffic visibility · 10 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#1e40af33;color:#60a5fa">04</div><div class="ag-text"><strong>Security Groups Advanced</strong>SG chaining, rules · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">05</div><div class="ag-text"><strong>Quiz & Architecture Lab</strong>Design challenge · 14 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">🏠</div><div class="ag-text"><strong>Portal</strong><a href="index.html" style="color:#2dd4bf;font-size:12px">index.html</a></div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">01</div><div class="ag-text"><strong>VPC Peering</strong>Connect VPCs privately · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>VPC Endpoints</strong>Private AWS service access · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>VPC Flow Logs</strong>Traffic visibility · 8 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#1e40af33;color:#60a5fa">04</div><div class="ag-text"><strong>Transit Gateway</strong>Hub-and-spoke routing · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">05</div><div class="ag-text"><strong>Security Groups Advanced</strong>SG chaining & rules · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#7c1d0d33;color:#fb923c">06</div><div class="ag-text"><strong>Direct Connect & VPN</strong>On-prem connectivity · 8 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">07</div><div class="ag-text"><strong>Quiz & Wrap-up</strong>Architecture challenge · 14 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">🏠</div><div class="ag-text"><strong>Portal</strong><a href="/portal.html" style="color:#2dd4bf;font-size:12px">index.html</a></div></div>
   </div>
 </div>
 
@@ -151,6 +157,102 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   </div>
 </div>
 
+<!-- Transit Gateway -->
+<div class="slide s-blue">
+  <div class="tag tag-teal">Segment 4 — Transit Gateway</div>
+  <h2>AWS Transit Gateway</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">Why Transit Gateway?</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> VPC Peering is <strong>non-transitive</strong> — mesh of N VPCs needs N(N-1)/2 peering connections</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> TGW acts as a <strong>regional hub</strong> — each VPC attaches once</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Supports VPC, VPN, and Direct Connect attachments</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Cross-region peering via TGW Peering</li>
+        <li style="color:#94a3b8"><span style="color:#2dd4bf">›</span> Supports up to 5,000 VPC attachments</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent3">Route Tables & Segmentation</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Each TGW has one or more route tables</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Attachments are associated to a route table</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Use separate route tables to isolate dev / prod</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Blackhole routes to block specific paths</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Shared services VPC → propagate to all route tables</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:14px;background:#2dd4bf10;border:1px solid #2dd4bf30;border-radius:10px;padding:10px 20px;font-size:13px;color:#94a3b8;max-width:860px;text-align:center">
+    10 VPCs with peering = 45 connections &nbsp;|&nbsp; 10 VPCs with TGW = <span style="color:#2dd4bf">10 attachments</span>
+  </div>
+</div>
+
+<!-- Advanced Security Groups -->
+<div class="slide s-purple">
+  <div class="tag tag-teal">Segment 5 — Security Groups</div>
+  <h2>Security Groups — Advanced Patterns</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">SG Referencing (Chaining)</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Inbound rule can reference <strong>another SG</strong> as source</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Allows instances in the source SG to connect</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Works cross-account with the account ID prefix</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Example: ALB SG → App SG → DB SG (3-tier)</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Never need to update rules when IPs change</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent2">Best Practices</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong>Principle of least privilege</strong> — only allow needed ports</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Avoid 0.0.0.0/0 on port 22/3389 — use SSM Session Manager instead</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Use SG references for tier-to-tier rules, not CIDR blocks</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Tag SGs clearly — name, purpose, environment</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Max 60 inbound + 60 outbound rules per SG (adjustable)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Max 5 SGs per ENI (network interface)</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:14px;background:#ffffff08;border-radius:10px;padding:10px 20px;font-size:12px;color:#64748b;max-width:860px;text-align:center">
+    3-tier pattern: <span style="color:#60a5fa">Internet → ALB-SG</span> → <span style="color:#c084fc">ALB-SG → App-SG (port 8080)</span> → <span style="color:#4ade80">App-SG → DB-SG (port 5432)</span>
+  </div>
+</div>
+
+<!-- Direct Connect & VPN -->
+<div class="slide s-coral">
+  <div class="tag tag-coral">Segment 6 — Hybrid Connectivity</div>
+  <h2>Direct Connect & Site-to-Site VPN</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent3">AWS Direct Connect</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fb923c">›</span> Dedicated private network connection from on-prem to AWS</li>
+        <li style="color:#94a3b8"><span style="color:#fb923c">›</span> Speeds: 1 Gbps, 10 Gbps, 100 Gbps</li>
+        <li style="color:#94a3b8"><span style="color:#fb923c">›</span> Lower latency, consistent bandwidth vs internet</li>
+        <li style="color:#94a3b8"><span style="color:#fb923c">›</span> <strong>Private VIF</strong> → access VPC resources</li>
+        <li style="color:#94a3b8"><span style="color:#fb923c">›</span> <strong>Public VIF</strong> → access public AWS services (S3, etc.)</li>
+        <li style="color:#94a3b8"><span style="color:#fb923c">›</span> Use <strong>Direct Connect Gateway</strong> for multi-VPC / multi-region</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent">Site-to-Site VPN</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Encrypted IPSec tunnel over the public internet</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Two tunnels per connection (HA — different AZs)</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Connects Customer Gateway (on-prem) to Virtual Private Gateway (VPC)</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Or attach to Transit Gateway for multi-VPC access</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Setup in minutes — good backup for Direct Connect</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Throughput limited by internet quality</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:14px;background:#ffffff08;border-radius:10px;padding:10px 16px;font-size:13px;color:#94a3b8;max-width:860px;text-align:center">
+    Production pattern: <span style="color:#fb923c">Direct Connect</span> as primary + <span style="color:#c084fc">VPN</span> as failover, both via <span style="color:#2dd4bf">Transit Gateway</span>
+  </div>
+</div>
+
 <div class="slide s-dark">
   <div class="tag tag-teal">Quiz</div>
   <h2>VPC Deep Dive Quiz ⚡</h2>
@@ -173,21 +275,21 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
     <span style="font-size:13px;color:#fbbf24">✓ Flow Logs</span>
     <span style="font-size:13px;color:#60a5fa">✓ Advanced SGs</span>
   </div>
-  <a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+  <a href="/portal.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
 </div>
 
 </div>
 <div id="nav">
   <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
   <div id="slide-title-nav">VPC Deep Dive</div>
-  <div id="progress"><div id="bar" style="width:14%"></div></div>
-  <div id="slide-info">1 / 7</div>
+  <div id="progress"><div id="bar" style="width:10%"></div></div>
+  <div id="slide-info">1 / 10</div>
   <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
-  <a href="index.html" class="home-link">🏠 Portal</a>
+  <a href="/portal.html" class="home-link">🏠 Portal</a>
 </div>
 <script>
-const titles=["Title","Agenda","VPC Peering","VPC Endpoints","Flow Logs","Quiz","Wrap Up"];
-let cur=0;const total=7;
+const titles=["Title","Agenda","VPC Peering","VPC Endpoints","Flow Logs","Transit Gateway","Security Groups","Direct Connect & VPN","Quiz","Wrap Up"];
+let cur=0;const total=10;
 const slides=document.querySelectorAll('.slide');
 function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
 function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}

@@ -84,7 +84,7 @@ h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
 #bar{height:4px;border-radius:2px;transition:width .3s}
 #slide-info{font-size:12px;color:#64748b;min-width:60px;text-align:right}
 #slide-title-nav{font-size:13px;color:#94a3b8;flex:2;text-align:center}
-.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;overflow-x:auto}
+.code-block{background:#0d1117;border:1px solid #ffffff15;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:1.7;width:100%;max-width:860px;white-space:pre-wrap;overflow-x:auto}
 .prop{color:#c084fc}.str{color:#4ade80}.val{color:#fbbf24}.cmt{color:#475569}.kw{color:#60a5fa}
 .badge-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
 .badge{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
@@ -260,7 +260,103 @@ kubectl top pods -n demo
   </div>
 </div>
 
-<!-- Slide 7: Quiz -->
+<!-- Slide 7: Ingress in Minikube -->
+<div class="slide s-blue" data-title="Ingress & Service Tunneling">
+  <div class="tag tag-blue">Segment 5 — Ingress</div>
+  <h2>Ingress & Service Tunneling</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">Enable Ingress</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Enable ingress addon</span>
+minikube addons enable ingress
+
+<span class="cmt"># Create a basic Ingress</span>
+<span class="prop">apiVersion</span>: networking.k8s.io/v1
+<span class="prop">kind</span>: Ingress
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">demo-ingress</span>
+<span class="prop">spec</span>:
+  <span class="prop">rules</span>:
+  - <span class="prop">host</span>: <span class="str">demo.local</span>
+    <span class="prop">http</span>:
+      <span class="prop">paths</span>:
+      - <span class="prop">path</span>: <span class="str">/</span>
+        <span class="prop">pathType</span>: <span class="str">Prefix</span>
+        <span class="prop">backend</span>:
+          <span class="prop">service</span>:
+            <span class="prop">name</span>: <span class="str">api</span>
+            <span class="prop">port</span>: {<span class="prop">number</span>: <span class="val">8080</span>}
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#4ade80">Access Services Locally</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Add to /etc/hosts for ingress</span>
+echo "$(minikube ip) demo.local" | \
+  sudo tee -a /etc/hosts
+
+<span class="cmt"># Or use minikube tunnel (LoadBalancer)</span>
+minikube tunnel
+<span class="cmt"># Then service gets external IP 127.0.0.1</span>
+
+<span class="cmt"># Or port-forward directly</span>
+kubectl port-forward svc/api 8080:8080
+
+<span class="cmt"># Open service in browser</span>
+minikube service api --url
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: Debugging -->
+<div class="slide s-amber" data-title="Debugging in Minikube">
+  <div class="tag tag-amber">Segment 6 — Debugging</div>
+  <h2>Debugging Pods & Services</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#fbbf24">Pod Not Starting?</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Check pod status and events</span>
+kubectl describe pod &lt;pod-name&gt;
+<span class="cmt"># Look for: Events at the bottom</span>
+<span class="cmt"># Common: ImagePullBackOff, CrashLoopBackOff</span>
+
+<span class="cmt"># Check logs</span>
+kubectl logs &lt;pod-name&gt;
+kubectl logs &lt;pod-name&gt; --previous  <span class="cmt"># last crash</span>
+
+<span class="cmt"># Exec into running pod</span>
+kubectl exec -it &lt;pod-name&gt; -- sh
+
+<span class="cmt"># Run a debug pod with tools</span>
+kubectl run debug --image=nicolaka/netshoot \
+  -it --rm -- bash
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#c084fc">Service Not Reachable?</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="cmt"># Check endpoints (are pods selected?)</span>
+kubectl get endpoints &lt;service-name&gt;
+<span class="cmt"># If NONE: label selector mismatch</span>
+
+<span class="cmt"># Check service definition</span>
+kubectl describe svc &lt;service-name&gt;
+
+<span class="cmt"># Test DNS resolution from a pod</span>
+kubectl run test --image=busybox -it --rm \
+  -- nslookup &lt;service-name&gt;
+
+<span class="cmt"># Check minikube dashboard</span>
+minikube dashboard
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: Quiz -->
 <div class="slide s-dark" data-title="Quiz">
   <div class="tag tag-teal">Knowledge Check</div>
   <h2>Quick Quiz 🎯</h2>
@@ -301,12 +397,12 @@ kubectl top pods -n demo
     <div class="hbox green">✅ HPA setup in Minikube</div>
     <div class="hbox green">✅ Rollout &amp; rollback</div>
   </div>
-  <a href="index.html" style="margin-top:24px;color:#fbbf24;font-size:14px;text-decoration:none">← Back to Portal</a>
+  <a href="/portal.html" style="margin-top:24px;color:#fbbf24;font-size:14px;text-decoration:none">← Back to Portal</a>
 </div>
 
 </div>
 <nav id="nav">
-  <a href="index.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
+  <a href="/portal.html" style="text-decoration:none"><button class="nav-btn" style="padding:8px 14px;font-size:13px">🏠 Portal</button></a>
   <button class="nav-btn" id="btnPrev">← Prev</button>
   <div id="progress"><div id="bar"></div></div>
   <span id="slide-title-nav"></span>

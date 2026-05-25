@@ -262,7 +262,78 @@ h2{font-size:28px;font-weight:700;margin-bottom:18px;text-align:center}
   </div>
 </div>
 
-<!-- Slide 7: Quiz -->
+<!-- Slide 7: PersistentVolumes & PVCs -->
+<div class="slide s-blue" data-title="PersistentVolumes & PVCs">
+  <div class="tag tag-blue">Segment 5 — Storage</div>
+  <h2>PersistentVolumes & PVCs</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#60a5fa">PV & PVC Model</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> <strong>PersistentVolume (PV)</strong> — cluster-level storage resource (provisioned by admin or dynamically)</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> <strong>PersistentVolumeClaim (PVC)</strong> — pod's request for storage (size, access mode)</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> <strong>StorageClass</strong> — defines the provisioner (gp3, efs, etc.) for dynamic provisioning</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Access modes: ReadWriteOnce, ReadOnlyMany, ReadWriteMany</li>
+        <li style="color:#94a3b8"><span style="color:#60a5fa">›</span> Reclaim policy: Retain, Delete, Recycle</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#4ade80">PVC Example</h3>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="prop">apiVersion</span>: v1
+<span class="prop">kind</span>: PersistentVolumeClaim
+<span class="prop">metadata</span>:
+  <span class="prop">name</span>: <span class="str">db-storage</span>
+<span class="prop">spec</span>:
+  <span class="prop">accessModes</span>: [<span class="str">"ReadWriteOnce"</span>]
+  <span class="prop">storageClassName</span>: <span class="str">gp3</span>
+  <span class="prop">resources</span>:
+    <span class="prop">requests</span>:
+      <span class="prop">storage</span>: <span class="str">20Gi</span>
+<span class="cmt"># Reference in pod:</span>
+<span class="prop">volumes</span>:
+- <span class="prop">name</span>: <span class="str">data</span>
+  <span class="prop">persistentVolumeClaim</span>:
+    <span class="prop">claimName</span>: <span class="str">db-storage</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: InitContainers -->
+<div class="slide s-amber" data-title="InitContainers & Sidecars">
+  <div class="tag tag-amber">Segment 6 — Patterns</div>
+  <h2>InitContainers & Sidecar Pattern</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="color:#fbbf24">InitContainers</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Run to completion <strong>before</strong> main containers start</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Run sequentially in order defined</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Use for: DB migration, wait for dependency, config rendering</li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">›</span> Share volumes with main containers for handoff</li>
+      </ul>
+      <div class="code-block" style="font-size:11px;margin-top:8px">
+<span class="prop">initContainers</span>:
+- <span class="prop">name</span>: <span class="str">wait-db</span>
+  <span class="prop">image</span>: <span class="str">busybox</span>
+  <span class="prop">command</span>: [<span class="str">'sh','-c','until nc -z db 5432; do sleep 2; done'</span>]
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:#c084fc">Sidecar Pattern</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> Additional containers in same pod sharing network & volumes</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> <strong>Log shipper</strong>: Fluentbit reads app logs from shared volume</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> <strong>Service mesh proxy</strong>: Envoy/Istio intercepts traffic</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> <strong>Secret injector</strong>: Vault agent sidecar</li>
+        <li style="color:#94a3b8"><span style="color:#c084fc">›</span> K8s 1.28+: Native sidecar containers (restartPolicy: Always in initContainers)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: Quiz -->
 <div class="slide s-dark" data-title="Quiz">
   <div class="tag tag-teal">Knowledge Check</div>
   <h2>Quick Quiz 🎯</h2>

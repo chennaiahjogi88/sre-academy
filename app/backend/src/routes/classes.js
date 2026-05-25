@@ -8,7 +8,7 @@ const tracer = trace.getTracer('sre-platform-backend');
 
 const router = express.Router();
 
-// All 48 classes definition
+// All 49 classes definition (class-aws-sd is the new AWS Storage & Database class)
 const ALL_CLASSES = [
   { id: 'class-1', module: 'SRE Foundations', title: 'SRE Foundations — Part 1', file: 'sre_foundations_1.html', public: true },
   { id: 'class-2', module: 'SRE Foundations', title: 'SRE Foundations — Part 2', file: 'sre_foundations_2.html', public: true },
@@ -17,6 +17,7 @@ const ALL_CLASSES = [
   { id: 'class-5', module: 'AWS Cloud', title: 'AWS Networking — VPC Basics', file: 'aws_vpc.html', public: false },
   { id: 'class-6', module: 'AWS Cloud', title: 'AWS Networking — Load Balancing', file: 'aws_elb.html', public: false },
   { id: 'class-7', module: 'AWS Cloud', title: 'AWS VPC Deep Dive', file: 'aws_vpc_deep.html', public: false },
+  { id: 'class-aws-sd', module: 'AWS Cloud', title: 'AWS Storage & Database', file: 'aws_storage_db.html', public: false },
   { id: 'class-8', module: 'Docker', title: 'Docker Fundamentals', file: 'docker_fundamentals.html', public: false },
   { id: 'class-9', module: 'Docker', title: 'Docker Advanced', file: 'docker_advanced.html', public: false },
   { id: 'class-10', module: 'Docker', title: 'Docker Compose', file: 'docker_compose.html', public: false },
@@ -59,6 +60,36 @@ const ALL_CLASSES = [
   { id: 'class-48', module: 'Advanced', title: 'K8s Security', file: 'k8s_security.html', public: false },
   { id: 'class-49', module: 'Observability', title: 'Observability Masterclass', file: 'observability_class.html', public: false },
 ];
+
+// GET /api/classes/delivery — get all admin-set delivery statuses
+router.get('/delivery', authenticate, async (req, res) => {
+  try {
+    const result = await db.query('SELECT class_id, status FROM class_delivery_status');
+    const statusMap = {};
+    result.rows.forEach(r => { statusMap[r.class_id] = r.status; });
+    res.json(statusMap);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch delivery status' });
+  }
+});
+
+// PUT /api/classes/:id/delivery — set delivery status (admin only)
+router.put('/:id/delivery', authenticate, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  try {
+    const { status } = req.body;
+    if (!['delivered', 'upcoming'].includes(status)) return res.status(400).json({ error: 'Status must be delivered or upcoming' });
+    await db.query(
+      `INSERT INTO class_delivery_status (class_id, status, updated_by, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (class_id) DO UPDATE SET status = $2, updated_by = $3, updated_at = NOW()`,
+      [req.params.id, status, req.user.id]
+    );
+    res.json({ success: true, classId: req.params.id, status });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update delivery status' });
+  }
+});
 
 // GET /api/classes — returns public classes always, private only if authenticated
 router.get('/', (req, res) => {

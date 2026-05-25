@@ -85,3 +85,11 @@ VALUES (
   'Demo Student',
   'student'
 ) ON CONFLICT (email) DO NOTHING;
+
+-- Class delivery status (admin-controlled batch delivery state)
+CREATE TABLE IF NOT EXISTS class_delivery_status (
+  class_id VARCHAR(50) PRIMARY KEY,
+  status VARCHAR(20) NOT NULL DEFAULT 'upcoming',
+  updated_by INT REFERENCES users(id),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);

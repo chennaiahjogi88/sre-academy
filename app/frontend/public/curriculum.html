@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <title>Curriculum — Ktech SRE Training</title>
+  <style>
+    :root {
+      --bg-base:    #060d1a;
+      --bg-card:    #0a1628;
+      --bg-raised:  #0f172a;
+      --border:     #1e293b;
+      --accent:     #38bdf8;
+      --text:       #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --green:      #4ade80;
+      --amber:      #fbbf24;
+      --red:        #f87171;
+      --purple:     #c084fc;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-base);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(6,13,26,0.97);
+      border-bottom: 1px solid #1e293b;
+      backdrop-filter: blur(10px);
+      padding: 0 40px; height: 70px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 18px; font-weight: 700; color: #38bdf8;
+      text-decoration: none; display: flex; align-items: center; gap: 10px;
+    }
+    .nav-logo-text { display: flex; flex-direction: column; line-height: 1; }
+    .brand-main { font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
+    .brand-sub { font-size: 9px; font-weight: 600; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .nav-links { display: flex; gap: 16px; align-items: center; }
+    .nav-links a {
+      padding: 8px 14px; border-radius: 6px; text-decoration: none;
+      font-size: 13px; font-weight: 500; color: #cbd5e1; transition: all 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: #1e293b; color: #38bdf8; }
+    .user-info {
+      display: flex; align-items: center; gap: 12px; padding: 6px 12px;
+      background: #0a1628; border-radius: 6px; border: 1px solid #1e293b; font-size: 13px;
+    }
+    .role-badge {
+      background: #38bdf8; color: #0a1628; padding: 2px 8px;
+      border-radius: 4px; font-weight: 600; text-transform: uppercase; font-size: 11px;
+    }
+    .admin-badge { background: #f97316; }
+    .btn-logout {
+      padding: 6px 14px; background: #f87171; color: #fff;
+      border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500;
+    }
+
+    /* ── Main ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 40px 40px 80px; }
+
+    /* ── Hero ── */
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 28px; font-weight: 800; color: #f1f5f9; margin-bottom: 6px; }
+    .page-subtitle { font-size: 14px; color: #64748b; }
+
+    /* ── Stats bar ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;
+    }
+    .stat-card {
+      background: #0a1628; border: 1px solid #1e293b; border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .stat-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .stat-value { font-size: 26px; font-weight: 800; color: #f1f5f9; }
+    .stat-sub { font-size: 12px; color: #475569; margin-top: 2px; }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;
+    }
+    .filter-pill {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1px solid #1e293b; background: transparent; color: #94a3b8;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .filter-pill:hover { border-color: #38bdf8; color: #38bdf8; }
+    .filter-pill.active { background: #38bdf8; color: #060d1a; border-color: #38bdf8; font-weight: 700; }
+    .filter-right { margin-left: auto; font-size: 13px; color: #475569; }
+    .admin-hint {
+      font-size: 12px; color: #475569; background: #0a1628;
+      border: 1px solid #1e293b; border-radius: 6px; padding: 6px 12px;
+      display: none;
+    }
+    .is-admin .admin-hint { display: block; }
+
+    /* ── Module section ── */
+    .module-section { margin-bottom: 36px; }
+    .module-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px; border-radius: 10px 10px 0 0;
+      background: #0a1628; border: 1px solid #1e293b; border-bottom: none;
+      cursor: pointer; user-select: none;
+    }
+    .module-color-bar { width: 4px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+    .module-name { font-size: 16px; font-weight: 700; color: #f1f5f9; flex: 1; }
+    .module-meta { font-size: 12px; color: #475569; }
+    .module-progress-ring {
+      width: 36px; height: 36px; position: relative;
+    }
+    .module-progress-ring svg { transform: rotate(-90deg); }
+    .module-progress-ring .ring-bg { fill: none; stroke: #1e293b; stroke-width: 3; }
+    .module-progress-ring .ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .5s; }
+    .module-progress-ring .ring-text {
+      position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 9px; font-weight: 700; color: #94a3b8;
+    }
+    .module-chevron { font-size: 12px; color: #475569; transition: transform .2s; }
+    .module-section.collapsed .module-chevron { transform: rotate(-90deg); }
+
+    .module-body {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px; padding: 16px; background: #060d1a;
+      border: 1px solid #1e293b; border-top: none; border-radius: 0 0 10px 10px;
+    }
+    .module-section.collapsed .module-body { display: none; }
+
+    /* ── Class card ── */
+    .class-card {
+      background: #0a1628; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+      position: relative; transition: border-color .2s, box-shadow .2s;
+    }
+    .class-card:hover { border-color: #334155; box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+    .class-card.delivered { border-left: 3px solid #4ade80; }
+    .class-card.upcoming { border-left: 3px solid #1e293b; }
+    .class-card.hidden { display: none; }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card-num { font-size: 11px; font-weight: 700; color: #475569; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; padding-top: 2px; }
+    .card-title-wrap { flex: 1; }
+    .card-title {
+      font-size: 14px; font-weight: 600; color: #f1f5f9; text-decoration: none;
+      line-height: 1.4; transition: color .15s;
+    }
+    .card-title:hover { color: #38bdf8; }
+    .card-title.no-link { cursor: default; }
+    .card-topics { font-size: 12px; color: #64748b; line-height: 1.5; }
+    .card-tools { font-size: 11px; color: #475569; font-family: 'JetBrains Mono', monospace; }
+
+    .card-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+
+    /* Delivery badge */
+    .delivery-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+      cursor: default; user-select: none; transition: all .15s;
+    }
+    .delivery-badge.delivered {
+      background: #14532d33; color: #4ade80; border: 1px solid #14532d55;
+    }
+    .delivery-badge.upcoming {
+      background: #ffffff08; color: #475569; border: 1px solid #ffffff12;
+    }
+    .is-admin .delivery-badge {
+      cursor: pointer;
+    }
+    .is-admin .delivery-badge:hover.delivered { background: #14532d55; }
+    .is-admin .delivery-badge:hover.upcoming { background: #ffffff15; color: #94a3b8; }
+
+    /* Progress badge */
+    .progress-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+    }
+    .progress-badge.completed { background: #15803d33; color: #4ade80; border: 1px solid #15803d55; }
+    .progress-badge.in-progress { background: #1e40af33; color: #60a5fa; border: 1px solid #1e40af55; }
+    .progress-badge.not-started { display: none; }
+
+    /* Slide progress mini-bar */
+    .slide-progress-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .slide-progress-bar { flex: 1; height: 3px; background: #1e293b; border-radius: 2px; }
+    .slide-progress-fill { height: 3px; border-radius: 2px; background: #38bdf8; transition: width .3s; }
+    .slide-progress-text { font-size: 10px; color: #475569; min-width: 40px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+    /* Loading / empty states */
+    .loading-state, .empty-state {
+      text-align: center; padding: 60px 20px; color: #475569; font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .container { padding: 24px 20px 60px; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .module-body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/portal.html" class="nav-brand">
+    <svg class="nav-logo-icon" viewBox="0 0 36 36" fill="none" width="36" height="36">
+      <rect width="36" height="36" rx="8" fill="#0f172a"/>
+      <path d="M8 28L18 8L28 28" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M11 22H25" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="nav-logo-text">
+      <span class="brand-main">Ktech</span>
+      <span class="brand-sub">SRE Academy</span>
+    </div>
+  </a>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="/portal.html">Portal</a>
+      <a href="/curriculum.html" class="active">Curriculum</a>
+      <a id="recordingsLink" href="/recordings.html">Recordings</a>
+      <a href="/resources.html">Resources</a>
+      <a id="adminLink" href="/admin.html" style="display:none">Admin</a>
+    </div>
+    <div class="user-info">
+      <span id="userName">—</span>
+      <span id="roleBadge" class="role-badge">student</span>
+    </div>
+    <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Course Curriculum</h1>
+    <p class="page-subtitle">Batch: May 2025 &nbsp;·&nbsp; 48 classes across 10 modules</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Classes</div>
+      <div class="stat-value" id="statTotal">48</div>
+      <div class="stat-sub">Full curriculum</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Delivered</div>
+      <div class="stat-value" id="statDelivered">—</div>
+      <div class="stat-sub">Classes taught so far</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Your Completions</div>
+      <div class="stat-value" id="statCompleted">—</div>
+      <div class="stat-sub">Slides finished</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Progress</div>
+      <div class="stat-value" id="statPct">—</div>
+      <div class="stat-sub">Of delivered classes</div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-pill active" onclick="setFilter('all', this)">All Classes</button>
+    <button class="filter-pill" onclick="setFilter('delivered', this)">✓ Delivered</button>
+    <button class="filter-pill" onclick="setFilter('upcoming', this)">Upcoming</button>
+    <button class="filter-pill" onclick="setFilter('completed', this)">My Completions</button>
+    <div class="admin-hint" id="adminHint">Admin: click a delivery badge to toggle delivered / upcoming</div>
+  </div>
+
+  <div id="curriculumRoot"><div class="loading-state">Loading curriculum…</div></div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+// ── Curriculum data (48 classes, matches sre-batch-may spreadsheet) ──────────
+const CURRICULUM = [
+  { num:1,  id:'class-1',       module:'SRE Foundations',          title:'SRE Foundations — Part 1',         file:'sre_foundations_1.html',  topics:'SRE vs DevOps · Google SRE principles · Reliability · Toil',                   tools:'' },
+  { num:2,  id:'class-2',       module:'SRE Foundations',          title:'SRE Foundations — Part 2',         file:'sre_foundations_2.html',  topics:'SRE roles · career roadmap · production mindset',                               tools:'' },
+  { num:3,  id:'class-3',       module:'AWS Cloud',                title:'AWS Basics',                       file:'aws_ppt.html',            topics:'AWS overview · global infrastructure · shared responsibility model',             tools:'AWS' },
+  { num:4,  id:'class-4',       module:'AWS Cloud',                title:'AWS Compute',                      file:'aws_class2.html',         topics:'EC2 deep dive · AMI · ASG basics',                                              tools:'AWS EC2' },
+  { num:5,  id:'class-5',       module:'AWS Cloud',                title:'AWS Networking — VPC',             file:'aws_vpc.html',            topics:'VPC · Subnets · Route Tables · IGW · NAT',                                     tools:'AWS VPC' },
+  { num:6,  id:'class-6',       module:'AWS Cloud',                title:'AWS Networking — Load Balancing',  file:'aws_elb.html',            topics:'ALB · NLB · Security Groups · NACLs',                                          tools:'AWS ELB' },
+  { num:7,  id:'class-7',       module:'AWS Cloud',                title:'AWS VPC Deep Dive',                file:'aws_vpc_deep.html',       topics:'VPC deep dive · security groups',                                               tools:'AWS' },
+  { num:8,  id:'class-aws-sd',  module:'AWS Cloud',                title:'AWS Storage & Database',           file:'aws_storage_db.html',     topics:'AWS S3 · EBS · EFS · RDS · DynamoDB',                                          tools:'AWS' },
+  { num:9,  id:'class-8',       module:'Docker & Containers',      title:'Docker Fundamentals',              file:'docker_fundamentals.html',topics:'Docker architecture · images · containers · Dockerfile basics',                 tools:'Docker' },
+  { num:10, id:'class-9',       module:'Docker & Containers',      title:'Docker Advanced',                  file:'docker_advanced.html',    topics:'Volumes · networking · health checks · best practices',                        tools:'Docker' },
+  { num:11, id:'class-10',      module:'Docker & Containers',      title:'Docker Compose',                   file:'docker_compose.html',     topics:'Compose files · multi-container apps · overrides',                             tools:'Docker Compose' },
+  { num:12, id:'class-11',      module:'Kubernetes',               title:'Kubernetes Basics',                file:'k8s_basics.html',         topics:'Pods · Services · Deployments · rolling updates',                              tools:'Kubernetes' },
+  { num:13, id:'class-12',      module:'Kubernetes',               title:'K8s Architecture',                 file:'k8s_architecture.html',   topics:'Control plane · etcd · Scheduler · kubelet · Pod lifecycle',                   tools:'Kubernetes' },
+  { num:14, id:'class-13',      module:'Kubernetes',               title:'K8s Scheduling',                   file:'k8s_scheduling.html',     topics:'Node affinity · taints & tolerations · resource requests & limits',            tools:'Kubernetes' },
+  { num:15, id:'class-14',      module:'Kubernetes',               title:'K8s Reliability Patterns',         file:'k8s_reliability.html',    topics:'Liveness & readiness probes · PodDisruptionBudget · anti-affinity',            tools:'Kubernetes' },
+  { num:16, id:'class-15',      module:'Kubernetes',               title:'K8s Workloads',                    file:'k8s_workloads.html',      topics:'StatefulSets · DaemonSets · Jobs · CronJobs · ConfigMaps · Secrets',           tools:'Kubernetes' },
+  { num:17, id:'class-16',      module:'Kubernetes',               title:'K8s Scaling',                      file:'k8s_scaling.html',        topics:'HPA · VPA · Cluster Autoscaler · Metrics Server',                              tools:'Kubernetes' },
+  { num:18, id:'class-17',      module:'Kubernetes',               title:'Minikube Labs',                    file:'minikube.html',           topics:'Minikube setup · docker-env · Ingress addon · local labs',                     tools:'Minikube' },
+  { num:19, id:'class-18',      module:'Kubernetes',               title:'K8s Production',                   file:'k8s_production.html',     topics:'Resource limits · namespaces · RBAC · production checklist',                   tools:'Kubernetes' },
+  { num:20, id:'class-19',      module:'Kubernetes',               title:'Helm Charts',                      file:'helm.html',               topics:'Helm charts & packaging · values.yaml · upgrade/rollback',                    tools:'Helm' },
+  { num:21, id:'class-20',      module:'AWS EKS',                  title:'Amazon EKS',                       file:'eks.html',                topics:'EKS architecture · managed node groups · EBS CSI · ALB Controller',            tools:'AWS EKS' },
+  { num:22, id:'class-21',      module:'Observability',            title:'Observability Foundations',        file:'observability_intro.html',topics:'Observability maturity · metrics / logs / traces · RED & USE methods',         tools:'' },
+  { num:23, id:'class-23',      module:'Observability',            title:'Prometheus Architecture',          file:'prometheus.html',         topics:'Prometheus architecture & setup · scraping · exporters · recording rules',    tools:'Prometheus' },
+  { num:24, id:'class-24',      module:'Observability',            title:'PromQL & Alerting',                file:'promql.html',             topics:'PromQL syntax · rate() · histogram_quantile() · alert rules',                  tools:'Prometheus' },
+  { num:25, id:'class-25',      module:'Observability',            title:'Grafana Dashboards',               file:'grafana.html',            topics:'Dashboards & visualization · data sources · panels · variables',               tools:'Grafana' },
+  { num:26, id:'class-26',      module:'Observability',            title:'Grafana Alerts',                   file:'grafana_alerts.html',     topics:'Alert rules · contact points · notification policies · silences',              tools:'Grafana' },
+  { num:27, id:'class-27',      module:'Observability',            title:'Loki Logging',                     file:'loki.html',               topics:'Loki architecture · LogQL · label selectors · Promtail',                       tools:'Loki' },
+  { num:28, id:'class-28',      module:'Observability',            title:'Distributed Tracing — Jaeger',     file:'jaeger.html',             topics:'Distributed tracing · OpenTelemetry SDK · trace context · sampling',           tools:'Jaeger' },
+  { num:29, id:'class-29',      module:'Observability',            title:'Alertmanager',                     file:'alertmanager.html',       topics:'Alert routing · receivers · grouping · inhibition · silences',                 tools:'Alertmanager' },
+  { num:30, id:'class-30',      module:'Infrastructure as Code',   title:'Terraform Basics',                 file:'terraform.html',          topics:'Terraform HCL · providers · resources · state · modules · EKS provisioning',  tools:'Terraform' },
+  { num:31, id:'class-31',      module:'Observability',            title:'EKS Observability Stack',          file:'eks_observability.html',  topics:'Deploy observability stack on EKS · ServiceMonitor · Grafana on EKS',         tools:'EKS · Prometheus · Grafana' },
+  { num:32, id:'class-32',      module:'CI/CD & GitOps',           title:'Git Fundamentals',                 file:'git_basics.html',         topics:'Git init/clone/commit/push · branching · merge conflicts · git log',          tools:'Git' },
+  { num:33, id:'class-33',      module:'CI/CD & GitOps',           title:'GitHub Actions',                   file:'github_actions.html',     topics:'Workflow YAML · jobs · steps · secrets · matrix builds · artifacts',         tools:'GitHub Actions' },
+  { num:34, id:'class-34',      module:'CI/CD & GitOps',           title:'GitOps with ArgoCD',               file:'argocd.html',             topics:'GitOps principles · App-of-Apps · sync policies · self-healing',              tools:'ArgoCD' },
+  { num:35, id:'class-35',      module:'CI/CD & GitOps',           title:'Deployment Strategies',            file:'deploy_strategies.html',  topics:'Blue/Green · Canary · Rolling · feature flags · traffic splitting',          tools:'ArgoCD' },
+  { num:36, id:'class-36',      module:'SRE Reliability Practices',title:'SLIs, SLOs & SLAs',               file:'sre_metrics.html',        topics:'SLI definition · SLO targets · SLA contracts · measurement approach',         tools:'Prometheus' },
+  { num:37, id:'class-37',      module:'SRE Reliability Practices',title:'Error Budgets',                    file:'error_budgets.html',      topics:'Error budget calculations · budget consumption · toil vs reliability',         tools:'Prometheus' },
+  { num:38, id:'class-38',      module:'SRE Reliability Practices',title:'Burn Rate Alerts',                 file:'burn_rate.html',          topics:'Fast/slow burn · multi-window multi-burn-rate alerts',                         tools:'Prometheus' },
+  { num:39, id:'class-39',      module:'SRE Reliability Practices',title:'Incident Management',              file:'incident_management.html',topics:'SEV1/SEV2/SEV3 · incident lifecycle · on-call rotation · runbooks',           tools:'' },
+  { num:40, id:'class-40',      module:'SRE Reliability Practices',title:'Incident Command',                 file:'incident_command.html',   topics:'IC role · CL role · communication during incidents · war room',               tools:'' },
+  { num:41, id:'class-41',      module:'SRE Reliability Practices',title:'Postmortems & RCA',               file:'postmortems.html',        topics:'Blameless RCA · 5 Whys · action items · postmortem templates',                tools:'' },
+  { num:42, id:'class-42',      module:'Advanced SRE Topics',      title:'Capacity Planning',               file:'capacity_planning.html',  topics:'Capacity forecasting · traffic modeling · load testing · cost per unit',      tools:'Kubernetes' },
+  { num:43, id:'class-43',      module:'Advanced SRE Topics',      title:'Advanced Autoscaling',            file:'autoscaling.html',        topics:'HPA advanced · KEDA · VPA · Cluster Autoscaler · Karpenter',                  tools:'Kubernetes · Karpenter' },
+  { num:44, id:'class-44',      module:'Advanced SRE Topics',      title:'Load Testing',                    file:'load_testing.html',       topics:'Load profiles · saturation testing · result analysis',                         tools:'Locust / K6 / JMeter' },
+  { num:45, id:'class-45',      module:'Advanced SRE Topics',      title:'Chaos Engineering',               file:'chaos_engineering.html',  topics:'Chaos principles · failure modes · Litmus Chaos · game days',                 tools:'LitmusChaos / Chaos Mesh' },
+  { num:46, id:'class-46',      module:'Advanced SRE Topics',      title:'Cost Optimization',               file:'cost_optimization.html',  topics:'EC2 Reserved/Spot · S3 tiers · right-sizing · tagging strategy',              tools:'AWS · Kubernetes' },
+  { num:47, id:'class-47',      module:'Advanced SRE Topics',      title:'Observability Cost Control',      file:'observability_cost.html', topics:'Cardinality explosion · metric retention · log sampling · efficient dashboards',tools:'Prometheus · Grafana' },
+  { num:48, id:'class-48',      module:'Advanced SRE Topics',      title:'K8s Security',                    file:'k8s_security.html',       topics:'RBAC · NetworkPolicies · Pod Security · OPA/Gatekeeper · image scanning',    tools:'Kubernetes Security' },
+];
+
+const MODULE_COLORS = {
+  'SRE Foundations':          '#c084fc',
+  'AWS Cloud':                '#4ade80',
+  'Docker & Containers':      '#38bdf8',
+  'Kubernetes':               '#6b8ff5',
+  'AWS EKS':                  '#4ade80',
+  'Observability':            '#fb923c',
+  'Infrastructure as Code':   '#2dd4bf',
+  'CI/CD & GitOps':           '#86efac',
+  'SRE Reliability Practices':'#f59e0b',
+  'Advanced SRE Topics':      '#f472b6',
+};
+
+// ── State ────────────────────────────────────────────────────────────────────
+let _deliveryStatus = {};  // classId → 'delivered' | 'upcoming'
+let _progress = {};        // classId → { completed, current_slide, total_slides }
+let _isAdmin = false;
+let _currentFilter = 'all';
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!Auth.init()) return;
+  const user = Auth.getUser();
+  if (!user) return;
+
+  document.getElementById('userName').textContent = user.name || user.email;
+  const roleBadge = document.getElementById('roleBadge');
+  roleBadge.textContent = user.role;
+  if (user.role === 'admin') { roleBadge.classList.add('admin-badge'); _isAdmin = true; }
+  if (user.role === 'admin') document.getElementById('adminLink').style.display = '';
+  if (_isAdmin) document.body.classList.add('is-admin');
+
+  try {
+    const [deliveryRes, progressRes] = await Promise.all([
+      Auth.fetch('/api/classes/delivery'),
+      Auth.fetch('/api/classes/progress/all'),
+    ]);
+    if (deliveryRes) _deliveryStatus = await deliveryRes.json();
+    if (progressRes) _progress = await progressRes.json();
+  } catch (_) {}
+
+  renderAll();
+  updateStats();
+});
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderAll() {
+  const root = document.getElementById('curriculumRoot');
+  const modules = [...new Set(CURRICULUM.map(c => c.module))];
+  root.innerHTML = '';
+
+  modules.forEach(mod => {
+    const classes = CURRICULUM.filter(c => c.module === mod);
+    const delivered = classes.filter(c => (_deliveryStatus[c.id] || 'upcoming') === 'delivered').length;
+    const completed = classes.filter(c => _progress[c.id]?.completed).length;
+    const color = MODULE_COLORS[mod] || '#38bdf8';
+
+    const section = document.createElement('div');
+    section.className = 'module-section';
+    section.dataset.module = mod;
+
+    // Ring progress
+    const ringPct = classes.length ? (completed / classes.length) : 0;
+    const ringC = 2 * Math.PI * 15;
+    const ringOffset = ringC * (1 - ringPct);
+
+    section.innerHTML = `
+      <div class="module-header" onclick="toggleSection(this.closest('.module-section'))">
+        <div class="module-color-bar" style="background:${color}"></div>
+        <div class="module-name">${mod}</div>
+        <div class="module-meta">${classes.length} classes &nbsp;·&nbsp; ${delivered} delivered &nbsp;·&nbsp; ${completed} completed</div>
+        <div class="module-progress-ring">
+          <svg viewBox="0 0 36 36" width="36" height="36">
+            <circle class="ring-bg" cx="18" cy="18" r="15"/>
+            <circle class="ring-fill" cx="18" cy="18" r="15"
+              stroke="${color}"
+              stroke-dasharray="${ringC}"
+              stroke-dashoffset="${ringOffset}"/>
+          </svg>
+          <div class="ring-text">${Math.round(ringPct*100)}%</div>
+        </div>
+        <span class="module-chevron">▼</span>
+      </div>
+      <div class="module-body" id="body-${mod.replace(/\W+/g,'_')}"></div>
+    `;
+    root.appendChild(section);
+
+    const body = section.querySelector('.module-body');
+    classes.forEach(cls => body.appendChild(buildCard(cls)));
+  });
+
+  applyFilter(_currentFilter);
+}
+
+function buildCard(cls) {
+  const delivery = _deliveryStatus[cls.id] || 'upcoming';
+  const prog = _progress[cls.id];
+  const isCompleted = prog?.completed;
+  const hasProgress = prog && (prog.current_slide > 0 || isCompleted);
+  const slidePct = (prog && prog.total_slides) ? Math.round((prog.current_slide / prog.total_slides) * 100) : 0;
+
+  const deliveryLabel = delivery === 'delivered' ? '✓ Delivered' : 'Upcoming';
+  const progressLabel = isCompleted ? 'Completed' : hasProgress ? 'In Progress' : '';
+  const progressClass = isCompleted ? 'completed' : hasProgress ? 'in-progress' : 'not-started';
+
+  const card = document.createElement('div');
+  card.className = `class-card ${delivery}`;
+  card.dataset.classId = cls.id;
+  card.dataset.delivery = delivery;
+  card.dataset.progress = progressClass;
+
+  const titleHtml = cls.file
+    ? `<a href="/ppts/${cls.file}" class="card-title">${cls.title}</a>`
+    : `<span class="card-title no-link">${cls.title}</span>`;
+
+  card.innerHTML = `
+    <div class="card-top">
+      <span class="card-num">class-${String(cls.num).padStart(2,'0')}</span>
+      <div class="card-title-wrap">${titleHtml}</div>
+    </div>
+    <div class="card-topics">${cls.topics}</div>
+    ${cls.tools ? `<div class="card-tools">${cls.tools}</div>` : ''}
+    <div class="card-footer">
+      <span class="delivery-badge ${delivery}" data-id="${cls.id}" onclick="toggleDelivery(event, '${cls.id}')">${deliveryLabel}</span>
+      ${progressLabel ? `<span class="progress-badge ${progressClass}">${progressLabel}</span>` : ''}
+    </div>
+    ${hasProgress && !isCompleted ? `
+      <div class="slide-progress-wrap">
+        <div class="slide-progress-bar"><div class="slide-progress-fill" style="width:${slidePct}%"></div></div>
+        <span class="slide-progress-text">${prog.current_slide}/${prog.total_slides} slides</span>
+      </div>` : ''}
+  `;
+  return card;
+}
+
+// ── Delivery toggle (admin only) ─────────────────────────────────────────────
+async function toggleDelivery(e, classId) {
+  if (!_isAdmin) return;
+  e.stopPropagation();
+  const current = _deliveryStatus[classId] || 'upcoming';
+  const next = current === 'delivered' ? 'upcoming' : 'delivered';
+
+  try {
+    const res = await Auth.fetch(`/api/classes/${classId}/delivery`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: next }),
+    });
+    if (!res || !res.ok) return;
+    _deliveryStatus[classId] = next;
+    // Re-render just this card
+    const card = document.querySelector(`.class-card[data-class-id="${classId}"]`);
+    if (card) {
+      const cls = CURRICULUM.find(c => c.id === classId);
+      if (cls) card.replaceWith(buildCard(cls));
+    }
+    applyFilter(_currentFilter);
+    updateStats();
+  } catch (_) {}
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  _currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter(f);
+}
+
+function applyFilter(f) {
+  document.querySelectorAll('.class-card').forEach(card => {
+    const delivery = card.dataset.delivery;
+    const progress = card.dataset.progress;
+    let show = true;
+    if (f === 'delivered')  show = delivery === 'delivered';
+    if (f === 'upcoming')   show = delivery === 'upcoming';
+    if (f === 'completed')  show = progress === 'completed';
+    card.classList.toggle('hidden', !show);
+  });
+  // Hide empty module bodies
+  document.querySelectorAll('.module-section').forEach(sec => {
+    const visible = [...sec.querySelectorAll('.class-card')].some(c => !c.classList.contains('hidden'));
+    sec.style.display = visible ? '' : 'none';
+  });
+}
+
+// ── Section collapse ─────────────────────────────────────────────────────────
+function toggleSection(section) {
+  section.classList.toggle('collapsed');
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const delivered = CURRICULUM.filter(c => (_deliveryStatus[c.id] || 'upcoming') === 'delivered').length;
+  const completed  = CURRICULUM.filter(c => _progress[c.id]?.completed).length;
+  const pct = delivered ? Math.round((completed / delivered) * 100) : 0;
+
+  document.getElementById('statDelivered').textContent = delivered;
+  document.getElementById('statCompleted').textContent = completed;
+  document.getElementById('statPct').textContent = delivered ? `${pct}%` : '—';
+}
+</script>
+</body>
+</html>

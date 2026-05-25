@@ -72,11 +72,13 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   <div class="tag tag-k8s">Session Plan</div>
   <h2>What We'll Cover</h2>
   <div class="agenda">
-    <div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">01</div><div class="ag-text"><strong>What is Kubernetes?</strong>Why K8s? Concepts · 10 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>Pods</strong>Smallest deployable unit · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">03</div><div class="ag-text"><strong>Services</strong>ClusterIP, NodePort, LB · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">04</div><div class="ag-text"><strong>Deployments</strong>ReplicaSets, rolling updates · 15 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">05</div><div class="ag-text"><strong>Quiz</strong>Review · 11 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">01</div><div class="ag-text"><strong>What is Kubernetes?</strong>Why K8s? Concepts · 8 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>Pods</strong>Smallest deployable unit · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">03</div><div class="ag-text"><strong>Services</strong>ClusterIP, NodePort, LB · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">04</div><div class="ag-text"><strong>Deployments</strong>ReplicaSets, rolling updates · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">05</div><div class="ag-text"><strong>Labels, ConfigMaps & Secrets</strong>Configuration management · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#7c1d0d33;color:#fb923c">06</div><div class="ag-text"><strong>Resources & Probes</strong>Requests, limits, liveness · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">07</div><div class="ag-text"><strong>Quiz</strong>Review · 12 min</div></div>
     <div class="ag-item"><div class="ag-num" style="background:#326ce522;color:#6b8ff5">🏠</div><div class="ag-text"><strong>Portal</strong><a href="/portal.html" style="color:#6b8ff5;font-size:12px">index.html</a></div></div>
   </div>
 </div>
@@ -200,6 +202,75 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   </div>
 </div>
 
+<!-- Labels, ConfigMaps & Secrets -->
+<div class="slide s-k8s">
+  <div class="tag tag-k8s">Segment 5 — Configuration</div>
+  <h2>Labels, ConfigMaps & Secrets</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">Labels & Selectors</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Labels: key/value pairs attached to any K8s object</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Used for selection, grouping, filtering</li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Services find pods via label selectors</li>
+        <li style="color:#94a3b8"><code style="color:#6b8ff5">kubectl get pods -l app=myapp,env=prod</code></li>
+        <li style="color:#94a3b8"><span style="color:#6b8ff5">›</span> Annotations: metadata not used for selection (build info, tool config)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent2">ConfigMaps & Secrets</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong>ConfigMap</strong> — non-sensitive config (env vars, config files)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> <strong>Secret</strong> — base64-encoded sensitive data (passwords, tokens, TLS certs)</li>
+        <li style="color:#94a3b8"><span style="color:#4ade80">›</span> Both can be injected as env vars or mounted as files</li>
+        <li style="color:#94a3b8"><code style="color:#4ade80">kubectl create cm app-config --from-file=app.conf</code></li>
+        <li style="color:#94a3b8"><code style="color:#4ade80">kubectl create secret generic db-creds \</code></li>
+        <li style="color:#94a3b8;padding-left:16px"><code style="color:#4ade80">--from-literal=password=s3cr3t</code></li>
+        <li style="color:#94a3b8"><span style="color:#fbbf24">⚠</span> Secrets are base64 not encrypted — use Sealed Secrets or AWS Secrets Manager for production</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Resource Requests/Limits & Probes -->
+<div class="slide s-green">
+  <div class="tag tag-green">Segment 6 — Resources & Probes</div>
+  <h2>Resource Requests, Limits & Probes</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent2">Requests & Limits</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="prop">resources:</span><br>
+&nbsp;&nbsp;<span class="prop">requests:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">cpu:</span> <span class="str">"250m"</span>&nbsp;&nbsp;<span class="cmt"># scheduler sees this</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">memory:</span> <span class="str">"256Mi"</span><br>
+&nbsp;&nbsp;<span class="prop">limits:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">cpu:</span> <span class="str">"500m"</span>&nbsp;&nbsp;<span class="cmt"># throttled if exceeded</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">memory:</span> <span class="str">"512Mi"</span>&nbsp;<span class="cmt"># OOMKilled if exceeded</span>
+      </div>
+      <ul style="margin-top:8px">
+        <li style="color:#94a3b8;font-size:12px"><span style="color:#4ade80">›</span> <strong>Request</strong>: guaranteed minimum — used for scheduling</li>
+        <li style="color:#94a3b8;font-size:12px"><span style="color:#fb923c">›</span> <strong>Limit</strong>: hard cap — CPU is throttled, memory triggers OOMKill</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent3">Liveness & Readiness Probes</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="prop">livenessProbe:</span>&nbsp;<span class="cmt"># restart if fails</span><br>
+&nbsp;&nbsp;<span class="prop">httpGet:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">path:</span> <span class="str">/healthz</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">port:</span> <span class="val">3000</span><br>
+&nbsp;&nbsp;<span class="prop">initialDelaySeconds:</span> <span class="val">10</span><br>
+&nbsp;&nbsp;<span class="prop">periodSeconds:</span> <span class="val">15</span><br>
+<span class="prop">readinessProbe:</span>&nbsp;<span class="cmt"># remove from LB if fails</span><br>
+&nbsp;&nbsp;<span class="prop">httpGet:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">path:</span> <span class="str">/ready</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">port:</span> <span class="val">3000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="slide s-dark">
   <div class="tag tag-k8s">Quiz</div>
   <h2>K8s Basics Quiz ⚡</h2>
@@ -229,14 +300,14 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
 <div id="nav">
   <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
   <div id="slide-title-nav">K8s Basics</div>
-  <div id="progress"><div id="bar" style="width:12.5%"></div></div>
-  <div id="slide-info">1 / 8</div>
+  <div id="progress"><div id="bar" style="width:10%"></div></div>
+  <div id="slide-info">1 / 10</div>
   <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
   <a href="/portal.html" class="home-link">🏠 Portal</a>
 </div>
 <script>
-const titles=["Title","Agenda","Why K8s","Pods","Services","Deployments","Quiz","Wrap Up"];
-let cur=0;const total=8;
+const titles=["Title","Agenda","Why K8s","Pods","Services","Deployments","Labels & ConfigMaps","Resources & Probes","Quiz","Wrap Up"];
+let cur=0;const total=10;
 const slides=document.querySelectorAll('.slide');
 function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
 function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}

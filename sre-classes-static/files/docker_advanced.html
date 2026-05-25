@@ -70,12 +70,14 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   <div class="tag tag-docker">Session Plan</div>
   <h2>What We'll Cover</h2>
   <div class="agenda">
-    <div class="ag-item"><div class="ag-num" style="background:#2496ed22;color:#60b5f5">01</div><div class="ag-text"><strong>Volumes vs Bind Mounts</strong>Persistent data · 12 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>Docker Networking</strong>bridge, host, overlay · 15 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>Best Practices</strong>Security & optimization · 15 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">04</div><div class="ag-text"><strong>Logging & Health Checks</strong>Observability · 10 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">05</div><div class="ag-text"><strong>Quiz</strong>Review · 8 min</div></div>
-    <div class="ag-item"><div class="ag-num" style="background:#2496ed22;color:#60b5f5">🏠</div><div class="ag-text"><strong>Portal</strong><a href="index.html" style="color:#60b5f5;font-size:12px">index.html</a></div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2496ed22;color:#60b5f5">01</div><div class="ag-text"><strong>Volumes vs Bind Mounts</strong>Persistent data · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">02</div><div class="ag-text"><strong>Docker Networking</strong>bridge, host, overlay · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#78350f33;color:#fbbf24">03</div><div class="ag-text"><strong>Best Practices</strong>Security & optimization · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2e106533;color:#c084fc">04</div><div class="ag-text"><strong>Logging & Health Checks</strong>Observability · 8 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#0d423f33;color:#2dd4bf">05</div><div class="ag-text"><strong>Multi-Stage Builds</strong>Smaller, secure images · 10 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#7c1d0d33;color:#fb923c">06</div><div class="ag-text"><strong>Docker Registry & ECR</strong>Push, pull, scan · 8 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#14532d33;color:#4ade80">07</div><div class="ag-text"><strong>Quiz</strong>Review · 14 min</div></div>
+    <div class="ag-item"><div class="ag-num" style="background:#2496ed22;color:#60b5f5">🏠</div><div class="ag-text"><strong>Portal</strong><a href="/portal.html" style="color:#60b5f5;font-size:12px">index.html</a></div></div>
   </div>
 </div>
 
@@ -181,6 +183,82 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
   </div>
 </div>
 
+<!-- Multi-stage builds -->
+<div class="slide s-docker">
+  <div class="tag tag-docker">Segment 5 — Multi-Stage Builds</div>
+  <h2>Multi-Stage Builds</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent">Why Multi-Stage?</h3>
+      <ul>
+        <li style="color:#94a3b8"><span style="color:#60b5f5">›</span> Build tools (compilers, npm, maven) are huge — don't ship them</li>
+        <li style="color:#94a3b8"><span style="color:#60b5f5">›</span> Final image only contains the compiled artifact + runtime</li>
+        <li style="color:#94a3b8"><span style="color:#60b5f5">›</span> Smaller = faster pulls, smaller attack surface</li>
+        <li style="color:#94a3b8"><span style="color:#60b5f5">›</span> Typical reduction: 800MB → 80MB for a Node.js app</li>
+        <li style="color:#94a3b8"><span style="color:#60b5f5">›</span> No separate build server needed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="accent3">Example: Node.js</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># Stage 1: Build</span><br>
+<span class="kw">FROM</span> <span class="str">node:18-alpine AS builder</span><br>
+<span class="kw">WORKDIR</span> /app<br>
+<span class="kw">COPY</span> package*.json ./<br>
+<span class="kw">RUN</span> npm ci --only=production<br>
+<span class="kw">COPY</span> . .<br>
+<span class="kw">RUN</span> npm run build<br><br>
+<span class="cmt"># Stage 2: Runtime (tiny image)</span><br>
+<span class="kw">FROM</span> <span class="str">node:18-alpine</span><br>
+<span class="kw">WORKDIR</span> /app<br>
+<span class="kw">COPY --from=builder</span> /app/dist ./dist<br>
+<span class="kw">COPY --from=builder</span> /app/node_modules .<br>
+<span class="kw">USER</span> node<br>
+<span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"dist/server.js"</span>]
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Docker Registry & ECR -->
+<div class="slide s-green">
+  <div class="tag tag-green">Segment 6 — Registry</div>
+  <h2>Docker Registry & Amazon ECR</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3 class="accent2">Docker Hub & Private Registries</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># Tag for Docker Hub</span><br>
+<span class="kw">docker tag</span> myapp:latest \<br>
+  <span class="str">myorg/myapp:v1.2.3</span><br><br>
+<span class="cmt"># Push</span><br>
+<span class="kw">docker push</span> myorg/myapp:v1.2.3<br><br>
+<span class="cmt"># Pull on another machine</span><br>
+<span class="kw">docker pull</span> myorg/myapp:v1.2.3<br><br>
+<span class="cmt"># Run private registry</span><br>
+<span class="kw">docker run</span> -d -p 5000:5000 registry:2
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="accent3">AWS ECR Workflow</h3>
+      <div class="code" style="font-size:11px;padding:10px 14px">
+<span class="cmt"># Authenticate to ECR</span><br>
+<span class="kw">aws ecr get-login-password</span> | \<br>
+  <span class="kw">docker login</span> --username AWS \<br>
+  --password-stdin \<br>
+  <span class="str">123456789.dkr.ecr.us-east-1.amazonaws.com</span><br><br>
+<span class="cmt"># Tag & push</span><br>
+<span class="kw">docker tag</span> myapp:latest \<br>
+  <span class="str">123456789.dkr.ecr.us-east-1.amazonaws.com/myapp:v1</span><br>
+<span class="kw">docker push</span> 123456789...myapp:v1<br><br>
+<span class="cmt"># Scan on push (ECR built-in)</span><br>
+<span class="kw">aws ecr describe-image-scan-findings</span> \<br>
+  --repository-name myapp --image-id imageTag=v1
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="slide s-dark">
   <div class="tag tag-docker">Quiz</div>
   <h2>Volumes & Networking Quiz ⚡</h2>
@@ -203,21 +281,21 @@ h2{font-size:30px;font-weight:700;margin-bottom:20px;text-align:center}
     <span style="font-size:13px;color:#fbbf24">✓ Security Best Practices</span>
     <span style="font-size:13px;color:#c084fc">✓ Health Checks & Logging</span>
   </div>
-  <a href="index.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
+  <a href="/portal.html" style="margin-top:28px;font-size:13px;color:#475569;text-decoration:none">← Back to Ktech SRE Portal</a>
 </div>
 
 </div>
 <div id="nav">
   <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← Prev</button>
   <div id="slide-title-nav">Docker Advanced</div>
-  <div id="progress"><div id="bar" style="width:11%"></div></div>
-  <div id="slide-info">1 / 9</div>
+  <div id="progress"><div id="bar" style="width:10%"></div></div>
+  <div id="slide-info">1 / 10</div>
   <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
-  <a href="index.html" class="home-link">🏠 Portal</a>
+  <a href="/portal.html" class="home-link">🏠 Portal</a>
 </div>
 <script>
-const titles=["Title","Agenda","Volumes","Networking","Best Practices","Logging & Health Checks","Quiz","Wrap Up"];
-let cur=0;const total=8;
+const titles=["Title","Agenda","Volumes","Networking","Best Practices","Logging & Health","Multi-Stage Builds","Registry & ECR","Quiz","Wrap Up"];
+let cur=0;const total=10;
 const slides=document.querySelectorAll('.slide');
 function go(d){slides[cur].classList.remove('active');cur=Math.max(0,Math.min(total-1,cur+d));slides[cur].classList.add('active');document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===total-1;document.getElementById('slide-info').textContent=(cur+1)+' / '+total;document.getElementById('bar').style.width=((cur+1)/total*100)+'%';document.getElementById('slide-title-nav').textContent=titles[cur];}
 function reveal(btn){const a=btn.nextElementSibling;a.classList.toggle('show');btn.textContent=a.classList.contains('show')?'Hide Answer':'Show Answer';}
