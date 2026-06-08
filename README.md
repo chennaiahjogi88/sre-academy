@@ -4,6 +4,8 @@ A full-stack training platform for SRE classes with real-time dashboards, class 
 
 See **[app/README.md](app/README.md)** for full design and deployment instructions.
 
+Batch-4 DEMO
+
 ---
 
 ## Quick Start
